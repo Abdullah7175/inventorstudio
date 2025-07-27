@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Code, Palette, Zap, Users } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Landing page background elements */}
+      <ServiceBackgroundElements density="medium" opacity={0.04} />
       <Navigation />
       
       {/* Hero Section */}

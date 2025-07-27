@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
+import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Lock, Eye, UserCheck, FileText, Calendar } from "lucide-react";
 
@@ -81,7 +82,9 @@ export default function PrivacyPolicy() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Privacy Policy background elements */}
+      <ServiceBackgroundElements density="light" opacity={0.02} />
       <Navigation />
       
       {/* Hero Section */}

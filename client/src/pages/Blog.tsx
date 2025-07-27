@@ -4,6 +4,8 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import BlogCard from "@/components/BlogCard";
 import AnimatedSection from "@/components/AnimatedSection";
+import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
+import MarketingElements from "@/components/MarketingElements";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { type BlogPost } from "@shared/schema";
@@ -39,7 +41,9 @@ export default function Blog() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Blog background elements */}
+      <ServiceBackgroundElements density="light" opacity={0.04} />
       <Navigation />
       
       {/* Hero Section */}

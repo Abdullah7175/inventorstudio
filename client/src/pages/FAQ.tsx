@@ -3,6 +3,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import FAQItem from "@/components/FAQItem";
 import AnimatedSection from "@/components/AnimatedSection";
+import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -81,7 +82,9 @@ export default function FAQ() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* FAQ page background elements */}
+      <ServiceBackgroundElements density="light" opacity={0.02} />
       <Navigation />
       
       {/* Hero Section */}

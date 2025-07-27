@@ -1,6 +1,8 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
+import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
+import DesignElements from "@/components/DesignElements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
@@ -59,7 +61,9 @@ export default function About() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* About page background elements */}
+      <ServiceBackgroundElements density="light" opacity={0.04} />
       <Navigation />
       
       {/* Hero Section */}
@@ -136,7 +140,9 @@ export default function About() {
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-20 bg-gray-900 bg-opacity-30">
+      <section className="py-20 bg-gray-900 bg-opacity-30 relative">
+        {/* Design elements for mission section */}
+        <DesignElements />
         <div className="container mx-auto px-6">
           <AnimatedSection className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">

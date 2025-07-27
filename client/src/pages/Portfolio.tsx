@@ -4,6 +4,8 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PortfolioItem from "@/components/PortfolioItem";
 import AnimatedSection from "@/components/AnimatedSection";
+import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
+import TechStackBackground from "@/components/TechStackBackground";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -38,7 +40,9 @@ export default function Portfolio() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Portfolio background elements */}
+      <ServiceBackgroundElements density="medium" opacity={0.05} />
       <Navigation />
       
       {/* Hero Section */}
