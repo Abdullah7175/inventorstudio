@@ -8,16 +8,29 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: unknown | undefined,
+  options: RequestInit = {},
 ): Promise<Response> {
   const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    method: options.method || 'GET',
+    headers: {
+      ...((options.body && !(options.body instanceof FormData)) ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+    body: options.body,
     credentials: "include",
+    ...options,
   });
+
+  // Handle 401 errors by redirecting to login
+  if (res.status === 401) {
+    // Clear any cached data
+    localStorage.clear();
+    sessionStorage.clear();
+    // Redirect to login
+    window.location.href = "/api/login";
+    throw new Error("401: Unauthorized - Redirecting to login");
+  }
 
   await throwIfResNotOk(res);
   return res;

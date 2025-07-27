@@ -175,7 +175,13 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => (window.location.href = "/api/logout")}
+                      onClick={() => {
+                        // Clear any local storage/cache
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        // Redirect to logout endpoint
+                        window.location.href = "/api/logout";
+                      }}
                       className="text-gray-400 hover:text-red-400 transition-colors duration-300"
                     >
                       <LogOut className="h-4 w-4" />
@@ -339,6 +345,10 @@ export default function Navigation() {
                         variant="ghost"
                         onClick={() => {
                           setIsMobileMenuOpen(false);
+                          // Clear any local storage/cache
+                          localStorage.clear();
+                          sessionStorage.clear();
+                          // Redirect to logout endpoint
                           window.location.href = "/api/logout";
                         }}
                         className="w-full text-gray-400 hover:text-red-400 transition-colors duration-300"

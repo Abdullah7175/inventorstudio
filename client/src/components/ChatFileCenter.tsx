@@ -87,18 +87,18 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
     }
   });
 
-  const { data: initialMessages = [] } = useQuery({
+  const { data: initialMessages = [] } = useQuery<ProjectMessage[]>({
     queryKey: ["/api/project-messages", projectId],
     enabled: !!projectId,
   });
 
-  const { data: files } = useQuery({
+  const { data: files = [] } = useQuery<ProjectFile[]>({
     queryKey: ["/api/project-files", projectId],
     enabled: !!projectId,
   });
 
   // Combine initial messages with real-time messages
-  const allMessages = [...initialMessages, ...realTimeMessages];
+  const allMessages = [...(Array.isArray(initialMessages) ? initialMessages : []), ...realTimeMessages];
 
   // Handle typing indicators
   const handleTyping = (value: string) => {
@@ -364,13 +364,13 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!files || files.length === 0 ? (
+          {!Array.isArray(files) || files.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               No files uploaded yet. Use the chat to share files with your team.
             </p>
           ) : (
             <div className="space-y-3">
-              {files.map((file: ProjectFile) => (
+              {Array.isArray(files) && files.map((file: ProjectFile) => (
                 <motion.div
                   key={file.id}
                   whileHover={{ scale: 1.01 }}

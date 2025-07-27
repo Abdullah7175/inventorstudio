@@ -3,6 +3,26 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+
+// Role-based middleware
+const requireRole = (roles: string[]) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !roles.includes(user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      req.currentUser = user;
+      next();
+    } catch (error) {
+      console.error("Role check error:", error);
+      res.status(500).json({ message: "Authorization check failed" });
+    }
+  };
+};
 import {
   insertContactSubmissionSchema,
   insertClientProjectSchema,
@@ -648,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { projectId } = req.params;
       // Mock data for demonstration
-      const mockFiles = [];
+      const mockFiles: any[] = [];
       res.json(mockFiles);
     } catch (error) {
       console.error("Project files error:", error);
@@ -657,7 +677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Portal routes
-  app.get("/api/admin/project-requests", isAuthenticated, async (req: any, res) => {
+  app.get("/api/admin/project-requests", isAuthenticated, requireRole(["admin"]), async (req: any, res) => {
     try {
       // Mock admin access check
       const mockRequests = [
@@ -992,7 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     ws.on('close', () => {
       // Remove connection on close
-      for (const [userId, connection] of connections.entries()) {
+      for (const [userId, connection] of Array.from(connections.entries())) {
         if (connection.ws === ws) {
           connections.delete(userId);
           console.log(`User ${userId} disconnected from WebSocket`);
