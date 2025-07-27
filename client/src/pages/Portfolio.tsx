@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PortfolioItem from "@/components/PortfolioItem";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -43,7 +42,6 @@ export default function Portfolio() {
     <div className="min-h-screen bg-background relative">
       {/* Portfolio background elements */}
       <ServiceBackgroundElements density="medium" opacity={0.05} />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20">

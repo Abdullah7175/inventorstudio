@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
@@ -93,7 +92,6 @@ export default function Contact() {
     <div className="min-h-screen bg-background relative">
       {/* Contact page background elements */}
       <ServiceBackgroundElements density="light" opacity={0.03} />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20">

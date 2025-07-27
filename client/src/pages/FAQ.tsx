@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import FAQItem from "@/components/FAQItem";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -85,7 +84,6 @@ export default function FAQ() {
     <div className="min-h-screen bg-background relative">
       {/* FAQ page background elements */}
       <ServiceBackgroundElements density="light" opacity={0.02} />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20">

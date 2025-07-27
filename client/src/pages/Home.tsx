@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
 import ServiceCard from "@/components/ServiceCard";
@@ -63,8 +62,6 @@ export default function Home() {
     <div className="min-h-screen bg-background relative">
       {/* Global service background elements */}
       <ServiceBackgroundElements density="light" opacity={0.03} />
-      
-      <Navigation />
       
       <Hero />
 

@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ServiceCard from "@/components/ServiceCard";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -65,7 +64,6 @@ export default function Services() {
     <div className="min-h-screen bg-background relative">
       {/* Services background pattern */}
       <ServicesBackgroundPattern />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20">

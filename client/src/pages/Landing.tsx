@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Code, Palette, Zap, Users } from "lucide-react";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
 
@@ -10,7 +9,6 @@ export default function Landing() {
     <div className="min-h-screen bg-background relative">
       {/* Landing page background elements */}
       <ServiceBackgroundElements density="medium" opacity={0.04} />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">

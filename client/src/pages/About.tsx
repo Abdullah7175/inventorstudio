@@ -1,4 +1,3 @@
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
@@ -64,7 +63,6 @@ export default function About() {
     <div className="min-h-screen bg-background relative">
       {/* About page background elements */}
       <ServiceBackgroundElements density="light" opacity={0.04} />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20">

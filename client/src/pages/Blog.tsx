@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import BlogCard from "@/components/BlogCard";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -44,7 +43,6 @@ export default function Blog() {
     <div className="min-h-screen bg-background relative">
       {/* Blog background elements */}
       <ServiceBackgroundElements density="light" opacity={0.04} />
-      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20">
