@@ -113,7 +113,7 @@ export default function Navigation() {
 
                   {/* Admin Portal */}
                   {(user as any)?.role === "admin" && (
-                    <Link href="/admin-portal">
+                    <Link href="/admin">
                       <Button 
                         variant="outline" 
                         size="sm" 

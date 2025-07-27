@@ -44,6 +44,7 @@ function Router() {
       
       {/* Protected routes - Admin Portal */}
       <Route path="/admin" component={AdminPortal} />
+      <Route path="/admin-portal" component={AdminPortal} />
       
       {/* Project Management Routes */}
       <Route path="/projects" component={ProjectManagement} />
