@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /portfolio
+Allow: /blog
+Allow: /contact
+Allow: /faq
+Allow: /privacy-policy
+Allow: /partnerships
+Allow: /certifications
+
+# Block sensitive areas
+Disallow: /client-portal
+Disallow: /admin
+Disallow: /admin-portal
+Disallow: /projects
+Disallow: /team
+Disallow: /setup
+Disallow: /api/
+
+# Allow search engines to index important content
+Sitemap: https://inventerdesignstudio.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
