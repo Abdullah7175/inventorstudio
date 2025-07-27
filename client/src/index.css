@@ -5,9 +5,9 @@
 :root {
   /* Light theme (primary) */
   --background: hsl(0, 0%, 100%);
-  --foreground: hsl(0, 0%, 3.9%);
+  --foreground: hsl(0, 0%, 9%);
   --muted: hsl(0, 0%, 96.1%);
-  --muted-foreground: hsl(0, 0%, 45.1%);
+  --muted-foreground: hsl(0, 0%, 40%);
   --popover: hsl(0, 0%, 100%);
   --popover-foreground: hsl(0, 0%, 3.9%);
   --card: hsl(0, 0%, 100%);
@@ -71,6 +71,7 @@
     overflow-x: hidden;
     min-height: 100vh;
     position: relative;
+    color: hsl(0, 0%, 9%);
   }
 
   html {
@@ -108,10 +109,11 @@
   }
 
   .gradient-text {
-    background: linear-gradient(45deg, hsl(76, 100%, 58%), var(--foreground));
+    background: linear-gradient(45deg, hsl(76, 100%, 45%), hsl(0, 0%, 9%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    font-weight: 700;
   }
 
   .animated-border {
