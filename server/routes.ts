@@ -27,6 +27,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick setup endpoint - set user role (for development)
+  app.post("/api/setup/role", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { role } = req.body; // "admin", "team", or "client"
+      
+      if (!["admin", "team", "client"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, team, or client" });
+      }
+
+      // Update user role
+      const updatedUser = await storage.updateUserRole(userId, role);
+      
+      res.json({ 
+        message: `Role updated to ${role}`,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
   // Public routes
   
   // Services

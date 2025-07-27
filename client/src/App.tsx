@@ -22,6 +22,7 @@ import ClientPortal from "@/pages/ClientPortal";
 import AdminPortal from "@/pages/AdminPortal";
 import ProjectManagement from "@/pages/ProjectManagement";
 import TeamPortal from "@/pages/TeamPortal";
+import Setup from "@/pages/Setup";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -49,6 +50,9 @@ function Router() {
       {/* Project Management Routes */}
       <Route path="/projects" component={ProjectManagement} />
       <Route path="/team" component={TeamPortal} />
+      
+      {/* Setup Route */}
+      <Route path="/setup" component={Setup} />
       
       {/* Home route - show Landing for non-authenticated users, Home for authenticated */}
       <Route path="/">
