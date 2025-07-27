@@ -63,7 +63,7 @@ export default function Home() {
 
       {/* Featured Services */}
       <AnimatedSection className="py-20">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Our <span className="gradient-text">Services</span>
@@ -95,7 +95,7 @@ export default function Home() {
 
       {/* Portfolio Preview */}
       <AnimatedSection className="py-20 bg-gray-900 bg-opacity-30">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Our <span className="gradient-text">Portfolio</span>
@@ -132,7 +132,7 @@ export default function Home() {
 
       {/* Testimonials */}
       <AnimatedSection className="py-20">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Client <span className="gradient-text">Testimonials</span>
@@ -187,7 +187,7 @@ export default function Home() {
 
       {/* Blog Preview */}
       <AnimatedSection className="py-20 bg-gray-900 bg-opacity-30">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Latest <span className="gradient-text">Insights</span>
@@ -219,7 +219,7 @@ export default function Home() {
 
       {/* CTA Section */}
       <AnimatedSection className="py-20" id="contact">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto responsive-padding">
           <div className="text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Ready to Start Your <span className="gradient-text">Project</span>?

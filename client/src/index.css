@@ -199,10 +199,50 @@
   
   /* Enhanced glass effect for mobile */
   .glass-effect-mobile {
-    @apply backdrop-blur-md bg-black/20 border border-white/10;
-    @supports (backdrop-filter: blur(1px)) {
-      @apply backdrop-blur-md;
-    }
+    backdrop-filter: blur(12px);
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Smooth scrolling */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* Enhanced hover effects */
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    transition: transform 0.3s ease;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(214, 255, 42, 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* Enhanced button animations */
+  .btn-magnetic {
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .btn-magnetic:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 10px 25px rgba(214, 255, 42, 0.2);
+  }
+
+  /* Improved text gradients */
+  .gradient-text-enhanced {
+    background: linear-gradient(135deg, #D6FF2A 0%, #A3D61C 50%, #D6FF2A 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 }
 
