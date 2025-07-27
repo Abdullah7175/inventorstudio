@@ -73,6 +73,14 @@ export default function Landing() {
               Get Started
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
+            <Button
+              onClick={() => (window.location.href = "/temp-admin")}
+              className="bg-neutral-800 text-white px-6 py-4 text-sm font-medium hover:bg-neutral-700 border border-neutral-600"
+              variant="outline"
+              size="lg"
+            >
+              Quick Admin Access
+            </Button>
 
             <Button
               variant="outline"

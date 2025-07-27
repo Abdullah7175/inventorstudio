@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Temp Admin Route</title>
+</head>
+<body>
+    <h1>Testing Temp Admin Route</h1>
+    <button onclick="testRoute()">Go to /temp-admin</button>
+    <button onclick="testDirect()">Test Direct Navigation</button>
+    <div id="result"></div>
+    
+    <script>
+        function testRoute() {
+            window.location.href = '/temp-admin';
+        }
+        
+        function testDirect() {
+            window.open('/temp-admin', '_blank');
+        }
+        
+        // Auto-test the route on load
+        fetch('/temp-admin')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('result').innerHTML = 
+                    '<p>✓ Route accessible: ' + (html.includes('temp-admin') || html.includes('Quick Admin Access') ? 'YES' : 'NO') + '</p>';
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = '<p>✗ Route failed: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>

@@ -27,8 +27,10 @@ export default function TempAdminLogin() {
         title: "Login Successful",
         description: "Welcome to the admin panel!",
       });
-      // Redirect to admin portal
-      window.location.href = "/admin-portal";
+      // Redirect to admin portal after successful login
+      setTimeout(() => {
+        window.location.href = "/admin-portal";
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
