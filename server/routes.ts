@@ -69,6 +69,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Temporary admin access endpoint (for development)
+  app.post("/api/auth/temp-admin", async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      // Simple password check for demo purposes
+      if (password !== "admin123") {
+        return res.status(401).json({ message: "Invalid password" });
+      }
+
+      // Get the admin user from database
+      const adminUser = await storage.getUser("admin-ebadm7251");
+      
+      if (!adminUser) {
+        return res.status(404).json({ message: "Admin user not found" });
+      }
+
+      // Create a mock session for the admin user
+      (req.session as any).tempAdmin = {
+        id: adminUser.id,
+        email: adminUser.email,
+        role: adminUser.role,
+        isTemp: true
+      };
+
+      res.json({ 
+        message: "Temporary admin access granted",
+        user: adminUser 
+      });
+    } catch (error) {
+      console.error("Temp admin login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Check temp admin session
+  app.get("/api/auth/temp-user", (req, res) => {
+    if ((req.session as any).tempAdmin) {
+      res.json((req.session as any).tempAdmin);
+    } else {
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  });
+
   // Quick setup endpoint - set user role (for development)
   app.post("/api/setup/role", isAuthenticated, async (req: any, res) => {
     try {

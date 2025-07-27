@@ -28,6 +28,7 @@ import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
 import AdminLogin from "@/pages/AdminLogin";
+import TempAdminLogin from "@/pages/TempAdminLogin";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -60,8 +61,9 @@ function Router() {
       {/* Real-time Chat Test Route */}
       <Route path="/chat-test" component={RealTimeChatTest} />
       
-      {/* Admin Login Route */}
+      {/* Admin Login Routes */}
       <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/temp-admin" component={TempAdminLogin} />
       
       {/* Setup Route */}
       <Route path="/setup" component={Setup} />
