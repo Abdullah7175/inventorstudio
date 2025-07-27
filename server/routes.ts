@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
 
 // Role-based middleware
 const requireRole = (roles: string[]) => {
@@ -1161,6 +1162,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Task update error:", error);
       res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  // AI Design Recommendations endpoints
+  app.get("/api/ai/design-recommendations/:projectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      // Mock recommendations for now
+      const mockRecommendations = [
+        {
+          id: "rec-1",
+          title: "Improve Color Contrast",
+          description: "Enhance accessibility by increasing color contrast ratios",
+          category: "color",
+          confidence: 0.92,
+          reasoning: "Current color combinations may not meet WCAG accessibility standards",
+          implementation: "Update primary colors to meet AA contrast requirements",
+          priority: "high"
+        }
+      ];
+      res.json(mockRecommendations);
+    } catch (error) {
+      console.error("AI recommendations error:", error);
+      res.status(500).json({ message: "Failed to fetch recommendations" });
+    }
+  });
+
+  app.post("/api/ai/design-recommendations", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId, projectType, targetAudience, brandGuidelines } = req.body;
+      
+      const recommendations = await generateDesignRecommendations({
+        projectType,
+        targetAudience,
+        brandGuidelines
+      });
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error("AI recommendations generation error:", error);
+      res.status(500).json({ message: "Failed to generate recommendations" });
+    }
+  });
+
+  // Project Timeline endpoints
+  app.get("/api/projects/timeline/:projectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const mockTimeline = [
+        {
+          id: "timeline-1",
+          title: "Design Phase",
+          description: "Create initial design concepts and wireframes",
+          startDate: "2025-01-01",
+          endDate: "2025-01-15",
+          status: "completed",
+          assignee: "Design Team",
+          color: "#22c55e",
+          order: 0
+        }
+      ];
+      res.json(mockTimeline);
+    } catch (error) {
+      console.error("Timeline fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch timeline" });
+    }
+  });
+
+  // Communication endpoints
+  app.get("/api/communications", isAuthenticated, async (req: any, res) => {
+    try {
+      const mockCommunications = [
+        {
+          id: "comm-1",
+          type: "message",
+          clientId: "client-1",
+          clientName: "John Doe",
+          subject: "Project Update Request",
+          content: "Could you provide an update on the current progress?",
+          timestamp: new Date().toISOString(),
+          status: "unread",
+          priority: "medium"
+        }
+      ];
+      res.json(mockCommunications);
+    } catch (error) {
+      console.error("Communications fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch communications" });
+    }
+  });
+
+  // Project Health endpoints
+  app.get("/api/projects/health/:projectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const mockHealth = {
+        overall: 85,
+        timeline: { score: 80, status: "on-track", daysRemaining: 30, completionPercentage: 70 },
+        budget: { score: 90, status: "under-budget", spent: 8000, allocated: 10000, remaining: 2000 },
+        team: { score: 85, status: "efficient", productivity: 85, availability: 90, workload: 75 },
+        quality: { score: 90, status: "excellent", issuesCount: 2, testCoverage: 85, clientSatisfaction: 95 },
+        communication: { score: 88, status: "active", responseTime: 2, clientEngagement: 90, lastUpdate: new Date().toISOString() },
+        risks: [],
+        recommendations: []
+      };
+      res.json(mockHealth);
+    } catch (error) {
+      console.error("Project health error:", error);
+      res.status(500).json({ message: "Failed to fetch project health" });
+    }
+  });
+
+  // Design Version endpoints
+  app.get("/api/projects/design-versions/:projectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const mockVersions = [
+        {
+          id: "version-1",
+          projectId: parseInt(projectId),
+          version: "1.0",
+          title: "Initial Design",
+          description: "First design iteration",
+          imageUrl: "/api/placeholder/800/600",
+          thumbnailUrl: "/api/placeholder/400/300",
+          createdBy: "Design Team",
+          createdAt: new Date().toISOString(),
+          status: "approved",
+          isActive: true,
+          changes: ["Initial design creation"],
+          comments: [],
+          metrics: { views: 15, downloads: 3, likes: 8, rating: 4.5 }
+        }
+      ];
+      res.json(mockVersions);
+    } catch (error) {
+      console.error("Design versions error:", error);
+      res.status(500).json({ message: "Failed to fetch design versions" });
     }
   });
 

@@ -31,6 +31,11 @@ import KanbanBoard from "@/components/KanbanBoard";
 import BlogManager from "@/components/BlogManager";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import OnboardingTour, { useOnboarding } from "@/components/OnboardingTour";
+import AIDesignRecommendations from "@/components/AIDesignRecommendations";
+import DragDropTimeline from "@/components/DragDropTimeline";
+import PersonalizedCommunicationDashboard from "@/components/PersonalizedCommunicationDashboard";
+import ProjectHealthIndicator from "@/components/ProjectHealthIndicator";
+import DesignVersionComparison from "@/components/DesignVersionComparison";
 
 interface ProjectRequest {
   id: number;
@@ -274,7 +279,7 @@ export default function AdminPortal() {
 
           {/* Admin Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 mobile-button">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-12 mobile-button">
               <TabsTrigger value="dashboard" className="text-xs lg:text-sm" data-tour="dashboard-tab">
                 <Settings className="h-4 w-4 mr-1 lg:mr-2" />
                 Dashboard
@@ -285,19 +290,39 @@ export default function AdminPortal() {
               </TabsTrigger>
               <TabsTrigger value="chat" className="text-xs lg:text-sm">
                 <MessageSquare className="h-4 w-4 mr-1 lg:mr-2" />
-                Client Chat
+                Chat
               </TabsTrigger>
               <TabsTrigger value="team" className="text-xs lg:text-sm">
                 <Users className="h-4 w-4 mr-1 lg:mr-2" />
-                Assign Team
+                Team
               </TabsTrigger>
               <TabsTrigger value="kanban" className="text-xs lg:text-sm">
                 <Settings className="h-4 w-4 mr-1 lg:mr-2" />
-                Task Manager
+                Tasks
+              </TabsTrigger>
+              <TabsTrigger value="ai-recommendations" className="text-xs lg:text-sm">
+                <Settings className="h-4 w-4 mr-1 lg:mr-2" />
+                AI Design
+              </TabsTrigger>
+              <TabsTrigger value="timeline" className="text-xs lg:text-sm">
+                <Calendar className="h-4 w-4 mr-1 lg:mr-2" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger value="communication" className="text-xs lg:text-sm">
+                <MessageSquare className="h-4 w-4 mr-1 lg:mr-2" />
+                Comms
+              </TabsTrigger>
+              <TabsTrigger value="health" className="text-xs lg:text-sm">
+                <Settings className="h-4 w-4 mr-1 lg:mr-2" />
+                Health
+              </TabsTrigger>
+              <TabsTrigger value="versions" className="text-xs lg:text-sm">
+                <FileText className="h-4 w-4 mr-1 lg:mr-2" />
+                Versions
               </TabsTrigger>
               <TabsTrigger value="invoicing" className="text-xs lg:text-sm">
                 <DollarSign className="h-4 w-4 mr-1 lg:mr-2" />
-                Invoicing
+                Invoice
               </TabsTrigger>
               <TabsTrigger value="blog" className="text-xs lg:text-sm">
                 <FileText className="h-4 w-4 mr-1 lg:mr-2" />
@@ -609,6 +634,31 @@ export default function AdminPortal() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* AI Design Recommendations Tab */}
+            <TabsContent value="ai-recommendations" className="space-y-6">
+              <AIDesignRecommendations projectId={1} projectType="website" targetAudience="business professionals" />
+            </TabsContent>
+
+            {/* Project Timeline Tab */}
+            <TabsContent value="timeline" className="space-y-6">
+              <DragDropTimeline projectId={1} isEditable={true} />
+            </TabsContent>
+
+            {/* Communication Dashboard Tab */}
+            <TabsContent value="communication" className="space-y-6">
+              <PersonalizedCommunicationDashboard />
+            </TabsContent>
+
+            {/* Project Health Tab */}
+            <TabsContent value="health" className="space-y-6">
+              <ProjectHealthIndicator projectId={1} />
+            </TabsContent>
+
+            {/* Design Version Comparison Tab */}
+            <TabsContent value="versions" className="space-y-6">
+              <DesignVersionComparison projectId={1} />
             </TabsContent>
 
             {/* Blog Management Tab */}
