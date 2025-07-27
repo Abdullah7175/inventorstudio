@@ -44,8 +44,8 @@ export default function Footer() {
 
   return (
     <footer className="bg-gray-900 bg-opacity-50 py-12 border-t border-border">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="container mx-auto responsive-padding">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 responsive-gap">
           {/* Company Info */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -90,12 +90,12 @@ export default function Footer() {
               {serviceLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ x: 5 }}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block"
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 </li>
               ))}
@@ -114,12 +114,12 @@ export default function Footer() {
               {companyLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ x: 5 }}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block"
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 </li>
               ))}
@@ -138,12 +138,12 @@ export default function Footer() {
               {supportLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ x: 5 }}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block"
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 </li>
               ))}
@@ -159,11 +159,11 @@ export default function Footer() {
           viewport={{ once: true }}
           className="border-t border-border mt-12 pt-8"
         >
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-muted-foreground text-center md:text-left">
+          <div className="flex flex-col sm:flex-row justify-between items-center">
+            <p className="text-muted-foreground text-center sm:text-left responsive-text-sm">
               © 2024 Inventer Design Studio. All rights reserved.
             </p>
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 mt-4 md:mt-0">
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 mt-4 sm:mt-0">
               <div className="flex items-center text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-2 text-primary" />
                 <span className="text-sm">Lahore, Pakistan • Dubai, UAE</span>

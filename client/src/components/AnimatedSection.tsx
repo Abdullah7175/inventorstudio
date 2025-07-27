@@ -5,12 +5,14 @@ interface AnimatedSectionProps {
   children: ReactNode;
   className?: string;
   delay?: number;
+  id?: string;
 }
 
 export default function AnimatedSection({ 
   children, 
   className = "", 
-  delay = 0 
+  delay = 0,
+  id
 }: AnimatedSectionProps) {
   return (
     <motion.div
@@ -19,6 +21,7 @@ export default function AnimatedSection({
       transition={{ duration: 0.8, delay }}
       viewport={{ once: true }}
       className={className}
+      id={id}
     >
       {children}
     </motion.div>

@@ -1,0 +1,47 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at MotionComponent (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=9878e353:6536:40)
+    at a
+    at https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9878e353:337:18
+    at li
+    at ul
+    at div
+    at MotionComponent (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=9878e353:6536:40)
+    at div
+    at div
+    at footer
+    at Footer
+    at div
+    at Home (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/src/pages/Home.tsx:36:49)
+    at Route (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9878e353:323:16)
+    at Switch (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9878e353:379:17)
+    at Router (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/src/App.tsx?v=YrxgOl6sJrQWqfzCdmAr7:38:42)
+    at Provider (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MAE4WKEQ.js?v=9878e353:38:15)
+    at TooltipProvider (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9878e353:59:5)
+    at QueryClientProvider (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=9878e353:2805:3)
+    at App
+at a
+at MotionComponent (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=9878e353:6536:40)
+at a
+at https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9878e353:337:18
+at li
+at ul
+at div
+at MotionComponent (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=9878e353:6536:40)
+at div
+at div
+at footer
+at Footer
+at div
+at Home (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/src/pages/Home.tsx:36:49)
+at Route (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9878e353:323:16)
+at Switch (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9878e353:379:17)
+at Router (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/src/App.tsx?v=YrxgOl6sJrQWqfzCdmAr7:38:42)
+at Provider (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MAE4WKEQ.js?v=9878e353:38:15)
+at TooltipProvider (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9878e353:59:5)
+at QueryClientProvider (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=9878e353:2805:3)
+at App
+at t.value (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://33b040ee-6242-46d2-9b38-e7261850d30d-00-3m36i2dbtyilx.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

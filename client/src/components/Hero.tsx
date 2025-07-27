@@ -45,7 +45,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-5xl md:text-7xl font-bold mb-6"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6"
         >
           Transform Your{" "}
           <span className="gradient-text">Digital Vision</span>
@@ -55,7 +55,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-xl md:text-2xl mb-8 text-muted-foreground max-w-3xl mx-auto"
+          className="text-lg sm:text-xl md:text-2xl mb-8 text-muted-foreground max-w-3xl mx-auto px-4"
         >
           We craft exceptional digital experiences through innovative web
           development, creative design, and strategic marketing solutions.

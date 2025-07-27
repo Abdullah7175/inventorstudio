@@ -73,7 +73,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          <div className="grid responsive-grid-cols-4 responsive-gap mb-12">
             {featuredServices.slice(0, 4).map((service, index) => (
               <ServiceCard key={service.id} service={service} index={index} />
             ))}
@@ -105,7 +105,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid responsive-grid-cols responsive-gap mb-12">
             {featuredProjects.slice(0, 6).map((project, index) => (
               <PortfolioItem 
                 key={project.id} 
@@ -142,7 +142,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid responsive-grid-cols responsive-gap">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.name}
@@ -197,7 +197,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid responsive-grid-cols responsive-gap mb-12">
             {blogPosts.slice(0, 3).map((post, index) => (
               <BlogCard key={post.id} post={post} index={index} />
             ))}
