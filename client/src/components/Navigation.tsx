@@ -40,7 +40,7 @@ export default function Navigation() {
   return (
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        scrolled ? "glass-effect bg-opacity-90" : "bg-transparent"
+        scrolled ? "bg-background border-b border-border" : "bg-transparent"
       }`}
     >
       <div className="container mx-auto px-6 py-4">
@@ -111,7 +111,7 @@ export default function Navigation() {
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="glass-effect border-border">
+            <SheetContent side="right" className="bg-background border-border">
               <div className="flex flex-col space-y-6 mt-8">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>

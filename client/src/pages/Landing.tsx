@@ -10,11 +10,7 @@ export default function Landing() {
       
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
-        {/* Background decoration - simplified */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary rounded-full filter blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary rounded-full filter blur-3xl" />
-        </div>
+        {/* Clean background - no blur effects */}
 
         <div className="container mx-auto px-6 text-center relative z-10">
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
@@ -54,7 +50,7 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section id="services" className="py-20 bg-gray-900 bg-opacity-30">
+      <section id="services" className="py-20 bg-muted/20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -102,7 +98,7 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary/10">
+      <section className="py-20 bg-muted/10">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Ready to Start Your <span className="gradient-text">Digital Journey</span>?
