@@ -5,7 +5,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +27,6 @@ export default function Navigation() {
     { label: "Services", href: "/services" },
     { label: "Portfolio", href: "/portfolio" },
     { label: "Blog", href: "/blog" },
-    { label: "Recommendations", href: "/recommendations" },
     { label: "Contact", href: "/contact" },
   ];
 
@@ -39,42 +37,47 @@ export default function Navigation() {
   };
 
   return (
-    <nav
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        scrolled ? "bg-background border-b border-border" : "bg-transparent"
+        scrolled ? "glass-effect bg-opacity-90" : "bg-transparent"
       }`}
     >
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <Link href="/">
-            <div className="text-2xl font-bold gradient-text cursor-pointer hover:opacity-80 transition-opacity">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="text-2xl font-bold gradient-text cursor-pointer"
+            >
               Inventer Design Studio
-            </div>
+            </motion.div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <span
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
                   className={`transition-colors duration-300 cursor-pointer ${
                     isActive(item.href)
                       ? "text-primary"
-                      : "text-foreground hover:text-primary"
+                      : "text-white hover:text-primary"
                   }`}
                 >
                   {item.label}
-                </span>
+                </motion.a>
               </Link>
             ))}
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex space-x-4 items-center">
-            <ThemeToggle />
             {isAuthenticated ? (
               <>
-                {(user as any)?.role === "admin" && (
+                {user?.role === "admin" && (
                   <Link href="/admin">
                     <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-black">
                       Admin
@@ -112,30 +115,28 @@ export default function Navigation() {
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-background border-border">
+            <SheetContent side="right" className="glass-effect border-border">
               <div className="flex flex-col space-y-6 mt-8">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <span
+                    <motion.a
+                      whileHover={{ scale: 1.05, x: 10 }}
                       onClick={() => setIsOpen(false)}
                       className={`block text-lg transition-colors duration-300 cursor-pointer ${
                         isActive(item.href)
                           ? "text-primary"
-                          : "text-foreground hover:text-primary"
+                          : "text-white hover:text-primary"
                       }`}
                     >
                       {item.label}
-                    </span>
+                    </motion.a>
                   </Link>
                 ))}
                 
                 <div className="border-t border-border pt-6 space-y-4">
-                  <div className="flex justify-center">
-                    <ThemeToggle />
-                  </div>
                   {isAuthenticated ? (
                     <>
-                      {(user as any)?.role === "admin" && (
+                      {user?.role === "admin" && (
                         <Link href="/admin">
                           <Button 
                             variant="outline" 
@@ -182,6 +183,6 @@ export default function Navigation() {
           </Sheet>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

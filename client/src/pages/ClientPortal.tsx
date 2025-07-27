@@ -201,9 +201,9 @@ export default function ClientPortal() {
                               <div>
                                 <CardTitle className="text-lg mb-2">{project.title}</CardTitle>
                                 <div className="flex items-center space-x-2">
-                                  {getStatusIcon(project.status || "pending")}
-                                  <Badge variant="secondary" className={getStatusColor(project.status || "pending")}>
-                                    {(project.status || "pending").replace("-", " ").toUpperCase()}
+                                  {getStatusIcon(project.status)}
+                                  <Badge variant="secondary" className={getStatusColor(project.status)}>
+                                    {project.status.replace("-", " ").toUpperCase()}
                                   </Badge>
                                 </div>
                               </div>
@@ -219,7 +219,7 @@ export default function ClientPortal() {
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-1" />
-                                Created: {formatDate(project.createdAt || new Date())}
+                                Created: {formatDate(project.createdAt)}
                               </div>
                             </div>
 
@@ -288,21 +288,21 @@ export default function ClientPortal() {
                     <CardContent className="space-y-4">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Name</label>
-                        <p className="text-lg">{(user as any)?.firstName} {(user as any)?.lastName}</p>
+                        <p className="text-lg">{user?.firstName} {user?.lastName}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Email</label>
-                        <p className="text-lg">{(user as any)?.email}</p>
+                        <p className="text-lg">{user?.email}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Role</label>
                         <Badge variant="secondary" className="bg-primary/20 text-primary">
-                          {(user as any)?.role || "Client"}
+                          {user?.role || "Client"}
                         </Badge>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Member Since</label>
-                        <p className="text-lg">{formatDate((user as any)?.createdAt)}</p>
+                        <p className="text-lg">{formatDate(user?.createdAt)}</p>
                       </div>
                     </CardContent>
                   </Card>

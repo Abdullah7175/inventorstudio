@@ -6,10 +6,6 @@ import {
   clientProjects,
   contactSubmissions,
   faqItems,
-  userPreferences,
-  designTemplates,
-  userRecommendations,
-  userInteractions,
   type User,
   type UpsertUser,
   type Service,
@@ -24,17 +20,9 @@ import {
   type InsertContactSubmission,
   type FaqItem,
   type InsertFaqItem,
-  type UserPreferences,
-  type InsertUserPreferences,
-  type DesignTemplate,
-  type InsertDesignTemplate,
-  type UserRecommendation,
-  type InsertUserRecommendation,
-  type UserInteraction,
-  type InsertUserInteraction,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - mandatory for Replit Auth
@@ -81,17 +69,6 @@ export interface IStorage {
   createFaqItem(item: InsertFaqItem): Promise<FaqItem>;
   updateFaqItem(id: number, item: Partial<InsertFaqItem>): Promise<FaqItem>;
   deleteFaqItem(id: number): Promise<void>;
-
-  // Recommendation Engine
-  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
-  upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
-  getDesignTemplates(filters?: { industry?: string; styleType?: string; category?: string }): Promise<DesignTemplate[]>;
-  createDesignTemplate(template: InsertDesignTemplate): Promise<DesignTemplate>;
-  updateDesignTemplate(id: number, template: Partial<InsertDesignTemplate>): Promise<DesignTemplate>;
-  getUserRecommendations(userId: string): Promise<UserRecommendation[]>;
-  generateRecommendations(userId: string): Promise<UserRecommendation[]>;
-  createUserInteraction(interaction: InsertUserInteraction): Promise<UserInteraction>;
-  getPopularTemplates(limit?: number): Promise<DesignTemplate[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -282,165 +259,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFaqItem(id: number): Promise<void> {
     await db.delete(faqItems).where(eq(faqItems.id, id));
-  }
-
-  // Recommendation Engine
-  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
-    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
-    return preferences;
-  }
-
-  async upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
-    const existing = await this.getUserPreferences(preferences.userId);
-    if (existing) {
-      const [updated] = await db
-        .update(userPreferences)
-        .set({ ...preferences, updatedAt: new Date() })
-        .where(eq(userPreferences.userId, preferences.userId))
-        .returning();
-      return updated;
-    } else {
-      const [created] = await db.insert(userPreferences).values(preferences).returning();
-      return created;
-    }
-  }
-
-  async getDesignTemplates(filters?: { industry?: string; styleType?: string; category?: string }): Promise<DesignTemplate[]> {
-    let query = db.select().from(designTemplates).where(eq(designTemplates.active, true));
-    
-    if (filters?.industry) {
-      query = query.where(eq(designTemplates.industry, filters.industry));
-    }
-    if (filters?.styleType) {
-      query = query.where(eq(designTemplates.styleType, filters.styleType));
-    }
-    if (filters?.category) {
-      query = query.where(eq(designTemplates.category, filters.category));
-    }
-    
-    return await query.orderBy(designTemplates.createdAt);
-  }
-
-  async createDesignTemplate(template: InsertDesignTemplate): Promise<DesignTemplate> {
-    const [newTemplate] = await db.insert(designTemplates).values(template).returning();
-    return newTemplate;
-  }
-
-  async updateDesignTemplate(id: number, template: Partial<InsertDesignTemplate>): Promise<DesignTemplate> {
-    const [updated] = await db
-      .update(designTemplates)
-      .set(template)
-      .where(eq(designTemplates.id, id))
-      .returning();
-    return updated;
-  }
-
-  async getUserRecommendations(userId: string): Promise<UserRecommendation[]> {
-    return await db
-      .select()
-      .from(userRecommendations)
-      .where(eq(userRecommendations.userId, userId))
-      .orderBy(desc(userRecommendations.score));
-  }
-
-  async generateRecommendations(userId: string): Promise<UserRecommendation[]> {
-    // Clear existing recommendations
-    await db.delete(userRecommendations).where(eq(userRecommendations.userId, userId));
-
-    const preferences = await this.getUserPreferences(userId);
-    if (!preferences) {
-      return [];
-    }
-
-    // Get all templates and calculate scores
-    const templates = await this.getDesignTemplates();
-    const recommendations: InsertUserRecommendation[] = [];
-
-    for (const template of templates) {
-      let score = 0;
-      const reasons: string[] = [];
-
-      // Industry match (highest weight - 30 points)
-      if (preferences.industry && template.industry === preferences.industry) {
-        score += 30;
-        reasons.push(`Perfect match for ${preferences.industry} industry`);
-      }
-
-      // Style preference match (25 points)
-      if (preferences.stylePreference && template.styleType === preferences.stylePreference) {
-        score += 25;
-        reasons.push(`Matches your ${preferences.stylePreference} style preference`);
-      }
-
-      // Budget match (20 points)
-      if (preferences.budget && template.price === preferences.budget) {
-        score += 20;
-        reasons.push(`Fits your ${preferences.budget} budget`);
-      }
-
-      // Features overlap (15 points)
-      if (preferences.features && template.features) {
-        const featureOverlap = preferences.features.filter(f => template.features.includes(f));
-        if (featureOverlap.length > 0) {
-          score += Math.min(15, featureOverlap.length * 5);
-          reasons.push(`Includes ${featureOverlap.length} features you need`);
-        }
-      }
-
-      // Timeline/difficulty match (10 points)
-      if (preferences.timeline === 'rush' && template.difficulty === 'easy') {
-        score += 10;
-        reasons.push('Quick to implement for your timeline');
-      } else if (preferences.timeline === 'extended' && template.difficulty === 'hard') {
-        score += 10;
-        reasons.push('Complex design perfect for extended timeline');
-      }
-
-      // Only recommend if score is above threshold
-      if (score >= 25) {
-        recommendations.push({
-          userId,
-          templateId: template.id,
-          score,
-          reason: reasons.join(', '),
-        });
-      }
-    }
-
-    // Insert recommendations
-    if (recommendations.length > 0) {
-      await db.insert(userRecommendations).values(recommendations);
-    }
-
-    return await this.getUserRecommendations(userId);
-  }
-
-  async createUserInteraction(interaction: InsertUserInteraction): Promise<UserInteraction> {
-    const [newInteraction] = await db.insert(userInteractions).values(interaction).returning();
-    return newInteraction;
-  }
-
-  async getPopularTemplates(limit: number = 10): Promise<DesignTemplate[]> {
-    // Get templates with most positive interactions
-    const popularTemplateIds = await db
-      .select({
-        templateId: userInteractions.templateId,
-        count: sql<number>`count(*)`.as('count')
-      })
-      .from(userInteractions)
-      .where(sql`${userInteractions.action} IN ('like', 'save', 'request_quote')`)
-      .groupBy(userInteractions.templateId)
-      .orderBy(sql`count(*) DESC`)
-      .limit(limit);
-
-    if (popularTemplateIds.length === 0) {
-      return await db.select().from(designTemplates)
-        .where(eq(designTemplates.active, true))
-        .limit(limit);
-    }
-
-    return await db.select().from(designTemplates)
-      .where(sql`${designTemplates.id} IN (${popularTemplateIds.map(t => t.templateId).join(',')})`);
   }
 }
 

@@ -3,7 +3,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 
 // Pages
@@ -19,7 +18,6 @@ import FAQ from "@/pages/FAQ";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import ClientPortal from "@/pages/ClientPortal";
 import AdminPortal from "@/pages/AdminPortal";
-import Recommendations from "@/pages/Recommendations";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -34,7 +32,6 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/recommendations" component={Recommendations} />
       
       {/* Protected routes - Client Portal */}
       <Route path="/client-portal" component={ClientPortal} />
@@ -67,15 +64,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="inventer-ui-theme">
-        <TooltipProvider>
-          <div className="bg-service-pattern bg-grid-pattern min-h-screen">
-            <div className="design-elements"></div>
-            <Toaster />
-            <Router />
-          </div>
-        </TooltipProvider>
-      </ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

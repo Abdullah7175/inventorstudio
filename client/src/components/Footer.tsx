@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { motion } from "framer-motion";
 import { 
   Facebook, 
   Instagram, 
@@ -42,11 +43,16 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-muted/30 py-12 border-t border-border">
+    <footer className="bg-gray-900 bg-opacity-50 py-12 border-t border-border">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
             <div className="text-2xl font-bold gradient-text mb-4">
               Inventer Design Studio
             </div>
@@ -57,90 +63,118 @@ export default function Footer() {
               {socialLinks.map((social, index) => {
                 const Icon = social.icon;
                 return (
-                  <a
+                  <motion.a
                     key={social.label}
                     href={social.href}
+                    whileHover={{ scale: 1.2, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
                     className="text-muted-foreground hover:text-primary transition-colors duration-300"
                     aria-label={social.label}
                   >
                     <Icon className="h-5 w-5" />
-                  </a>
+                  </motion.a>
                 );
               })}
             </div>
-          </div>
+          </motion.div>
 
           {/* Services */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
             <h3 className="text-lg font-semibold mb-4">Services</h3>
             <ul className="space-y-2">
               {serviceLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <span className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block">
+                    <motion.a
+                      whileHover={{ x: 5 }}
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                    >
                       {link.label}
-                    </span>
+                    </motion.a>
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Company */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
               {companyLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <span className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block">
+                    <motion.a
+                      whileHover={{ x: 5 }}
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                    >
                       {link.label}
-                    </span>
+                    </motion.a>
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Support */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
             <h3 className="text-lg font-semibold mb-4">Support</h3>
             <ul className="space-y-2">
               {supportLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <span className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block">
+                    <motion.a
+                      whileHover={{ x: 5 }}
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                    >
                       {link.label}
-                    </span>
+                    </motion.a>
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-border mt-12 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-sm text-muted-foreground">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          viewport={{ once: true }}
+          className="border-t border-border mt-12 pt-8"
+        >
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-muted-foreground text-center md:text-left">
               © 2024 Inventer Design Studio. All rights reserved.
-            </div>
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span>hello@inventerdesignstudio.com</span>
+            </p>
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 mt-4 md:mt-0">
+              <div className="flex items-center text-muted-foreground">
+                <MapPin className="h-4 w-4 mr-2 text-primary" />
+                <span className="text-sm">Lahore, Pakistan • Dubai, UAE</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>San Francisco, CA</span>
+              <div className="flex items-center text-muted-foreground">
+                <Mail className="h-4 w-4 mr-2 text-primary" />
+                <span className="text-sm">hello@inventerdesignstudio.com</span>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );

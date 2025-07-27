@@ -218,7 +218,7 @@ export default function Home() {
       </AnimatedSection>
 
       {/* CTA Section */}
-      <AnimatedSection className="py-20">
+      <AnimatedSection className="py-20" id="contact">
         <div className="container mx-auto px-6">
           <div className="text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
