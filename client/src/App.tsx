@@ -23,6 +23,7 @@ import AdminPortal from "@/pages/AdminPortal";
 import ProjectManagement from "@/pages/ProjectManagement";
 import TeamPortal from "@/pages/TeamPortal";
 import Setup from "@/pages/Setup";
+import AddToHomeScreen from "@/components/AddToHomeScreen";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -82,6 +83,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <AddToHomeScreen />
       </TooltipProvider>
     </QueryClientProvider>
   );
