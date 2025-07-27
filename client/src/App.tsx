@@ -46,6 +46,9 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       
+      {/* Temporary admin access - accessible to all users */}
+      <Route path="/temp-admin" component={TempAdminLogin} />
+      
       {/* Protected routes - Client Portal */}
       <Route path="/client-portal" component={ClientPortal} />
       <Route path="/client-portal-new" component={ClientPortalNew} />
@@ -63,7 +66,6 @@ function Router() {
       
       {/* Admin Login Routes */}
       <Route path="/admin-login" component={AdminLogin} />
-      <Route path="/temp-admin" component={TempAdminLogin} />
       
       {/* Setup Route */}
       <Route path="/setup" component={Setup} />
