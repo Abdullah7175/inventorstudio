@@ -90,12 +90,12 @@ export default function Footer() {
               {serviceLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ x: 5 }}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block"
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 </li>
               ))}
@@ -114,12 +114,12 @@ export default function Footer() {
               {companyLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ x: 5 }}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block"
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 </li>
               ))}
@@ -138,12 +138,12 @@ export default function Footer() {
               {supportLinks.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ x: 5 }}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300 cursor-pointer block"
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 </li>
               ))}
