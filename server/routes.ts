@@ -48,6 +48,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple logout endpoint for frontend
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      
+      // Destroy session
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) {
+          console.error("Session destroy error:", sessionErr);
+        }
+        
+        // Clear session cookie
+        res.clearCookie('connect.sid');
+        res.json({ message: "Logged out successfully" });
+      });
+    });
+  });
+
   // Quick setup endpoint - set user role (for development)
   app.post("/api/setup/role", isAuthenticated, async (req: any, res) => {
     try {

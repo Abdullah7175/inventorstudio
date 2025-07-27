@@ -175,14 +175,26 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        // Clear any local storage/cache
-                        localStorage.clear();
-                        sessionStorage.clear();
-                        // Redirect to logout endpoint
-                        window.location.href = "/api/logout";
+                      onClick={async () => {
+                        try {
+                          // Clear any local storage/cache first
+                          localStorage.clear();
+                          sessionStorage.clear();
+                          
+                          // Force logout by calling the API
+                          await fetch("/api/auth/logout", {
+                            method: "POST",
+                            credentials: "include"
+                          });
+                        } catch (error) {
+                          console.log("Logout error:", error);
+                        } finally {
+                          // Always redirect to home and reload
+                          window.location.href = "/";
+                        }
                       }}
                       className="text-gray-400 hover:text-red-400 transition-colors duration-300"
+                      title="Logout"
                     >
                       <LogOut className="h-4 w-4" />
                     </Button>
@@ -343,13 +355,24 @@ export default function Navigation() {
 
                       <Button
                         variant="ghost"
-                        onClick={() => {
+                        onClick={async () => {
                           setIsMobileMenuOpen(false);
-                          // Clear any local storage/cache
-                          localStorage.clear();
-                          sessionStorage.clear();
-                          // Redirect to logout endpoint
-                          window.location.href = "/api/logout";
+                          try {
+                            // Clear any local storage/cache first
+                            localStorage.clear();
+                            sessionStorage.clear();
+                            
+                            // Force logout by calling the API
+                            await fetch("/api/auth/logout", {
+                              method: "POST",
+                              credentials: "include"
+                            });
+                          } catch (error) {
+                            console.log("Logout error:", error);
+                          } finally {
+                            // Always redirect to home and reload
+                            window.location.href = "/";
+                          }
                         }}
                         className="w-full text-gray-400 hover:text-red-400 transition-colors duration-300"
                       >
