@@ -35,7 +35,7 @@ export default function ServiceCart() {
 
   const submitRequestMutation = useMutation({
     mutationFn: async (requestData: any) => {
-      return apiRequest("POST", "/api/service-cart/submit", requestData);
+      return apiRequest("POST", "/api/cart/submit", requestData);
     },
     onSuccess: () => {
       toast({

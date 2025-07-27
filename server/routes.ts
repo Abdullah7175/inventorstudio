@@ -419,7 +419,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart/submit", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      res.json({ message: "Cart submitted successfully", userId });
+      const requestData = {
+        clientId: userId,
+        projectName: req.body.projectName,
+        serviceIds: req.body.serviceIds,
+        description: req.body.notes,
+        budget: req.body.budget,
+        timeline: req.body.timeline,
+        status: "pending"
+      };
+      
+      console.log("Cart submission data:", requestData);
+      res.json({ success: true, message: "Project request submitted successfully" });
     } catch (error) {
       console.error("Error submitting cart:", error);
       res.status(500).json({ message: "Failed to submit cart" });
