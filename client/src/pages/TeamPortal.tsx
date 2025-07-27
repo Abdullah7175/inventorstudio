@@ -1,330 +1,501 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import KanbanBoard from "@/components/KanbanBoard";
-import AnimatedSection from "@/components/AnimatedSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Users, 
-  Calendar, 
-  Clock, 
+  Briefcase, 
+  Upload, 
   CheckCircle, 
-  AlertCircle,
+  Calendar,
   FileText,
-  Target
+  Settings,
+  Clock,
+  AlertCircle
 } from "lucide-react";
-import { type ProjectRequest, type ProjectTask } from "@shared/schema";
+import KanbanBoard from "@/components/KanbanBoard";
+
+interface AssignedProject {
+  id: number;
+  projectName: string;
+  status: string;
+  priority: string;
+  dueDate?: string;
+  taskCount: number;
+  completedTasks: number;
+}
 
 export default function TeamPortal() {
-  const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("assigned");
+  const { user, isAuthenticated, isLoading } = useAuth();
+  
+  const queryClient = useQueryClient();
 
-  // Redirect if not authenticated or not team member
+  // Redirect to login if not authenticated or not team member
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !user || !('role' in user) || !['team', 'admin'].includes(user.role))) {
+    if (!isLoading && (!isAuthenticated || user?.role !== "team")) {
       toast({
-        title: "Unauthorized",
-        description: "Team access required. Redirecting...",
+        title: "Access Denied",
+        description: "You don't have permission to access this area.",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = isAuthenticated ? "/" : "/api/login";
-      }, 1000);
+        window.location.href = "/api/login";
+      }, 500);
       return;
     }
   }, [isAuthenticated, isLoading, user, toast]);
 
-  // Fetch assigned projects (anonymized for team members)
-  const { data: assignedProjects = [] } = useQuery<ProjectRequest[]>({
+  const { data: assignedProjects = [], error: projectsError } = useQuery({
     queryKey: ["/api/team/assigned-projects"],
-    enabled: isAuthenticated && user && 'role' in user && ['team', 'admin'].includes(user.role),
+    enabled: isAuthenticated && user?.role === "team",
+    retry: false,
   });
 
-  // Fetch team member's tasks
-  const { data: myTasks = [] } = useQuery<ProjectTask[]>({
-    queryKey: ["/api/team/my-tasks"],
-    enabled: isAuthenticated && user && 'role' in user && ['team', 'admin'].includes(user.role),
+  const { data: teamTasks = [] } = useQuery({
+    queryKey: ["/api/team/tasks"],
+    enabled: isAuthenticated && user?.role === "team",
+    retry: false,
   });
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "todo":
-        return <Clock className="h-4 w-4 text-gray-500" />;
-      case "in-progress":
-        return <AlertCircle className="h-4 w-4 text-blue-500" />;
-      case "review":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "done":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
+  const uploadFileMutation = useMutation({
+    mutationFn: async (fileData: FormData) => {
+      return apiRequest("/api/team/upload-file", {
+        method: "POST",
+        body: fileData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "File Uploaded",
+        description: "File has been uploaded successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/team/files"] });
+    },
+    onError: () => {
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload the file. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markProgressMutation = useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: number; status: string }) => {
+      return apiRequest(`/api/team/tasks/${taskId}/progress`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Progress Updated",
+        description: "Task progress has been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/team/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/team/assigned-projects"] });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Could not update task progress. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle unauthorized errors
+  useEffect(() => {
+    if (projectsError && isUnauthorizedError(projectsError as Error)) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [projectsError, toast]);
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending": return "bg-yellow-500";
+      case "active": return "bg-blue-500";
+      case "completed": return "bg-green-500";
+      case "on-hold": return "bg-red-500";
+      default: return "bg-gray-500";
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "todo":
-        return "bg-gray-500/20 text-gray-500";
-      case "in-progress":
-        return "bg-blue-500/20 text-blue-500";
-      case "review":
-        return "bg-yellow-500/20 text-yellow-500";
-      case "done":
-        return "bg-green-500/20 text-green-500";
-      default:
-        return "bg-gray-500/20 text-gray-500";
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending": return <Clock className="h-4 w-4" />;
+      case "active": return <AlertCircle className="h-4 w-4" />;
+      case "completed": return <CheckCircle className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
     }
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-500/20 text-red-500";
-      case "medium":
-        return "bg-yellow-500/20 text-yellow-500";
-      case "low":
-        return "bg-green-500/20 text-green-500";
-      default:
-        return "bg-gray-500/20 text-gray-500";
+    switch (priority.toLowerCase()) {
+      case "high": return "text-red-600";
+      case "medium": return "text-yellow-600";
+      case "low": return "text-green-600";
+      default: return "text-gray-600";
     }
   };
 
-  const formatDate = (date: Date | string | null) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+  const calculateProgress = (completed: number, total: number) => {
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, projectId: number) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const formData = new FormData();
+    formData.append("projectId", projectId.toString());
+    
+    Array.from(files).forEach((file) => {
+      formData.append("files", file);
     });
+
+    uploadFileMutation.mutate(formData);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading team portal...</p>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-20 pb-16">
+          <div className="mobile-container">
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
-  if (!isAuthenticated || !user || !('role' in user) || !['team', 'admin'].includes(user.role)) {
-    return null; // Will redirect
-  }
-
-  const stats = {
-    totalTasks: myTasks.length,
-    todoTasks: myTasks.filter(t => t.status === "todo").length,
-    inProgressTasks: myTasks.filter(t => t.status === "in-progress").length,
-    completedTasks: myTasks.filter(t => t.status === "done").length,
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
-      {/* Header */}
-      <section className="pt-32 pb-12">
-        <div className="container mx-auto px-6">
-          <AnimatedSection>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Team <span className="gradient-text">Portal</span>
+      <div className="pt-20 pb-16">
+        <div className="mobile-container space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl lg:text-4xl font-bold">
+              Team Portal
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Welcome back! Manage your assigned tasks and project contributions.
+            <p className="text-muted-foreground">
+              Manage your assigned tasks, upload files, and track progress.
             </p>
-          </AnimatedSection>
-        </div>
-      </section>
+          </div>
 
-      {/* Stats Cards */}
-      <section className="pb-8">
-        <div className="container mx-auto px-6">
-          <AnimatedSection>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-primary mb-2">
-                    {stats.totalTasks}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Tasks</div>
-                </CardContent>
-              </Card>
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-blue-500 mb-2">
-                    {stats.inProgressTasks}
-                  </div>
-                  <div className="text-sm text-muted-foreground">In Progress</div>
-                </CardContent>
-              </Card>
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-gray-500 mb-2">
-                    {stats.todoTasks}
-                  </div>
-                  <div className="text-sm text-muted-foreground">To Do</div>
-                </CardContent>
-              </Card>
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-green-500 mb-2">
-                    {stats.completedTasks}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Completed</div>
-                </CardContent>
-              </Card>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
+          {/* Team Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Assigned Projects
+                </CardTitle>
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{assignedProjects.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Active assignments
+                </p>
+              </CardContent>
+            </Card>
 
-      {/* Main Content */}
-      <section className="pb-20">
-        <div className="container mx-auto px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="glass-effect border-border">
-              <TabsTrigger value="assigned" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-                <Target className="h-4 w-4 mr-2" />
-                Assigned Projects
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Pending Tasks
+                </CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {teamTasks.filter((t: any) => t.status !== "done").length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting completion
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Completed Tasks
+                </CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {teamTasks.filter((t: any) => t.status === "done").length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Team Portal Tabs */}
+          <Tabs defaultValue="projects" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mobile-button">
+              <TabsTrigger value="projects" className="text-xs lg:text-sm">
+                <Briefcase className="h-4 w-4 mr-1 lg:mr-2" />
+                Projects
               </TabsTrigger>
-              <TabsTrigger value="tasks" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-                <FileText className="h-4 w-4 mr-2" />
-                My Tasks
+              <TabsTrigger value="kanban" className="text-xs lg:text-sm">
+                <Settings className="h-4 w-4 mr-1 lg:mr-2" />
+                Kanban
+              </TabsTrigger>
+              <TabsTrigger value="files" className="text-xs lg:text-sm">
+                <Upload className="h-4 w-4 mr-1 lg:mr-2" />
+                Files
+              </TabsTrigger>
+              <TabsTrigger value="progress" className="text-xs lg:text-sm">
+                <CheckCircle className="h-4 w-4 mr-1 lg:mr-2" />
+                Progress
               </TabsTrigger>
             </TabsList>
 
             {/* Assigned Projects Tab */}
-            <TabsContent value="assigned">
-              <AnimatedSection>
-                <h2 className="text-2xl font-bold mb-6">Assigned Projects</h2>
-                
-                {assignedProjects.length === 0 ? (
-                  <Card className="glass-effect border-border">
-                    <CardContent className="text-center py-12">
-                      <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Assigned Projects</h3>
-                      <p className="text-muted-foreground">
-                        You'll see projects assigned to you here.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-6">
-                    {assignedProjects.map((project) => (
-                      <Card key={project.id} className="glass-effect border-border">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
+            <TabsContent value="projects" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Your Assigned Projects
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {assignedProjects.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No projects assigned yet. Check back later for new assignments.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {assignedProjects.map((project: AssignedProject) => (
+                        <div
+                          key={project.id}
+                          className="p-4 border border-border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                              <h3 className="text-xl font-semibold mb-2">
-                                Project #{project.id} - {project.projectName}
-                              </h3>
-                              {project.description && (
-                                <p className="text-muted-foreground mb-3">{project.description}</p>
-                              )}
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span>Timeline: {project.timeline || "Not specified"}</span>
-                                <span>Created: {formatDate(project.createdAt)}</span>
+                              <h4 className="font-medium text-sm lg:text-base mb-1">
+                                Project #{project.id}
+                              </h4>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className={getPriorityColor(project.priority)}>
+                                  {project.priority} priority
+                                </span>
+                                {project.dueDate && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      Due: {new Date(project.dueDate).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
-                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-500">
-                              {project.status?.replace("-", " ").toUpperCase()}
+                            <Badge 
+                              variant="secondary" 
+                              className={`${getStatusColor(project.status)} text-white`}
+                            >
+                              <span className="flex items-center gap-1">
+                                {getStatusIcon(project.status)}
+                                {project.status}
+                              </span>
                             </Badge>
                           </div>
 
-                          {/* Project Kanban Board */}
-                          <div className="mt-6 pt-6 border-t border-border">
-                            <h4 className="text-lg font-semibold mb-4">Project Tasks</h4>
-                            <KanbanBoard projectId={project.id} isTeamView={true} />
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>Task Progress</span>
+                              <span className="text-muted-foreground">
+                                {project.completedTasks} / {project.taskCount} completed
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all duration-300"
+                                style={{ 
+                                  width: `${calculateProgress(project.completedTasks, project.taskCount)}%` 
+                                }}
+                              ></div>
+                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </AnimatedSection>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
-            {/* My Tasks Tab */}
-            <TabsContent value="tasks">
-              <AnimatedSection>
-                <h2 className="text-2xl font-bold mb-6">My Tasks</h2>
-                
-                {myTasks.length === 0 ? (
-                  <Card className="glass-effect border-border">
-                    <CardContent className="text-center py-12">
-                      <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Tasks Assigned</h3>
-                      <p className="text-muted-foreground">
-                        Tasks assigned to you will appear here.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {myTasks.map((task, index) => (
-                      <AnimatedSection key={task.id} delay={index * 0.05}>
-                        <Card className="glass-effect border-border hover:border-primary/50 transition-all duration-300">
-                          <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                              <span className="text-lg">{task.title}</span>
-                              {getStatusIcon(task.status || "todo")}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {task.description && (
-                              <p className="text-muted-foreground mb-4">{task.description}</p>
-                            )}
-                            
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold">Status:</span>
-                                <Badge variant="secondary" className={getStatusColor(task.status || "todo")}>
-                                  {(task.status || "todo").replace("-", " ").toUpperCase()}
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold">Priority:</span>
-                                <Badge variant="outline" className={getPriorityColor(task.priority || "medium")}>
-                                  {(task.priority || "medium").toUpperCase()}
-                                </Badge>
-                              </div>
+            {/* Kanban Interface Tab */}
+            <TabsContent value="kanban">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Task Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <KanbanBoard isTeamView={true} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                              {task.dueDate && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-semibold">Due Date:</span>
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <Calendar className="h-3 w-3" />
-                                    {formatDate(task.dueDate)}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold">Project:</span>
-                                <span className="text-sm text-muted-foreground">#{task.projectId}</span>
-                              </div>
+            {/* File Upload Tab */}
+            <TabsContent value="files" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Upload Project Files
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {assignedProjects.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No projects assigned. Files can be uploaded once you're assigned to a project.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {assignedProjects.map((project: AssignedProject) => (
+                        <div
+                          key={project.id}
+                          className="p-4 border border-border rounded-lg"
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h4 className="font-medium">Project #{project.id}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Upload files for this project
+                              </p>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </AnimatedSection>
-                    ))}
-                  </div>
-                )}
-              </AnimatedSection>
+                            <Badge variant="outline">{project.status}</Badge>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <Input
+                              type="file"
+                              multiple
+                              onChange={(e) => handleFileUpload(e, project.id)}
+                              className="flex-1 mobile-button"
+                              accept="*/*"
+                            />
+                            <Button
+                              variant="outline"
+                              disabled={uploadFileMutation.isPending}
+                              className="mobile-button"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadFileMutation.isPending ? "Uploading..." : "Upload"}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Progress Tracking Tab */}
+            <TabsContent value="progress" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Task Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {teamTasks.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No tasks assigned yet. Tasks will appear here once you're assigned to projects.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {teamTasks.map((task: any) => (
+                        <div
+                          key={task.id}
+                          className="p-4 border border-border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{task.title}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                Project #{task.projectId}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant="outline" 
+                                className={`${getStatusColor(task.status)} text-white text-xs`}
+                              >
+                                {task.status}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const newStatus = task.status === "done" ? "review" : "done";
+                                  markProgressMutation.mutate({ 
+                                    taskId: task.id, 
+                                    status: newStatus 
+                                  });
+                                }}
+                                disabled={markProgressMutation.isPending}
+                                className="h-6 text-xs mobile-button"
+                              >
+                                {task.status === "done" ? "Reopen" : "Complete"}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {task.description && (
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {task.description}
+                            </p>
+                          )}
+                          
+                          {task.dueDate && (
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Due: {new Date(task.dueDate).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
-      </section>
-
+      </div>
       <Footer />
     </div>
   );

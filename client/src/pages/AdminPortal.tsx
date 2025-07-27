@@ -6,602 +6,595 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import AnimatedSection from "@/components/AnimatedSection";
-import BlogManagement from "@/components/BlogManagement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  Users, 
-  FolderOpen, 
+  Settings, 
+  FileText, 
   MessageSquare, 
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Calendar,
+  Users, 
+  DollarSign,
   CheckCircle,
-  Clock,
-  AlertCircle,
-  FileText,
-  BarChart3
+  X,
+  Eye,
+  UserPlus,
+  Send,
+  Calendar,
+  Clock
 } from "lucide-react";
-import { type ClientProject, type ContactSubmission, type InsertClientProject } from "@shared/schema";
+import KanbanBoard from "@/components/KanbanBoard";
+
+interface ProjectRequest {
+  id: number;
+  projectName: string;
+  clientId: string;
+  serviceIds: string[];
+  description: string;
+  budget: string;
+  timeline: string;
+  status: string;
+  createdAt: string;
+}
+
+interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  skills: string[];
+  isActive: boolean;
+}
 
 export default function AdminPortal() {
-  const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [selectedRequest, setSelectedRequest] = useState<ProjectRequest | null>(null);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [assignedTeam, setAssignedTeam] = useState("");
+  const [invoiceAmount, setInvoiceAmount] = useState("");
+  const [invoiceDescription, setInvoiceDescription] = useState("");
+  
   const queryClient = useQueryClient();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newProject, setNewProject] = useState<Partial<InsertClientProject>>({
-    title: "",
-    description: "",
-    status: "pending",
-    clientId: "",
-  });
 
-  // Redirect if not authenticated or not admin
+  // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || (user && 'role' in user && user.role !== "admin"))) {
+    if (!isLoading && (!isAuthenticated || user?.role !== "admin")) {
       toast({
-        title: "Unauthorized",
-        description: "Admin access required. Redirecting...",
+        title: "Access Denied",
+        description: "You don't have permission to access this area.",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = isAuthenticated ? "/" : "/api/login";
-      }, 1000);
+        window.location.href = "/api/login";
+      }, 500);
       return;
     }
   }, [isAuthenticated, isLoading, user, toast]);
 
-  const { data: projects = [], isLoading: projectsLoading, error: projectsError } = useQuery<ClientProject[]>({
-    queryKey: ["/api/admin/projects"],
-    enabled: isAuthenticated && user && 'role' in user && user.role === "admin",
+  const { data: requests = [], error: requestsError } = useQuery({
+    queryKey: ["/api/admin/project-requests"],
+    enabled: isAuthenticated && user?.role === "admin",
     retry: false,
   });
 
-  const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useQuery<ContactSubmission[]>({
-    queryKey: ["/api/admin/contacts"],
-    enabled: isAuthenticated && user && 'role' in user && user.role === "admin",
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ["/api/admin/team-members"],
+    enabled: isAuthenticated && user?.role === "admin",
     retry: false,
+  });
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ["/api/admin/all-projects"],
+    enabled: isAuthenticated && user?.role === "admin",
+    retry: false,
+  });
+
+  const approveRequestMutation = useMutation({
+    mutationFn: async (requestData: any) => {
+      return apiRequest(`/api/admin/project-requests/${requestData.id}/approve`, {
+        method: "POST",
+        body: JSON.stringify({
+          adminNotes: requestData.adminNotes,
+          assignedTeamId: requestData.assignedTeamId,
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Approved",
+        description: "Project request has been approved and team assigned.",
+      });
+      setSelectedRequest(null);
+      setAdminNotes("");
+      setAssignedTeam("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/project-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/all-projects"] });
+    },
+    onError: () => {
+      toast({
+        title: "Approval Failed",
+        description: "Could not approve the request. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectRequestMutation = useMutation({
+    mutationFn: async (requestData: any) => {
+      return apiRequest(`/api/admin/project-requests/${requestData.id}/reject`, {
+        method: "POST",
+        body: JSON.stringify({
+          adminNotes: requestData.adminNotes,
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Rejected",
+        description: "Project request has been rejected.",
+      });
+      setSelectedRequest(null);
+      setAdminNotes("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/project-requests"] });
+    },
+    onError: () => {
+      toast({
+        title: "Rejection Failed",
+        description: "Could not reject the request. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (invoiceData: any) => {
+      return apiRequest("/api/admin/invoices", {
+        method: "POST",
+        body: JSON.stringify(invoiceData),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invoice Created",
+        description: "Invoice has been generated successfully.",
+      });
+      setInvoiceAmount("");
+      setInvoiceDescription("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
+    },
+    onError: () => {
+      toast({
+        title: "Invoice Creation Failed",
+        description: "Could not create the invoice. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Handle unauthorized errors
   useEffect(() => {
-    if ((projectsError && isUnauthorizedError(projectsError as Error)) ||
-        (contactsError && isUnauthorizedError(contactsError as Error))) {
+    if (requestsError && isUnauthorizedError(requestsError as Error)) {
       toast({
         title: "Unauthorized",
-        description: "Admin access required. Redirecting...",
+        description: "You are logged out. Logging in again...",
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/api/login";
       }, 500);
     }
-  }, [projectsError, contactsError, toast]);
-
-  const createProjectMutation = useMutation({
-    mutationFn: async (data: InsertClientProject) => {
-      await apiRequest("POST", "/api/admin/projects", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/projects"] });
-      setIsCreateModalOpen(false);
-      setNewProject({ title: "", description: "", status: "pending", clientId: "" });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create project",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateProjectMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertClientProject> }) => {
-      await apiRequest("PATCH", `/api/admin/projects/${id}`, data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Project updated successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/projects"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update project",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "in-progress":
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case "review":
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
-    }
-  };
+  }, [requestsError, toast]);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-500/20 text-green-500";
-      case "in-progress":
-        return "bg-blue-500/20 text-blue-500";
-      case "review":
-        return "bg-yellow-500/20 text-yellow-500";
-      default:
-        return "bg-gray-500/20 text-gray-500";
+    switch (status.toLowerCase()) {
+      case "pending": return "bg-yellow-500";
+      case "approved": case "active": return "bg-blue-500";
+      case "completed": return "bg-green-500";
+      case "rejected": return "bg-red-500";
+      default: return "bg-gray-500";
     }
   };
 
-  const formatDate = (date: Date | string | null) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const handleCreateProject = () => {
-    if (!newProject.title || !newProject.clientId) {
+  const handleApproveRequest = () => {
+    if (!selectedRequest) return;
+    
+    if (!assignedTeam) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Team Required",
+        description: "Please assign a team member to this project.",
         variant: "destructive",
       });
       return;
     }
-    createProjectMutation.mutate(newProject as InsertClientProject);
+
+    approveRequestMutation.mutate({
+      id: selectedRequest.id,
+      adminNotes,
+      assignedTeamId: assignedTeam,
+    });
   };
 
-  const handleStatusChange = (projectId: number, newStatus: string) => {
-    updateProjectMutation.mutate({
-      id: projectId,
-      data: { status: newStatus }
+  const handleRejectRequest = () => {
+    if (!selectedRequest) return;
+    
+    if (!adminNotes.trim()) {
+      toast({
+        title: "Rejection Reason Required",
+        description: "Please provide a reason for rejecting this request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    rejectRequestMutation.mutate({
+      id: selectedRequest.id,
+      adminNotes,
     });
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading admin portal...</p>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-20 pb-16">
+          <div className="mobile-container">
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
-  if (!isAuthenticated || !user || !('role' in user) || user.role !== "admin") {
-    return null; // Will redirect
-  }
-
-  const stats = {
-    totalProjects: projects.length,
-    completedProjects: projects.filter(p => p.status === "completed").length,
-    activeProjects: projects.filter(p => p.status === "in-progress").length,
-    pendingContacts: contacts.filter(c => !c.responded).length,
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
-      {/* Header */}
-      <section className="pt-32 pb-12">
-        <div className="container mx-auto px-6">
-          <AnimatedSection className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Admin <span className="gradient-text">Portal</span>
-              </h1>
-              <p className="text-xl text-muted-foreground">
-                Manage projects, clients, and monitor business operations.
-              </p>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
+      <div className="pt-20 pb-16">
+        <div className="mobile-container space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl lg:text-4xl font-bold">
+              Admin Portal
+            </h1>
+            <p className="text-muted-foreground">
+              Manage project requests, assign teams, and oversee all operations.
+            </p>
+          </div>
 
-      {/* Stats Cards */}
-      <section className="pb-8">
-        <div className="container mx-auto px-6">
-          <AnimatedSection>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-primary mb-2">{stats.totalProjects}</div>
-                  <div className="text-sm text-muted-foreground">Total Projects</div>
-                </CardContent>
-              </Card>
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-green-500 mb-2">{stats.completedProjects}</div>
-                  <div className="text-sm text-muted-foreground">Completed</div>
-                </CardContent>
-              </Card>
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-blue-500 mb-2">{stats.activeProjects}</div>
-                  <div className="text-sm text-muted-foreground">Active</div>
-                </CardContent>
-              </Card>
-              <Card className="glass-effect border-border">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-yellow-500 mb-2">{stats.pendingContacts}</div>
-                  <div className="text-sm text-muted-foreground">Pending Contacts</div>
-                </CardContent>
-              </Card>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="pb-20">
-        <div className="container mx-auto px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="overview" className="space-y-8">
-            <TabsList className="glass-effect border-border">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Overview
+          {/* Admin Tabs */}
+          <Tabs defaultValue="requests" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mobile-button">
+              <TabsTrigger value="requests" className="text-xs lg:text-sm">
+                <FileText className="h-4 w-4 mr-1 lg:mr-2" />
+                Requests
               </TabsTrigger>
-              <TabsTrigger value="blog" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-                <FileText className="h-4 w-4 mr-2" />
-                Blog Management
+              <TabsTrigger value="chat" className="text-xs lg:text-sm">
+                <MessageSquare className="h-4 w-4 mr-1 lg:mr-2" />
+                Client Chat
               </TabsTrigger>
-              <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Projects ({projects.length})
+              <TabsTrigger value="team" className="text-xs lg:text-sm">
+                <Users className="h-4 w-4 mr-1 lg:mr-2" />
+                Assign Team
               </TabsTrigger>
-              <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Contacts ({contacts.length})
+              <TabsTrigger value="kanban" className="text-xs lg:text-sm">
+                <Settings className="h-4 w-4 mr-1 lg:mr-2" />
+                Task Manager
+              </TabsTrigger>
+              <TabsTrigger value="invoicing" className="text-xs lg:text-sm">
+                <DollarSign className="h-4 w-4 mr-1 lg:mr-2" />
+                Invoicing
               </TabsTrigger>
             </TabsList>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview">
-              <AnimatedSection>
-                <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <Card className="glass-effect border-border">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FolderOpen className="h-5 w-5" />
-                        Recent Projects
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {projects.slice(0, 3).map((project) => (
-                          <div key={project.id} className="flex justify-between items-center">
-                            <span className="text-sm truncate">{project.title}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {project.status}
-                            </Badge>
+            {/* Request Review Tab */}
+            <TabsContent value="requests" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Pending Requests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Requests</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {requests.filter((r: ProjectRequest) => r.status === "pending").length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No pending requests.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {requests
+                          .filter((r: ProjectRequest) => r.status === "pending")
+                          .map((request: ProjectRequest) => (
+                          <div
+                            key={request.id}
+                            className={`p-3 border border-border rounded-lg cursor-pointer transition-all ${
+                              selectedRequest?.id === request.id ? "border-primary bg-primary/5" : ""
+                            }`}
+                            onClick={() => setSelectedRequest(request)}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-medium text-sm">{request.projectName}</h4>
+                              <Badge variant="secondary" className="bg-yellow-500 text-white">
+                                {request.status}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              <p>Budget: {request.budget}</p>
+                              <p>Timeline: {request.timeline}</p>
+                              <p>Submitted: {new Date(request.createdAt).toLocaleDateString()}</p>
+                            </div>
                           </div>
                         ))}
-                        {projects.length === 0 && (
-                          <p className="text-muted-foreground text-sm">No projects yet</p>
-                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </CardContent>
+                </Card>
 
-                  <Card className="glass-effect border-border">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <MessageSquare className="h-5 w-5" />
-                        Recent Contacts
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {contacts.slice(0, 3).map((contact) => (
-                          <div key={contact.id} className="flex justify-between items-center">
-                            <span className="text-sm truncate">{contact.name}</span>
-                            <Badge variant={contact.responded ? "default" : "secondary"} className="text-xs">
-                              {contact.responded ? "Responded" : "Pending"}
-                            </Badge>
-                          </div>
-                        ))}
-                        {contacts.length === 0 && (
-                          <p className="text-muted-foreground text-sm">No contacts yet</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="glass-effect border-border">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Quick Actions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <Button 
-                        onClick={() => setActiveTab("blog")} 
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Create Blog Post
-                      </Button>
-                      <Button 
-                        onClick={() => setActiveTab("projects")} 
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Project
-                      </Button>
-                      <Button 
-                        onClick={() => setActiveTab("contacts")} 
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        View Contacts
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </AnimatedSection>
-            </TabsContent>
-
-            {/* Blog Management Tab */}
-            <TabsContent value="blog">
-              <BlogManagement />
-            </TabsContent>
-
-            {/* Projects Tab */}
-            <TabsContent value="projects">
-              <AnimatedSection>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Project Management</h2>
-                  <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-primary text-black hover:bg-primary/80">
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Project
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="glass-effect border-border">
-                      <DialogHeader>
-                        <DialogTitle>Create New Project</DialogTitle>
-                      </DialogHeader>
+                {/* Request Details & Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Request Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!selectedRequest ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        Select a request to view details.
+                      </p>
+                    ) : (
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-semibold mb-2">Project Title *</label>
-                          <Input
-                            value={newProject.title || ""}
-                            onChange={(e) => setNewProject(prev => ({ ...prev, title: e.target.value }))}
-                            placeholder="Enter project title"
-                            className="bg-white/10 border-border focus:border-primary"
-                          />
+                          <h4 className="font-medium mb-2">{selectedRequest.projectName}</h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {selectedRequest.description}
+                          </p>
+                          
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <strong>Budget:</strong> {selectedRequest.budget}
+                            </div>
+                            <div>
+                              <strong>Timeline:</strong> {selectedRequest.timeline}
+                            </div>
+                            <div>
+                              <strong>Services:</strong> {selectedRequest.serviceIds?.length || 0}
+                            </div>
+                            <div>
+                              <strong>Status:</strong> {selectedRequest.status}
+                            </div>
+                          </div>
                         </div>
+
                         <div>
-                          <label className="block text-sm font-semibold mb-2">Client ID *</label>
-                          <Input
-                            value={newProject.clientId || ""}
-                            onChange={(e) => setNewProject(prev => ({ ...prev, clientId: e.target.value }))}
-                            placeholder="Client user ID"
-                            className="bg-white/10 border-border focus:border-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold mb-2">Description</label>
-                          <Textarea
-                            value={newProject.description}
-                            onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Project description"
-                            className="bg-white/10 border-border focus:border-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold mb-2">Status</label>
-                          <Select value={newProject.status} onValueChange={(value) => setNewProject(prev => ({ ...prev, status: value }))}>
-                            <SelectTrigger className="bg-white/10 border-border focus:border-primary">
-                              <SelectValue />
+                          <label className="text-sm font-medium mb-2 block">
+                            Assign Team Member
+                          </label>
+                          <Select value={assignedTeam} onValueChange={setAssignedTeam}>
+                            <SelectTrigger className="mobile-button">
+                              <SelectValue placeholder="Select team member" />
                             </SelectTrigger>
-                            <SelectContent className="glass-effect border-border">
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="in-progress">In Progress</SelectItem>
-                              <SelectItem value="review">Under Review</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
+                            <SelectContent>
+                              {teamMembers.map((member: TeamMember) => (
+                                <SelectItem key={member.id} value={member.id.toString()}>
+                                  {member.name} - {member.role}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button
-                          onClick={handleCreateProject}
-                          disabled={createProjectMutation.isPending}
-                          className="w-full bg-primary text-black hover:bg-primary/80"
-                        >
-                          {createProjectMutation.isPending ? "Creating..." : "Create Project"}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
 
-                {projectsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <Card key={i} className="glass-effect border-border">
-                        <CardContent className="p-6">
-                          <Skeleton className="h-6 w-1/3 mb-2" />
-                          <Skeleton className="h-4 w-2/3 mb-4" />
-                          <Skeleton className="h-4 w-1/4" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : projects.length === 0 ? (
-                  <Card className="glass-effect border-border">
-                    <CardContent className="text-center py-12">
-                      <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Projects Yet</h3>
-                      <p className="text-muted-foreground">Create your first project to get started.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-4">
-                    {projects.map((project, index) => (
-                      <AnimatedSection key={project.id} delay={index * 0.05}>
-                        <Card className="glass-effect border-border hover:border-primary/50 transition-all duration-300">
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <h3 className="text-lg font-semibold">{project.title}</h3>
-                                  {getStatusIcon(project.status || "pending")}
-                                  <Badge variant="secondary" className={getStatusColor(project.status || "pending")}>
-                                    {(project.status || "pending").replace("-", " ").toUpperCase()}
-                                  </Badge>
-                                </div>
-                                <p className="text-muted-foreground text-sm mb-3">
-                                  Client ID: {project.clientId}
-                                </p>
-                                {project.description && (
-                                  <p className="text-muted-foreground mb-3">{project.description}</p>
-                                )}
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                  <Calendar className="h-4 w-4 mr-1" />
-                                  Created: {formatDate(project.createdAt)} | Updated: {formatDate(project.updatedAt)}
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Select
-                                  value={project.status || "pending"}
-                                  onValueChange={(value) => handleStatusChange(project.id, value)}
-                                >
-                                  <SelectTrigger className="w-32 h-8 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="glass-effect border-border">
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="in-progress">In Progress</SelectItem>
-                                    <SelectItem value="review">Review</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </AnimatedSection>
-                    ))}
-                  </div>
-                )}
-              </AnimatedSection>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">
+                            Admin Notes
+                          </label>
+                          <Textarea
+                            value={adminNotes}
+                            onChange={(e) => setAdminNotes(e.target.value)}
+                            placeholder="Add internal notes or feedback..."
+                            rows={3}
+                            className="mobile-button"
+                          />
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button
+                            onClick={handleApproveRequest}
+                            disabled={approveRequestMutation.isPending}
+                            className="flex-1 mobile-button"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleRejectRequest}
+                            disabled={rejectRequestMutation.isPending}
+                            className="flex-1 mobile-button"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
-            {/* Contacts Tab */}
-            <TabsContent value="contacts">
-              <AnimatedSection>
-                <h2 className="text-2xl font-bold mb-6">Contact Submissions</h2>
-                
-                {contactsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <Card key={i} className="glass-effect border-border">
-                        <CardContent className="p-6">
-                          <Skeleton className="h-6 w-1/3 mb-2" />
-                          <Skeleton className="h-4 w-2/3 mb-4" />
-                          <Skeleton className="h-4 w-1/4" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : contacts.length === 0 ? (
-                  <Card className="glass-effect border-border">
-                    <CardContent className="text-center py-12">
-                      <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Contact Submissions</h3>
-                      <p className="text-muted-foreground">Contact submissions will appear here.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-4">
-                    {contacts.map((contact, index) => (
-                      <AnimatedSection key={contact.id} delay={index * 0.05}>
-                        <Card className={`glass-effect transition-all duration-300 ${
-                          contact.responded ? "border-border" : "border-primary/50"
-                        }`}>
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <h3 className="text-lg font-semibold">{contact.name}</h3>
-                                  {!contact.responded && (
-                                    <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-500">
-                                      NEW
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-muted-foreground text-sm mb-2">
-                                  📧 {contact.email}
-                                </p>
-                                {contact.service && (
-                                  <p className="text-muted-foreground text-sm mb-3">
-                                    Service: {contact.service}
-                                  </p>
-                                )}
-                                <p className="text-muted-foreground mb-3">{contact.message}</p>
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                  <Calendar className="h-4 w-4 mr-1" />
-                                  {formatDate(contact.createdAt)}
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="border-primary text-primary hover:bg-primary hover:text-black"
-                                  onClick={() => window.open(`mailto:${contact.email}`, '_blank')}
-                                >
-                                  Reply
-                                </Button>
-                              </div>
+            {/* Client Chat Tab */}
+            <TabsContent value="chat">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Client Communications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-center text-muted-foreground py-8">
+                    Client chat interface will be integrated here.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Team Assignment Tab */}
+            <TabsContent value="team">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Team Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {teamMembers.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No team members found.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {teamMembers.map((member: TeamMember) => (
+                        <div
+                          key={member.id}
+                          className="p-4 border border-border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-medium">{member.name}</h4>
+                              <p className="text-sm text-muted-foreground">{member.role}</p>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </AnimatedSection>
-                    ))}
+                            <Badge 
+                              variant={member.isActive ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {member.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          
+                          {member.skills && member.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {member.skills.slice(0, 3).map((skill, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {member.skills.length > 3 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{member.skills.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Kanban Task Manager Tab */}
+            <TabsContent value="kanban">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Task Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <KanbanBoard />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Invoicing Tab */}
+            <TabsContent value="invoicing">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Invoice Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Create Invoice */}
+                  <div className="space-y-4 p-4 border border-border rounded-lg">
+                    <h4 className="font-medium">Create New Invoice</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Amount
+                        </label>
+                        <Input
+                          value={invoiceAmount}
+                          onChange={(e) => setInvoiceAmount(e.target.value)}
+                          placeholder="$0.00"
+                          className="mobile-button"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Project
+                        </label>
+                        <Select>
+                          <SelectTrigger className="mobile-button">
+                            <SelectValue placeholder="Select project" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allProjects.map((project: any) => (
+                              <SelectItem key={project.id} value={project.id.toString()}>
+                                {project.projectName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Description
+                      </label>
+                      <Textarea
+                        value={invoiceDescription}
+                        onChange={(e) => setInvoiceDescription(e.target.value)}
+                        placeholder="Invoice description..."
+                        rows={3}
+                        className="mobile-button"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        if (!invoiceAmount || !invoiceDescription) {
+                          toast({
+                            title: "Missing Information",
+                            description: "Please fill in all required fields.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        createInvoiceMutation.mutate({
+                          amount: invoiceAmount,
+                          description: invoiceDescription,
+                        });
+                      }}
+                      disabled={createInvoiceMutation.isPending}
+                      className="mobile-button"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Create Invoice
+                    </Button>
                   </div>
-                )}
-              </AnimatedSection>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
-      </section>
-
+      </div>
       <Footer />
     </div>
   );

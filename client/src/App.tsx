@@ -22,6 +22,7 @@ import ClientPortal from "@/pages/ClientPortal";
 import AdminPortal from "@/pages/AdminPortal";
 import ProjectManagement from "@/pages/ProjectManagement";
 import TeamPortal from "@/pages/TeamPortal";
+import ClientPortalNew from "@/pages/ClientPortalNew";
 import Setup from "@/pages/Setup";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import MobileNavigation from "@/components/MobileNavigation";
@@ -44,6 +45,7 @@ function Router() {
       
       {/* Protected routes - Client Portal */}
       <Route path="/client-portal" component={ClientPortal} />
+      <Route path="/client-portal-new" component={ClientPortalNew} />
       
       {/* Protected routes - Admin Portal */}
       <Route path="/admin" component={AdminPortal} />

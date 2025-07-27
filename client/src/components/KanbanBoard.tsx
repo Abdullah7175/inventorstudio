@@ -1,429 +1,312 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Plus, 
+  MoreVertical, 
   Calendar, 
   User, 
-  Clock, 
-  AlertCircle, 
-  CheckCircle, 
-  MoreVertical,
-  Trash2,
-  Edit,
-  FileUpload
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Circle
 } from "lucide-react";
-import { type ProjectTask, type InsertProjectTask, type TeamMember } from "@shared/schema";
+
+interface ProjectTask {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  assignedTo?: string;
+  dueDate?: string;
+  position: number;
+  projectId: number;
+}
 
 interface KanbanColumn {
   id: string;
   title: string;
   status: string;
   color: string;
-  tasks: ProjectTask[];
 }
 
-interface KanbanBoardProps {
-  projectId: number;
-  isTeamView?: boolean;
-}
+const columns: KanbanColumn[] = [
+  { id: "todo", title: "To Do", status: "todo", color: "bg-gray-500" },
+  { id: "inprogress", title: "In Progress", status: "in-progress", color: "bg-blue-500" },
+  { id: "review", title: "Review", status: "review", color: "bg-yellow-500" },
+  { id: "done", title: "Done", status: "done", color: "bg-green-500" },
+];
 
-export default function KanbanBoard({ projectId, isTeamView = false }: KanbanBoardProps) {
+export default function KanbanBoard({ 
+  projectId, 
+  isTeamView = false 
+}: { 
+  projectId?: number; 
+  isTeamView?: boolean; 
+}) {
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [newTask, setNewTask] = useState<Partial<InsertProjectTask>>({
-    projectId,
-    title: "",
-    description: "",
-    status: "todo",
-    priority: "medium",
-    assignedTo: "",
+
+  const { data: tasks } = useQuery({
+    queryKey: isTeamView 
+      ? ["/api/team/tasks"] 
+      : ["/api/project-tasks", projectId],
+    enabled: isTeamView || !!projectId,
   });
 
-  // Fetch tasks for this project
-  const { data: tasks = [], isLoading } = useQuery<ProjectTask[]>({
-    queryKey: ["/api/projects", projectId, "tasks"],
-    enabled: !!projectId,
-  });
-
-  // Fetch team members for assignment
-  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
-    queryKey: ["/api/team/members"],
-    enabled: !isTeamView, // Only admins can see team members
-  });
-
-  // Create task mutation
   const createTaskMutation = useMutation({
-    mutationFn: async (data: InsertProjectTask) => {
-      return await apiRequest("/api/tasks", "POST", data);
+    mutationFn: async (taskData: any) => {
+      return apiRequest("/api/project-tasks", {
+        method: "POST",
+        body: JSON.stringify(taskData),
+      });
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Task created successfully",
+        title: "Task Created",
+        description: "New task has been added to the project.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-      setIsCreateTaskOpen(false);
-      setNewTask({
-        projectId,
-        title: "",
-        description: "",
-        status: "todo",
-        priority: "medium",
-        assignedTo: "",
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setShowNewTaskForm(false);
+      setSelectedColumn(null);
+      queryClient.invalidateQueries({ 
+        queryKey: isTeamView ? ["/api/team/tasks"] : ["/api/project-tasks", projectId] 
       });
     },
-    onError: (error: Error) => {
+    onError: () => {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Failed to Create Task",
+        description: "Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Update task status mutation
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, status, position }: { taskId: number; status: string; position?: number }) => {
-      return await apiRequest(`/api/tasks/${taskId}`, "PATCH", { status, position });
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: number; status: string }) => {
+      return apiRequest(`/api/project-tasks/${taskId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      queryClient.invalidateQueries({ 
+        queryKey: isTeamView ? ["/api/team/tasks"] : ["/api/project-tasks", projectId] 
       });
     },
   });
-
-  // Delete task mutation
-  const deleteTaskMutation = useMutation({
-    mutationFn: async (taskId: number) => {
-      return await apiRequest(`/api/tasks/${taskId}`, "DELETE");
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Task deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const columns: KanbanColumn[] = [
-    {
-      id: "todo",
-      title: "To Do",
-      status: "todo",
-      color: "bg-gray-500/20 text-gray-500",
-      tasks: tasks.filter(task => task.status === "todo"),
-    },
-    {
-      id: "in-progress",
-      title: "In Progress",
-      status: "in-progress",
-      color: "bg-blue-500/20 text-blue-500",
-      tasks: tasks.filter(task => task.status === "in-progress"),
-    },
-    {
-      id: "review",
-      title: "Review",
-      status: "review",
-      color: "bg-yellow-500/20 text-yellow-500",
-      tasks: tasks.filter(task => task.status === "review"),
-    },
-    {
-      id: "done",
-      title: "Done",
-      status: "done",
-      color: "bg-green-500/20 text-green-500",
-      tasks: tasks.filter(task => task.status === "done"),
-    },
-  ];
 
   const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case "medium":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "low":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return null;
+    switch (priority.toLowerCase()) {
+      case "high": return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case "medium": return <Circle className="h-4 w-4 text-yellow-500" />;
+      case "low": return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default: return <Circle className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "border-l-red-500";
-      case "medium":
-        return "border-l-yellow-500";
-      case "low":
-        return "border-l-green-500";
-      default:
-        return "border-l-gray-500";
-    }
+  const getTasksByStatus = (status: string) => {
+    return tasks?.filter((task: ProjectTask) => task.status === status) || [];
   };
 
-  const handleDragStart = (task: ProjectTask) => {
-    setDraggedTask(task);
+  const handleCreateTask = () => {
+    if (!newTaskTitle.trim()) {
+      toast({
+        title: "Title Required",
+        description: "Please enter a task title.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const taskData = {
+      title: newTaskTitle,
+      description: newTaskDescription,
+      status: selectedColumn || "todo",
+      priority: "medium",
+      projectId: projectId || 0,
+    };
+
+    createTaskMutation.mutate(taskData);
+  };
+
+  const handleDragStart = (e: React.DragEvent, taskId: number) => {
+    e.dataTransfer.setData("taskId", taskId.toString());
+  };
+
+  const handleDrop = (e: React.DragEvent, status: string) => {
+    e.preventDefault();
+    const taskId = parseInt(e.dataTransfer.getData("taskId"));
+    if (taskId) {
+      updateTaskStatusMutation.mutate({ taskId, status });
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent, newStatus: string) => {
-    e.preventDefault();
-    if (draggedTask && draggedTask.status !== newStatus) {
-      updateTaskMutation.mutate({
-        taskId: draggedTask.id,
-        status: newStatus,
-      });
-    }
-    setDraggedTask(null);
-  };
-
-  const handleCreateTask = () => {
-    if (!newTask.title?.trim()) {
-      toast({
-        title: "Error",
-        description: "Task title is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createTaskMutation.mutate(newTask as InsertProjectTask);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="glass-effect border-border">
-            <CardHeader>
-              <div className="h-6 bg-white/10 rounded animate-pulse" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[...Array(3)].map((_, j) => (
-                  <div key={j} className="h-20 bg-white/5 rounded animate-pulse" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Project Board</h2>
-        {!isTeamView && (
-          <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary text-black hover:bg-primary/80">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Task
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass-effect border-border">
-              <DialogHeader>
-                <DialogTitle>Create New Task</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Task Title *</label>
-                  <Input
-                    value={newTask.title || ""}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Enter task title"
-                    className="bg-white/10 border-border focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Description</label>
-                  <Textarea
-                    value={newTask.description || ""}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Task description..."
-                    className="bg-white/10 border-border focus:border-primary"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">Priority</label>
-                    <Select
-                      value={newTask.priority}
-                      onValueChange={(value) => setNewTask(prev => ({ ...prev, priority: value }))}
-                    >
-                      <SelectTrigger className="bg-white/10 border-border focus:border-primary">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="glass-effect border-border">
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">Assign To</label>
-                    <Select
-                      value={newTask.assignedTo}
-                      onValueChange={(value) => setNewTask(prev => ({ ...prev, assignedTo: value }))}
-                    >
-                      <SelectTrigger className="bg-white/10 border-border focus:border-primary">
-                        <SelectValue placeholder="Select team member" />
-                      </SelectTrigger>
-                      <SelectContent className="glass-effect border-border">
-                        {teamMembers.map((member) => (
-                          <SelectItem key={member.id} value={member.userId}>
-                            {member.name} - {member.role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleCreateTask}
-                  disabled={createTaskMutation.isPending}
-                  className="w-full bg-primary text-black hover:bg-primary/80"
-                >
-                  {createTaskMutation.isPending ? "Creating..." : "Create Task"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="mobile-container">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
         {columns.map((column) => (
-          <div
-            key={column.id}
-            className="space-y-4"
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, column.status)}
-          >
-            {/* Column Header */}
-            <Card className="glass-effect border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${column.color.split(' ')[0]}`} />
-                    {column.title}
-                  </div>
-                  <Badge variant="secondary" className={column.color}>
-                    {column.tasks.length}
+          <Card key={column.id} className="min-h-96">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${column.color}`}></div>
+                  <span className="text-sm lg:text-base">{column.title}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {getTasksByStatus(column.status).length}
                   </Badge>
-                </CardTitle>
-              </CardHeader>
-            </Card>
-
-            {/* Tasks */}
-            <div className="space-y-3">
-              {column.tasks.map((task) => {
-                const assignedMember = teamMembers.find(m => m.userId === task.assignedTo);
-                return (
-                  <Card
-                    key={task.id}
-                    className={`glass-effect border-border hover:border-primary/50 transition-all duration-300 cursor-move border-l-4 ${getPriorityColor(task.priority || "medium")}`}
-                    draggable
-                    onDragStart={() => handleDragStart(task)}
+                </div>
+                {!isTeamView && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedColumn(column.status);
+                      setShowNewTaskForm(true);
+                    }}
+                    className="h-6 w-6 p-0"
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold text-sm leading-tight">{task.title}</h4>
-                        {!isTeamView && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteTaskMutation.mutate(task.id)}
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent
+              className="space-y-3"
+              onDrop={(e) => handleDrop(e, column.status)}
+              onDragOver={handleDragOver}
+            >
+              <AnimatePresence>
+                {getTasksByStatus(column.status).map((task: ProjectTask) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, task.id)}
+                    className="p-3 bg-card border border-border rounded-lg cursor-move hover:shadow-md transition-all"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <h4 className="font-medium text-sm line-clamp-2">{task.title}</h4>
+                        <div className="flex items-center gap-1">
+                          {getPriorityIcon(task.priority)}
+                          <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       </div>
-
+                      
                       {task.description && (
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                        <p className="text-xs text-muted-foreground line-clamp-2">
                           {task.description}
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getPriorityIcon(task.priority || "medium")}
-                          {assignedMember && (
-                            <div className="flex items-center gap-1">
-                              <Avatar className="h-5 w-5">
-                                <AvatarFallback className="text-xs">
-                                  {assignedMember.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                              {!isTeamView && (
-                                <span className="text-xs text-muted-foreground">
-                                  {assignedMember.name}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        {task.assignedTo && !isTeamView && (
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            <span>Assigned</span>
+                          </div>
+                        )}
+                        
                         {task.dueDate && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(task.dueDate).toLocaleDateString()}
+                            <span>{new Date(task.dueDate).toLocaleDateString()}</span>
                           </div>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
 
-              {column.tasks.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground text-sm">No tasks in {column.title.toLowerCase()}</p>
-                </div>
+                      {isTeamView && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            Project #{task.projectId}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateTaskStatusMutation.mutate({ 
+                              taskId: task.id, 
+                              status: task.status === "done" ? "review" : "done" 
+                            })}
+                            className="h-6 text-xs"
+                          >
+                            {task.status === "done" ? "Reopen" : "Complete"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* New Task Form */}
+              {showNewTaskForm && selectedColumn === column.status && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-3 border-2 border-dashed border-primary/50 rounded-lg space-y-3"
+                >
+                  <Input
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="Task title..."
+                    className="text-sm"
+                  />
+                  <Textarea
+                    value={newTaskDescription}
+                    onChange={(e) => setNewTaskDescription(e.target.value)}
+                    placeholder="Task description (optional)..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleCreateTask}
+                      disabled={createTaskMutation.isPending}
+                      className="text-xs"
+                    >
+                      Add Task
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowNewTaskForm(false);
+                        setSelectedColumn(null);
+                        setNewTaskTitle("");
+                        setNewTaskDescription("");
+                      }}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </motion.div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

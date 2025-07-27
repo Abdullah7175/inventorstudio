@@ -524,6 +524,398 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Service Cart routes
+  app.post("/api/service-cart/submit", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const requestData = {
+        clientId: userId,
+        projectName: req.body.projectName,
+        serviceIds: req.body.serviceIds,
+        description: req.body.notes,
+        budget: req.body.budget,
+        timeline: req.body.timeline,
+        status: "pending"
+      };
+      
+      // Note: This would create a project request from service cart
+      res.json({ success: true, message: "Project request submitted successfully" });
+    } catch (error) {
+      console.error("Service cart submission error:", error);
+      res.status(500).json({ message: "Failed to submit service request" });
+    }
+  });
+
+  // Client Project routes
+  app.get("/api/client/projects", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      // Mock data for demonstration - would fetch from project requests table
+      const mockProjects = [
+        {
+          id: 1,
+          projectName: "Website Redesign",
+          status: "active",
+          budget: "$5000",
+          timeline: "3 months",
+          createdAt: new Date().toISOString()
+        }
+      ];
+      res.json(mockProjects);
+    } catch (error) {
+      console.error("Client projects error:", error);
+      res.status(500).json({ message: "Failed to fetch client projects" });
+    }
+  });
+
+  app.get("/api/client/invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      // Mock data for demonstration
+      const mockInvoices = [
+        {
+          id: 1,
+          invoiceNumber: "INV-001",
+          total: "2500.00",
+          status: "unpaid",
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString()
+        }
+      ];
+      res.json(mockInvoices);
+    } catch (error) {
+      console.error("Client invoices error:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  // Project Messages routes
+  app.get("/api/project-messages/:projectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      // Mock data for demonstration
+      const mockMessages = [
+        {
+          id: 1,
+          message: "Project has started. We'll keep you updated on progress.",
+          senderId: "team-001",
+          senderRole: "team",
+          createdAt: new Date().toISOString(),
+          attachments: []
+        }
+      ];
+      res.json(mockMessages);
+    } catch (error) {
+      console.error("Project messages error:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/project-messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageData = {
+        id: Date.now(),
+        projectId: parseInt(req.body.projectId),
+        senderId: userId,
+        senderRole: "client",
+        message: req.body.message,
+        createdAt: new Date().toISOString(),
+        attachments: []
+      };
+      
+      res.json(messageData);
+    } catch (error) {
+      console.error("Message creation error:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Project Files routes
+  app.get("/api/project-files/:projectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      // Mock data for demonstration
+      const mockFiles = [];
+      res.json(mockFiles);
+    } catch (error) {
+      console.error("Project files error:", error);
+      res.status(500).json({ message: "Failed to fetch files" });
+    }
+  });
+
+  // Admin Portal routes
+  app.get("/api/admin/project-requests", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock admin access check
+      const mockRequests = [
+        {
+          id: 1,
+          projectName: "E-commerce Platform",
+          clientId: "client-001",
+          serviceIds: ["1", "2"],
+          description: "Need a modern e-commerce solution",
+          budget: "$10000",
+          timeline: "6 months",
+          status: "pending",
+          createdAt: new Date().toISOString()
+        }
+      ];
+      res.json(mockRequests);
+    } catch (error) {
+      console.error("Admin requests error:", error);
+      res.status(500).json({ message: "Failed to fetch project requests" });
+    }
+  });
+
+  app.post("/api/admin/project-requests/:id/approve", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { adminNotes, assignedTeamId } = req.body;
+      
+      // Mock approval response
+      const approvedRequest = {
+        id: parseInt(id),
+        status: "approved",
+        adminNotes,
+        assignedTeamId,
+        updatedAt: new Date().toISOString()
+      };
+        
+      res.json(approvedRequest);
+    } catch (error) {
+      console.error("Request approval error:", error);
+      res.status(500).json({ message: "Failed to approve request" });
+    }
+  });
+
+  app.post("/api/admin/project-requests/:id/reject", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { adminNotes } = req.body;
+      
+      // Mock rejection response
+      const rejectedRequest = {
+        id: parseInt(id),
+        status: "rejected",
+        adminNotes,
+        updatedAt: new Date().toISOString()
+      };
+        
+      res.json(rejectedRequest);
+    } catch (error) {
+      console.error("Request rejection error:", error);
+      res.status(500).json({ message: "Failed to reject request" });
+    }
+  });
+
+  app.get("/api/admin/team-members", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock team members data
+      const mockTeamMembers = [
+        {
+          id: 1,
+          name: "Sarah Johnson",
+          role: "Frontend Developer",
+          skills: ["React", "TypeScript", "CSS"],
+          isActive: true
+        },
+        {
+          id: 2,
+          name: "Mike Chen",
+          role: "Backend Developer", 
+          skills: ["Node.js", "PostgreSQL", "API Design"],
+          isActive: true
+        }
+      ];
+      res.json(mockTeamMembers);
+    } catch (error) {
+      console.error("Team members error:", error);
+      res.status(500).json({ message: "Failed to fetch team members" });
+    }
+  });
+
+  app.get("/api/admin/all-projects", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock all projects data
+      const mockProjects = [
+        {
+          id: 1,
+          projectName: "Portfolio Website",
+          status: "completed",
+          createdAt: new Date().toISOString()
+        }
+      ];
+      res.json(mockProjects);
+    } catch (error) {
+      console.error("All projects error:", error);
+      res.status(500).json({ message: "Failed to fetch all projects" });
+    }
+  });
+
+  app.post("/api/admin/invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const invoiceData = {
+        id: Date.now(),
+        invoiceNumber: `INV-${Date.now()}`,
+        ...req.body,
+        status: "unpaid",
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date().toISOString()
+      };
+      
+      res.json(invoiceData);
+    } catch (error) {
+      console.error("Invoice creation error:", error);
+      res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  // Team Portal routes
+  app.get("/api/team/assigned-projects", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock assigned projects for team members
+      const mockProjects = [
+        {
+          id: 1,
+          projectName: "Mobile App Development",
+          status: "active",
+          priority: "high",
+          dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+          taskCount: 15,
+          completedTasks: 8
+        }
+      ];
+      res.json(mockProjects);
+    } catch (error) {
+      console.error("Team projects error:", error);
+      res.status(500).json({ message: "Failed to fetch assigned projects" });
+    }
+  });
+
+  app.get("/api/team/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock team tasks
+      const mockTasks = [
+        {
+          id: 1,
+          title: "Design user interface mockups",
+          description: "Create high-fidelity mockups for the main application screens",
+          status: "in-progress",
+          priority: "high",
+          projectId: 1,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString()
+        }
+      ];
+      res.json(mockTasks);
+    } catch (error) {
+      console.error("Team tasks error:", error);
+      res.status(500).json({ message: "Failed to fetch team tasks" });
+    }
+  });
+
+  app.patch("/api/team/tasks/:taskId/progress", isAuthenticated, async (req: any, res) => {
+    try {
+      const { taskId } = req.params;
+      const { status } = req.body;
+      
+      const updatedTask = {
+        id: parseInt(taskId),
+        status,
+        updatedAt: new Date().toISOString()
+      };
+        
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Task progress error:", error);
+      res.status(500).json({ message: "Failed to update task progress" });
+    }
+  });
+
+  app.post("/api/team/upload-file", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock file upload response
+      res.json({ 
+        message: "File uploaded successfully",
+        filename: "uploaded-file.jpg",
+        uploadedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("File upload error:", error);
+      res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
+  // Project Task CRUD routes
+  app.get("/api/project-tasks/:projectId?", isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      
+      // Mock project tasks
+      const mockTasks = [
+        {
+          id: 1,
+          title: "Setup project repository",
+          description: "Initialize Git repository and project structure",
+          status: "done",
+          priority: "high",
+          projectId: projectId ? parseInt(projectId) : 1,
+          position: 1,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          title: "Design database schema",
+          description: "Create ERD and define table structures",
+          status: "in-progress",
+          priority: "medium",
+          projectId: projectId ? parseInt(projectId) : 1,
+          position: 2,
+          createdAt: new Date().toISOString()
+        }
+      ];
+      
+      res.json(mockTasks);
+    } catch (error) {
+      console.error("Project tasks error:", error);
+      res.status(500).json({ message: "Failed to fetch project tasks" });
+    }
+  });
+
+  app.post("/api/project-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskData = {
+        id: Date.now(),
+        ...req.body,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(taskData);
+    } catch (error) {
+      console.error("Task creation error:", error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.patch("/api/project-tasks/:taskId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { taskId } = req.params;
+      
+      const updatedTask = {
+        id: parseInt(taskId),
+        ...req.body,
+        updatedAt: new Date().toISOString()
+      };
+        
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Task update error:", error);
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
