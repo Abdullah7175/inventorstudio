@@ -211,3 +211,36 @@ The project management system transforms the website from a simple portfolio int
 - **Performance Optimization**: Added will-change and transform3d for better mobile performance
 
 The mobile experience now provides native app-like functionality with proper touch handling, responsive layouts, and optimized performance across all device sizes from iPhone to desktop displays.
+
+## Navigation Logic Improvements & Real-Time Chat Integration (January 2025)
+
+### Smart Navigation System
+- **Role-Based Menu Items**: Navigation now shows different items based on authentication status and user role
+- **Public Navigation**: Non-authenticated users see basic menu items (Home, About, Services, Portfolio, Blog, Contact, FAQ)
+- **Authenticated Navigation**: Logged-in users see public items plus authenticated features (Projects, Chat Test)
+- **Role-Based Portal Access**: 
+  - Clients see "Client Portal" button
+  - Team members see "Team Portal" button  
+  - Admins see "Admin Portal" button
+- **Clean Authentication Flow**: "Get Started" button for guests, proper logout functionality for authenticated users
+
+### Real-Time WebSocket Chat System
+- **WebSocket Server**: Implemented at `/ws` path with message broadcasting and typing indicators
+- **useWebSocket Hook**: Client-side hook with auto-reconnection, authentication, and message handling
+- **ChatFileCenter Component**: Updated with real-time messaging, typing indicators, and connection status
+- **Real-Time Features**:
+  - Instant message delivery without page refresh
+  - Live typing indicators with animated dots
+  - Connection status monitoring
+  - Auto-scroll to new messages
+  - Message persistence via API + real-time delivery via WebSocket
+- **Test Interface**: Available at `/chat-test` for testing WebSocket functionality across multiple browser tabs
+
+### Technical Implementation
+- **Connection Management**: WebSocket connections stored with user authentication info
+- **Message Broadcasting**: Real-time message delivery to all connected users in same project
+- **Typing Indicators**: Timeout-based typing status with 1-second delay
+- **Error Handling**: Graceful WebSocket disconnection and reconnection logic
+- **Integration**: Seamlessly integrated into existing project management portals
+
+The navigation system now properly handles authentication states and user roles, while the real-time chat system provides instant communication capabilities for project collaboration.

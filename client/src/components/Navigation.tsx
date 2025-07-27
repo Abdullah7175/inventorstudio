@@ -20,7 +20,8 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
+  // Public navigation items (always visible)
+  const publicNavItems = [
     { label: "Home", href: "/", icon: Home },
     { label: "About", href: "/about", icon: Info },
     { label: "Services", href: "/services", icon: Briefcase },
@@ -29,6 +30,24 @@ export default function Navigation() {
     { label: "Contact", href: "/contact", icon: MessageSquare },
     { label: "FAQ", href: "/faq", icon: HelpCircle },
   ];
+
+  // Authenticated user navigation items (only when logged in)
+  const authNavItems = [
+    { label: "Projects", href: "/projects", icon: FolderOpen },
+    { label: "Chat Test", href: "/chat-test", icon: MessageSquare },
+  ];
+
+  // Get navigation items based on authentication status
+  const getNavItems = () => {
+    if (!isAuthenticated) {
+      return publicNavItems;
+    }
+    
+    // For authenticated users, show public items + authenticated features
+    return [...publicNavItems, ...authNavItems];
+  };
+
+  const navItems = getNavItems();
 
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
@@ -113,16 +132,30 @@ export default function Navigation() {
                       </span>
                     </div>
 
-                    {/* Portal Links */}
-                    <Link href="/client-portal-new">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
-                      >
-                        Portal
-                      </Button>
-                    </Link>
+                    {/* Portal Links - Role-based access */}
+                    {(user as any)?.role === "client" && (
+                      <Link href="/client-portal-new">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
+                        >
+                          Client Portal
+                        </Button>
+                      </Link>
+                    )}
+
+                    {(user as any)?.role === "team" && (
+                      <Link href="/team-portal">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
+                        >
+                          Team Portal
+                        </Button>
+                      </Link>
+                    )}
 
                     {/* Admin Portal */}
                     {(user as any)?.role === "admin" && (
@@ -136,7 +169,7 @@ export default function Navigation() {
                           Admin
                         </Button>
                       </Link>
-                  )}
+                    )}
 
                     {/* Logout */}
                     <Button
@@ -157,7 +190,7 @@ export default function Navigation() {
                       onClick={() => (window.location.href = "/api/login")}
                       className="bg-primary text-black hover:bg-primary/80 transition-all duration-300 group"
                     >
-                      Get Started
+                      Login
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </motion.div>
@@ -266,14 +299,28 @@ export default function Navigation() {
                         </span>
                       </div>
                       
-                      <Link href="/client-portal-new">
-                        <Button 
-                          className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          Client Portal
-                        </Button>
-                      </Link>
+                      {/* Role-based Portal Access */}
+                      {(user as any)?.role === "client" && (
+                        <Link href="/client-portal-new">
+                          <Button 
+                            className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            Client Portal
+                          </Button>
+                        </Link>
+                      )}
+
+                      {(user as any)?.role === "team" && (
+                        <Link href="/team-portal">
+                          <Button 
+                            className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            Team Portal
+                          </Button>
+                        </Link>
+                      )}
 
                       {(user as any)?.role === "admin" && (
                         <Link href="/admin-portal">
@@ -308,7 +355,7 @@ export default function Navigation() {
                       }}
                       className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
                     >
-                      Get Started
+                      Login
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   )}
