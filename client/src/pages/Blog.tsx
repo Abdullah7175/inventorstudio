@@ -12,7 +12,14 @@ export default function Blog() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
-    queryKey: ["/api/blog", { published: true }],
+    queryKey: ["/api/blog"],
+    queryFn: async () => {
+      const response = await fetch("/api/blog?published=true");
+      if (!response.ok) {
+        throw new Error('Failed to fetch blog posts');
+      }
+      return response.json();
+    },
   });
 
   const filteredPosts = posts.filter(post =>
