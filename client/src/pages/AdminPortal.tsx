@@ -28,6 +28,7 @@ import {
   Clock
 } from "lucide-react";
 import KanbanBoard from "@/components/KanbanBoard";
+import BlogManager from "@/components/BlogManager";
 
 interface ProjectRequest {
   id: number;
@@ -269,7 +270,7 @@ export default function AdminPortal() {
 
           {/* Admin Tabs */}
           <Tabs defaultValue="requests" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mobile-button">
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 mobile-button">
               <TabsTrigger value="requests" className="text-xs lg:text-sm">
                 <FileText className="h-4 w-4 mr-1 lg:mr-2" />
                 Requests
@@ -289,6 +290,10 @@ export default function AdminPortal() {
               <TabsTrigger value="invoicing" className="text-xs lg:text-sm">
                 <DollarSign className="h-4 w-4 mr-1 lg:mr-2" />
                 Invoicing
+              </TabsTrigger>
+              <TabsTrigger value="blog" className="text-xs lg:text-sm">
+                <FileText className="h-4 w-4 mr-1 lg:mr-2" />
+                Blog
               </TabsTrigger>
             </TabsList>
 
@@ -591,6 +596,11 @@ export default function AdminPortal() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Blog Management Tab */}
+            <TabsContent value="blog">
+              <BlogManager />
             </TabsContent>
           </Tabs>
         </div>

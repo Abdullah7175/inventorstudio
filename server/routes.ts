@@ -195,7 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Blog
+
+
+  // Blog routes
   app.get("/api/blog", async (req, res) => {
     try {
       const published = req.query.published === "true";
@@ -217,6 +219,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching blog post:", error);
       res.status(500).json({ message: "Failed to fetch blog post" });
+    }
+  });
+
+  // Helper function to check roles
+  const requireRole = (roles: string[]) => {
+    return async (req: any, res: any, next: any) => {
+      try {
+        // Check temp admin first
+        if ((req.session as any).tempAdmin) {
+          if (roles.includes((req.session as any).tempAdmin.role)) {
+            return next();
+          }
+        }
+
+        // Check regular auth
+        const userId = req.user?.claims?.sub;
+        if (!userId) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const user = await storage.getUser(userId);
+        if (!user || !roles.includes(user.role)) {
+          return res.status(403).json({ message: "Insufficient permissions" });
+        }
+        
+        next();
+      } catch (error) {
+        res.status(500).json({ message: "Authentication error" });
+      }
+    };
+  };
+
+  // Admin Blog Management Routes
+  app.get("/api/admin/blog", isAuthenticated, requireRole(["admin", "editor"]), async (req: any, res) => {
+    try {
+      const posts = await storage.getBlogPosts(); // Get all posts, published and draft
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching admin blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.post("/api/admin/blog", isAuthenticated, requireRole(["admin", "editor"]), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postData = req.body;
+      
+      // Add author ID
+      postData.authorId = userId;
+      
+      const newPost = await storage.createBlogPost(postData);
+      res.json(newPost);
+    } catch (error: any) {
+      console.error("Error creating blog post:", error);
+      res.status(400).json({ message: error.message || "Failed to create blog post" });
+    }
+  });
+
+  app.put("/api/admin/blog/:id", isAuthenticated, requireRole(["admin", "editor"]), async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // If publishing for the first time, set publishedAt
+      if (updates.published && !updates.publishedAt) {
+        updates.publishedAt = new Date();
+      }
+      
+      const updatedPost = await storage.updateBlogPost(id, updates);
+      res.json(updatedPost);
+    } catch (error: any) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ message: "Failed to update blog post" });
+    }
+  });
+
+  app.delete("/api/admin/blog/:id", isAuthenticated, requireRole(["admin"]), async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBlogPost(id);
+      res.json({ message: "Blog post deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ message: "Failed to delete blog post" });
     }
   });
 
