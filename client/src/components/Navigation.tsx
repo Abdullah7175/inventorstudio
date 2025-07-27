@@ -38,9 +38,7 @@ export default function Navigation() {
   };
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
+    <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled ? "glass-effect bg-opacity-90" : "bg-transparent"
       }`}
@@ -48,20 +46,16 @@ export default function Navigation() {
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <Link href="/">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="text-2xl font-bold gradient-text cursor-pointer"
-            >
+            <div className="text-2xl font-bold gradient-text cursor-pointer hover:opacity-80 transition-opacity">
               Inventer Design Studio
-            </motion.div>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <motion.span
-                  whileHover={{ scale: 1.05 }}
+                <span
                   className={`transition-colors duration-300 cursor-pointer ${
                     isActive(item.href)
                       ? "text-primary"
@@ -69,7 +63,7 @@ export default function Navigation() {
                   }`}
                 >
                   {item.label}
-                </motion.span>
+                </span>
               </Link>
             ))}
           </div>
@@ -121,8 +115,7 @@ export default function Navigation() {
               <div className="flex flex-col space-y-6 mt-8">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <motion.span
-                      whileHover={{ scale: 1.05, x: 10 }}
+                    <span
                       onClick={() => setIsOpen(false)}
                       className={`block text-lg transition-colors duration-300 cursor-pointer ${
                         isActive(item.href)
@@ -131,7 +124,7 @@ export default function Navigation() {
                       }`}
                     >
                       {item.label}
-                    </motion.span>
+                    </span>
                   </Link>
                 ))}
                 
@@ -188,6 +181,6 @@ export default function Navigation() {
           </Sheet>
         </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 }

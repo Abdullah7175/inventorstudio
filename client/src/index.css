@@ -99,7 +99,7 @@
 @layer components {
   .glass-effect {
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(3px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
@@ -136,11 +136,11 @@
   }
 
   .floating-animation {
-    animation: float 6s ease-in-out infinite;
+    /* animation: float 6s ease-in-out infinite; */
   }
 
   .glow-animation {
-    animation: glow 2s ease-in-out infinite alternate;
+    /* animation: glow 2s ease-in-out infinite alternate; */
   }
 
   .slide-in-up {
@@ -159,7 +159,7 @@
       radial-gradient(circle at 40% 40%, var(--floating-element-1) 0%, transparent 50%);
     background-size: 800px 800px, 600px 600px, 400px 400px;
     background-position: 0 0, 100% 100%, 50% 50%;
-    animation: floatPattern 20s ease-in-out infinite;
+    /* animation: floatPattern 20s ease-in-out infinite; */
   }
   
   .bg-grid-pattern {
@@ -190,7 +190,7 @@
     height: 200px;
     background: var(--floating-element-1);
     border-radius: 50%;
-    animation: float 15s ease-in-out infinite;
+    /* animation: float 15s ease-in-out infinite; */
   }
   
   .design-elements::after {
@@ -202,7 +202,7 @@
     height: 300px;
     background: var(--floating-element-2);
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    animation: float 25s ease-in-out infinite reverse;
+    /* animation: float 25s ease-in-out infinite reverse; */
   }
   
   .service-icon-bg {
@@ -213,7 +213,7 @@
     font-size: 4rem;
     color: var(--floating-element-1);
     opacity: 0.1;
-    animation: rotate 30s linear infinite;
+    /* animation: rotate 30s linear infinite; */
   }
 }
 
