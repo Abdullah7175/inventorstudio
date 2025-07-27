@@ -1109,10 +1109,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const connections = new Map<string, { ws: WebSocket; userId: string; role: string }>();
   
   wss.on('connection', (ws: WebSocket, req) => {
-    console.log('New WebSocket connection');
+    console.log('New WebSocket connection established');
     
-    ws.on('message', (message: string) => {
+    // Add error handler for the WebSocket connection
+    ws.on('error', (error) => {
+      console.error('WebSocket connection error:', error);
+    });
+    
+    ws.on('message', (messageBuffer) => {
       try {
+        const message = messageBuffer.toString();
         const data = JSON.parse(message);
         
         if (data.type === 'auth') {
@@ -1123,6 +1129,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: data.role
           });
           console.log(`User ${data.userId} (${data.role}) connected to WebSocket`);
+          
+          // Send acknowledgment
+          ws.send(JSON.stringify({
+            type: 'auth_success',
+            message: 'Successfully authenticated'
+          }));
         } else if (data.type === 'chat_message') {
           // Broadcast message to all connected users in the same project
           const messageData = {
@@ -1137,8 +1149,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Send to all connections (in a real app, filter by project access)
           connections.forEach(({ ws: clientWs }) => {
-            if (clientWs.readyState === WebSocket.OPEN) {
-              clientWs.send(JSON.stringify(messageData));
+            try {
+              if (clientWs.readyState === WebSocket.OPEN) {
+                clientWs.send(JSON.stringify(messageData));
+              }
+            } catch (error) {
+              console.error('Error sending message to client:', error);
             }
           });
         } else if (data.type === 'typing') {
@@ -1152,17 +1168,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           connections.forEach(({ ws: clientWs, userId }) => {
-            if (clientWs.readyState === WebSocket.OPEN && userId !== data.senderId) {
-              clientWs.send(JSON.stringify(typingData));
+            try {
+              if (clientWs.readyState === WebSocket.OPEN && userId !== data.senderId) {
+                clientWs.send(JSON.stringify(typingData));
+              }
+            } catch (error) {
+              console.error('Error sending typing indicator:', error);
             }
           });
         }
       } catch (error) {
-        console.error('WebSocket message error:', error);
+        console.error('WebSocket message processing error:', error);
+        // Send error response to client
+        try {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Invalid message format'
+            }));
+          }
+        } catch (sendError) {
+          console.error('Error sending error message:', sendError);
+        }
       }
     });
     
-    ws.on('close', () => {
+    ws.on('close', (code, reason) => {
+      console.log(`WebSocket connection closed with code ${code}: ${reason}`);
       // Remove connection on close
       for (const [userId, connection] of Array.from(connections.entries())) {
         if (connection.ws === ws) {
@@ -1172,6 +1204,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     });
+    
+    // Handle ping/pong for connection health
+    ws.on('ping', () => {
+      ws.pong();
+    });
+  });
+  
+  // Handle WebSocket server errors
+  wss.on('error', (error) => {
+    console.error('WebSocket Server error:', error);
   });
   
   return httpServer;

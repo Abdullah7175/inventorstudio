@@ -36,11 +36,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         setConnectionError(null);
         
         // Authenticate with the server
-        ws.send(JSON.stringify({
-          type: 'auth',
-          userId: (user as any)?.id || 'anonymous',
-          role: (user as any)?.role || 'client'
-        }));
+        try {
+          ws.send(JSON.stringify({
+            type: 'auth',
+            userId: (user as any)?.id || 'anonymous',
+            role: (user as any)?.role || 'client'
+          }));
+        } catch (error) {
+          console.error('Failed to send auth message:', error);
+        }
         
         options.onConnect?.();
       };
@@ -54,22 +58,33 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         }
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log(`WebSocket disconnected with code ${event.code}: ${event.reason}`);
         setIsConnected(false);
+        
+        // Handle different close codes
+        if (event.code === 4500) {
+          setConnectionError('Internal server error - retrying connection');
+        } else if (event.code !== 1000) {
+          setConnectionError(`Connection closed unexpectedly (${event.code})`);
+        }
+        
         options.onDisconnect?.();
         
-        // Attempt to reconnect after 3 seconds
-        setTimeout(() => {
-          if (isAuthenticated) {
-            connect();
-          }
-        }, 3000);
+        // Only attempt to reconnect for certain error codes and if still authenticated
+        if (isAuthenticated && event.code !== 1000 && event.code !== 1001) {
+          setTimeout(() => {
+            if (isAuthenticated) {
+              console.log('Attempting to reconnect WebSocket...');
+              connect();
+            }
+          }, 3000);
+        }
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setConnectionError('Connection failed');
+        setConnectionError('Connection failed - check network or server');
         setIsConnected(false);
       };
 
@@ -89,9 +104,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+      try {
+        wsRef.current.send(JSON.stringify(message));
+      } catch (error) {
+        console.error('Failed to send WebSocket message:', error);
+        setConnectionError('Failed to send message');
+      }
     } else {
-      console.warn('WebSocket is not connected');
+      console.warn('WebSocket is not connected - message not sent');
+      setConnectionError('Not connected - cannot send message');
     }
   }, []);
 
