@@ -45,7 +45,7 @@ export default function AdminPortal() {
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || user?.role !== "admin")) {
+    if (!isLoading && (!isAuthenticated || (user as any)?.role !== "admin")) {
       toast({
         title: "Unauthorized",
         description: "Admin access required. Redirecting...",
@@ -60,13 +60,13 @@ export default function AdminPortal() {
 
   const { data: projects = [], isLoading: projectsLoading, error: projectsError } = useQuery<ClientProject[]>({
     queryKey: ["/api/admin/projects"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user as any)?.role === "admin",
     retry: false,
   });
 
   const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useQuery<ContactSubmission[]>({
     queryKey: ["/api/admin/contacts"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user as any)?.role === "admin",
     retry: false,
   });
 
@@ -292,7 +292,7 @@ export default function AdminPortal() {
                         <div>
                           <label className="block text-sm font-semibold mb-2">Project Title *</label>
                           <Input
-                            value={newProject.title}
+                            value={newProject.title || ""}
                             onChange={(e) => setNewProject(prev => ({ ...prev, title: e.target.value }))}
                             placeholder="Enter project title"
                             className="bg-white/10 border-border focus:border-primary"
@@ -301,7 +301,7 @@ export default function AdminPortal() {
                         <div>
                           <label className="block text-sm font-semibold mb-2">Client ID *</label>
                           <Input
-                            value={newProject.clientId}
+                            value={newProject.clientId || ""}
                             onChange={(e) => setNewProject(prev => ({ ...prev, clientId: e.target.value }))}
                             placeholder="Client user ID"
                             className="bg-white/10 border-border focus:border-primary"
@@ -310,7 +310,7 @@ export default function AdminPortal() {
                         <div>
                           <label className="block text-sm font-semibold mb-2">Description</label>
                           <Textarea
-                            value={newProject.description}
+                            value={newProject.description || ""}
                             onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
                             placeholder="Project description"
                             className="bg-white/10 border-border focus:border-primary"
@@ -318,7 +318,7 @@ export default function AdminPortal() {
                         </div>
                         <div>
                           <label className="block text-sm font-semibold mb-2">Status</label>
-                          <Select value={newProject.status} onValueChange={(value) => setNewProject(prev => ({ ...prev, status: value }))}>
+                          <Select value={newProject.status || "pending"} onValueChange={(value) => setNewProject(prev => ({ ...prev, status: value }))}>
                             <SelectTrigger className="bg-white/10 border-border focus:border-primary">
                               <SelectValue />
                             </SelectTrigger>
@@ -372,9 +372,9 @@ export default function AdminPortal() {
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3 mb-2">
                                   <h3 className="text-lg font-semibold">{project.title}</h3>
-                                  {getStatusIcon(project.status)}
-                                  <Badge variant="secondary" className={getStatusColor(project.status)}>
-                                    {project.status.replace("-", " ").toUpperCase()}
+                                  {getStatusIcon(project.status || "pending")}
+                                  <Badge variant="secondary" className={getStatusColor(project.status || "pending")}>
+                                    {(project.status || "pending").replace("-", " ").toUpperCase()}
                                   </Badge>
                                 </div>
                                 <p className="text-muted-foreground text-sm mb-3">
@@ -385,12 +385,12 @@ export default function AdminPortal() {
                                 )}
                                 <div className="flex items-center text-sm text-muted-foreground">
                                   <Calendar className="h-4 w-4 mr-1" />
-                                  Created: {formatDate(project.createdAt)} | Updated: {formatDate(project.updatedAt)}
+                                  Created: {formatDate(project.createdAt || new Date())} | Updated: {formatDate(project.updatedAt || new Date())}
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Select
-                                  value={project.status}
+                                  value={project.status || "pending"}
                                   onValueChange={(value) => handleStatusChange(project.id, value)}
                                 >
                                   <SelectTrigger className="w-32 h-8 text-xs">

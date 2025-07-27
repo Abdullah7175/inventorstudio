@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,25 +60,26 @@ export default function Navigation() {
           <div className="hidden md:flex space-x-8">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <motion.a
+                <motion.span
                   whileHover={{ scale: 1.05 }}
                   className={`transition-colors duration-300 cursor-pointer ${
                     isActive(item.href)
                       ? "text-primary"
-                      : "text-white hover:text-primary"
+                      : "text-foreground hover:text-primary"
                   }`}
                 >
                   {item.label}
-                </motion.a>
+                </motion.span>
               </Link>
             ))}
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex space-x-4 items-center">
+            <ThemeToggle />
             {isAuthenticated ? (
               <>
-                {user?.role === "admin" && (
+                {(user as any)?.role === "admin" && (
                   <Link href="/admin">
                     <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-black">
                       Admin
@@ -119,24 +121,27 @@ export default function Navigation() {
               <div className="flex flex-col space-y-6 mt-8">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <motion.a
+                    <motion.span
                       whileHover={{ scale: 1.05, x: 10 }}
                       onClick={() => setIsOpen(false)}
                       className={`block text-lg transition-colors duration-300 cursor-pointer ${
                         isActive(item.href)
                           ? "text-primary"
-                          : "text-white hover:text-primary"
+                          : "text-foreground hover:text-primary"
                       }`}
                     >
                       {item.label}
-                    </motion.a>
+                    </motion.span>
                   </Link>
                 ))}
                 
                 <div className="border-t border-border pt-6 space-y-4">
+                  <div className="flex justify-center">
+                    <ThemeToggle />
+                  </div>
                   {isAuthenticated ? (
                     <>
-                      {user?.role === "admin" && (
+                      {(user as any)?.role === "admin" && (
                         <Link href="/admin">
                           <Button 
                             variant="outline" 
