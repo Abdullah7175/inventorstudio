@@ -19,6 +19,7 @@ import FAQ from "@/pages/FAQ";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import ClientPortal from "@/pages/ClientPortal";
 import AdminPortal from "@/pages/AdminPortal";
+import Recommendations from "@/pages/Recommendations";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/recommendations" component={Recommendations} />
       
       {/* Protected routes - Client Portal */}
       <Route path="/client-portal" component={ClientPortal} />

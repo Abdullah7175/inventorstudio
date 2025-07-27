@@ -28,6 +28,7 @@ export default function Navigation() {
     { label: "Services", href: "/services" },
     { label: "Portfolio", href: "/portfolio" },
     { label: "Blog", href: "/blog" },
+    { label: "Recommendations", href: "/recommendations" },
     { label: "Contact", href: "/contact" },
   ];
 

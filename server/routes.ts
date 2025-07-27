@@ -9,6 +9,9 @@ import {
   insertPortfolioProjectSchema,
   insertBlogPostSchema,
   insertFaqItemSchema,
+  insertUserPreferencesSchema,
+  insertDesignTemplateSchema,
+  insertUserInteractionSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -296,6 +299,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating blog post:", error);
       res.status(400).json({ message: error.message || "Failed to create blog post" });
+    }
+  });
+
+  // Recommendation Engine Routes
+  
+  // Get user preferences
+  app.get("/api/recommendations/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferences = await storage.getUserPreferences(userId);
+      res.json(preferences || null);
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ message: "Failed to fetch preferences" });
+    }
+  });
+
+  // Save/update user preferences
+  app.post("/api/recommendations/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertUserPreferencesSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const preferences = await storage.upsertUserPreferences(validatedData);
+      res.json(preferences);
+    } catch (error: any) {
+      console.error("Error saving user preferences:", error);
+      res.status(400).json({ message: error.message || "Failed to save preferences" });
+    }
+  });
+
+  // Get user recommendations
+  app.get("/api/recommendations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const recommendations = await storage.getUserRecommendations(userId);
+      
+      // If no recommendations exist, generate them
+      if (recommendations.length === 0) {
+        const newRecommendations = await storage.generateRecommendations(userId);
+        return res.json(newRecommendations);
+      }
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+      res.status(500).json({ message: "Failed to fetch recommendations" });
+    }
+  });
+
+  // Generate new recommendations
+  app.post("/api/recommendations/generate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const recommendations = await storage.generateRecommendations(userId);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error generating recommendations:", error);
+      res.status(500).json({ message: "Failed to generate recommendations" });
+    }
+  });
+
+  // Get design templates (public)
+  app.get("/api/design-templates", async (req, res) => {
+    try {
+      const { industry, styleType, category } = req.query;
+      const templates = await storage.getDesignTemplates({
+        industry: industry as string,
+        styleType: styleType as string,
+        category: category as string,
+      });
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching design templates:", error);
+      res.status(500).json({ message: "Failed to fetch design templates" });
+    }
+  });
+
+  // Get popular templates (public)
+  app.get("/api/design-templates/popular", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const templates = await storage.getPopularTemplates(limit);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching popular templates:", error);
+      res.status(500).json({ message: "Failed to fetch popular templates" });
+    }
+  });
+
+  // Record user interaction
+  app.post("/api/recommendations/interact", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertUserInteractionSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const interaction = await storage.createUserInteraction(validatedData);
+      res.json(interaction);
+    } catch (error: any) {
+      console.error("Error recording interaction:", error);
+      res.status(400).json({ message: error.message || "Failed to record interaction" });
+    }
+  });
+
+  // Admin routes for design templates
+  app.post("/api/admin/design-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const validatedData = insertDesignTemplateSchema.parse(req.body);
+      const template = await storage.createDesignTemplate(validatedData);
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error creating design template:", error);
+      res.status(400).json({ message: error.message || "Failed to create design template" });
+    }
+  });
+
+  app.patch("/api/admin/design-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      const template = await storage.updateDesignTemplate(id, req.body);
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating design template:", error);
+      res.status(500).json({ message: "Failed to update design template" });
     }
   });
 

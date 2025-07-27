@@ -105,6 +105,65 @@ export const faqItems = pgTable("faq_items", {
   order: serial("order"),
 });
 
+// User preferences table for design recommendations
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  industry: varchar("industry"), // tech, fashion, healthcare, finance, etc.
+  businessType: varchar("business_type"), // startup, corporate, personal, nonprofit
+  stylePreference: varchar("style_preference"), // modern, classic, minimalist, bold, creative
+  colorScheme: varchar("color_scheme"), // bright, muted, monochrome, vibrant
+  targetAudience: varchar("target_audience"), // young, professional, general, luxury
+  budget: varchar("budget"), // basic, standard, premium, enterprise
+  timeline: varchar("timeline"), // rush, standard, extended
+  features: text("features").array(), // e-commerce, blog, portfolio, booking, etc.
+  inspiration: text("inspiration"), // websites or brands they like
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Design templates/styles table
+export const designTemplates = pgTable("design_templates", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category").notNull(), // web, mobile, branding, marketing
+  styleType: varchar("style_type").notNull(), // modern, classic, minimalist, bold, creative
+  industry: varchar("industry").notNull(),
+  colorSchemes: text("color_schemes").array(),
+  features: text("features").array(),
+  imageUrl: varchar("image_url"),
+  previewUrl: varchar("preview_url"),
+  difficulty: varchar("difficulty").default("medium"), // easy, medium, hard
+  estimatedHours: serial("estimated_hours"),
+  price: varchar("price"), // basic, standard, premium
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User recommendations table
+export const userRecommendations = pgTable("user_recommendations", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  templateId: serial("template_id").references(() => designTemplates.id).notNull(),
+  score: serial("score"), // recommendation score out of 100
+  reason: text("reason"), // why this was recommended
+  viewed: boolean("viewed").default(false),
+  liked: boolean("liked").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User interactions for improving recommendations
+export const userInteractions = pgTable("user_interactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  templateId: serial("template_id").references(() => designTemplates.id),
+  projectId: serial("project_id").references(() => portfolioProjects.id),
+  action: varchar("action").notNull(), // view, like, dislike, save, request_quote
+  data: jsonb("data"), // additional interaction data
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertServiceSchema = createInsertSchema(services).omit({
   id: true,
@@ -137,6 +196,27 @@ export const insertFaqItemSchema = createInsertSchema(faqItems).omit({
   id: true,
 });
 
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDesignTemplateSchema = createInsertSchema(designTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserRecommendationSchema = createInsertSchema(userRecommendations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserInteractionSchema = createInsertSchema(userInteractions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -152,3 +232,11 @@ export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
 export type FaqItem = typeof faqItems.$inferSelect;
 export type InsertFaqItem = z.infer<typeof insertFaqItemSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type DesignTemplate = typeof designTemplates.$inferSelect;
+export type InsertDesignTemplate = z.infer<typeof insertDesignTemplateSchema>;
+export type UserRecommendation = typeof userRecommendations.$inferSelect;
+export type InsertUserRecommendation = z.infer<typeof insertUserRecommendationSchema>;
+export type UserInteraction = typeof userInteractions.$inferSelect;
+export type InsertUserInteraction = z.infer<typeof insertUserInteractionSchema>;
