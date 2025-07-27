@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +35,14 @@ interface Invoice {
   createdAt: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function ClientPortal() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -56,13 +63,13 @@ export default function ClientPortal() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: projects = [], error: projectsError } = useQuery({
+  const { data: projects = [], error: projectsError } = useQuery<Project[]>({
     queryKey: ["/api/client/projects"],
     enabled: isAuthenticated,
     retry: false,
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = [] } = useQuery<Invoice[]>({
     queryKey: ["/api/client/invoices"],
     enabled: isAuthenticated,
     retry: false,
@@ -108,7 +115,6 @@ export default function ClientPortal() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <div className="pt-20 pb-16">
           <div className="mobile-container">
             <div className="flex items-center justify-center py-12">
@@ -123,13 +129,12 @@ export default function ClientPortal() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       <div className="pt-20 pb-16">
         <div className="mobile-container space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
             <h1 className="text-3xl lg:text-4xl font-bold">
-              Welcome back, {user?.firstName || 'Client'}!
+              Welcome back, {(user as any)?.firstName || 'Client'}!
             </h1>
             <p className="text-muted-foreground">
               Manage your projects, track progress, and communicate with your team.

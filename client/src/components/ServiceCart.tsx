@@ -29,16 +29,13 @@ export default function ServiceCart() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: services } = useQuery({
+  const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
   const submitRequestMutation = useMutation({
     mutationFn: async (requestData: any) => {
-      return apiRequest("/api/service-cart/submit", {
-        method: "POST",
-        body: JSON.stringify(requestData),
-      });
+      return apiRequest("POST", "/api/service-cart/submit", requestData);
     },
     onSuccess: () => {
       toast({
