@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
 import { Link } from "wouter";
+import { HeroBackgroundElements } from "./ServiceBackgroundElements";
 
 export default function Hero() {
   const scrollToContact = () => {
@@ -13,6 +14,9 @@ export default function Hero() {
 
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Service-related background elements */}
+      <HeroBackgroundElements />
+      
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-10">
         <motion.div

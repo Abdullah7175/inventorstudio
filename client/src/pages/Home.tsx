@@ -5,6 +5,10 @@ import Hero from "@/components/Hero";
 import ServiceCard from "@/components/ServiceCard";
 import PortfolioItem from "@/components/PortfolioItem";
 import BlogCard from "@/components/BlogCard";
+import ServiceBackgroundElements, { ServicesBackgroundPattern } from "@/components/ServiceBackgroundElements";
+import TechStackBackground from "@/components/TechStackBackground";
+import MarketingElements from "@/components/MarketingElements";
+import DesignElements from "@/components/DesignElements";
 import AnimatedSection from "@/components/AnimatedSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,13 +60,18 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Global service background elements */}
+      <ServiceBackgroundElements density="light" opacity={0.03} />
+      
       <Navigation />
       
       <Hero />
 
       {/* Featured Services */}
-      <AnimatedSection className="py-20">
+      <AnimatedSection className="py-20 relative">
+        {/* Services section specific background */}
+        <ServicesBackgroundPattern />
         <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -94,7 +103,9 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Portfolio Preview */}
-      <AnimatedSection className="py-20 bg-gray-900 bg-opacity-30">
+      <AnimatedSection className="py-20 bg-gray-900 bg-opacity-30 relative">
+        {/* Tech stack background for portfolio */}
+        <TechStackBackground />
         <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -131,7 +142,9 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Testimonials */}
-      <AnimatedSection className="py-20">
+      <AnimatedSection className="py-20 relative">
+        {/* Design elements for testimonials */}
+        <DesignElements />
         <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -186,7 +199,9 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Blog Preview */}
-      <AnimatedSection className="py-20 bg-gray-900 bg-opacity-30">
+      <AnimatedSection className="py-20 bg-gray-900 bg-opacity-30 relative">
+        {/* Marketing elements for blog section */}
+        <MarketingElements />
         <div className="container mx-auto responsive-padding">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">

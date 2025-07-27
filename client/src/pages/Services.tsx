@@ -3,6 +3,8 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ServiceCard from "@/components/ServiceCard";
 import AnimatedSection from "@/components/AnimatedSection";
+import { ServicesBackgroundPattern } from "@/components/ServiceBackgroundElements";
+import TechStackBackground from "@/components/TechStackBackground";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -60,7 +62,9 @@ export default function Services() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Services background pattern */}
+      <ServicesBackgroundPattern />
       <Navigation />
       
       {/* Hero Section */}
@@ -89,7 +93,9 @@ export default function Services() {
       </section>
 
       {/* Process Section */}
-      <section className="py-20 bg-gray-900 bg-opacity-30">
+      <section className="py-20 bg-gray-900 bg-opacity-30 relative">
+        {/* Tech stack background for process section */}
+        <TechStackBackground />
         <div className="container mx-auto px-6">
           <AnimatedSection className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
