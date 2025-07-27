@@ -26,6 +26,7 @@ import ClientPortalNew from "@/pages/ClientPortalNew";
 import Setup from "@/pages/Setup";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
+import RealTimeChatTest from "@/components/RealTimeChatTest";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -54,6 +55,9 @@ function Router() {
       {/* Project Management Routes */}
       <Route path="/projects" component={ProjectManagement} />
       <Route path="/team" component={TeamPortal} />
+      
+      {/* Real-time Chat Test Route */}
+      <Route path="/chat-test" component={RealTimeChatTest} />
       
       {/* Setup Route */}
       <Route path="/setup" component={Setup} />

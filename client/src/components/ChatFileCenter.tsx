@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   MessageSquare, 
   Send, 
@@ -41,12 +43,51 @@ interface ProjectFile {
 export default function ChatFileCenter({ projectId }: { projectId: number }) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [realTimeMessages, setRealTimeMessages] = useState<ProjectMessage[]>([]);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const { data: messages } = useQuery({
+  // WebSocket connection for real-time chat
+  const { isConnected, sendChatMessage, sendTypingIndicator } = useWebSocket({
+    onMessage: (wsMessage) => {
+      if (wsMessage.type === 'chat_message' && wsMessage.projectId === projectId) {
+        const newMessage: ProjectMessage = {
+          id: wsMessage.id,
+          message: wsMessage.message,
+          senderId: wsMessage.senderId,
+          senderRole: wsMessage.senderRole,
+          createdAt: wsMessage.timestamp,
+          attachments: []
+        };
+        setRealTimeMessages(prev => [...prev, newMessage]);
+        
+        // Scroll to bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else if (wsMessage.type === 'typing') {
+        const senderId = wsMessage.senderId;
+        setTypingUsers(prev => {
+          const newTypingUsers = new Set(prev);
+          if (wsMessage.isTyping) {
+            newTypingUsers.add(senderId);
+          } else {
+            newTypingUsers.delete(senderId);
+          }
+          return newTypingUsers;
+        });
+      }
+    }
+  });
+
+  const { data: initialMessages = [] } = useQuery({
     queryKey: ["/api/project-messages", projectId],
     enabled: !!projectId,
   });
@@ -56,14 +97,44 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
     enabled: !!projectId,
   });
 
+  // Combine initial messages with real-time messages
+  const allMessages = [...initialMessages, ...realTimeMessages];
+
+  // Handle typing indicators
+  const handleTyping = (value: string) => {
+    setMessage(value);
+    
+    if (!isTyping && value.length > 0) {
+      setIsTyping(true);
+      sendTypingIndicator(projectId, true);
+    }
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      sendTypingIndicator(projectId, false);
+    }, 1000);
+  };
+
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: any) => {
+      // Send via WebSocket for real-time delivery
+      if (isConnected) {
+        sendChatMessage(projectId, messageData.message);
+      }
+      
+      // Also send to API for persistence
       const formData = new FormData();
       formData.append("projectId", projectId.toString());
       formData.append("message", messageData.message);
       
       if (selectedFiles) {
-        Array.from(selectedFiles).forEach((file, index) => {
+        Array.from(selectedFiles).forEach((file) => {
           formData.append(`files`, file);
         });
       }
@@ -101,8 +172,27 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
       return;
     }
 
+    // Stop typing indicator immediately
+    if (isTyping) {
+      setIsTyping(false);
+      sendTypingIndicator(projectId, false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    }
+
     sendMessageMutation.mutate({ message });
   };
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(event.target.files);
@@ -134,12 +224,12 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
-            {!messages || messages.length === 0 ? (
+            {(!allMessages || allMessages.length === 0) ? (
               <p className="text-center text-muted-foreground py-8">
                 No messages yet. Start a conversation with your team!
               </p>
             ) : (
-              messages.map((msg: ProjectMessage) => (
+              allMessages.map((msg: ProjectMessage) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -179,6 +269,27 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
                 </motion.div>
               ))
             )}
+            
+            {/* Typing Indicators */}
+            {typingUsers.size > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-lg bg-muted mr-8"
+              >
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <span>Someone is typing...</span>
+                </div>
+              </motion.div>
+            )}
+            
+            {/* Reference for auto-scroll */}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Message Input */}
@@ -197,9 +308,10 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
             <div className="flex gap-2">
               <Input
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message..."
+                onChange={(e) => handleTyping(e.target.value)}
+                placeholder={isConnected ? "Type your message..." : "Connecting..."}
                 className="flex-1 mobile-button"
+                disabled={!isConnected}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -225,11 +337,19 @@ export default function ChatFileCenter({ projectId }: { projectId: number }) {
               </Button>
               <Button
                 onClick={handleSendMessage}
-                disabled={sendMessageMutation.isPending}
+                disabled={sendMessageMutation.isPending || !isConnected}
                 className="mobile-button"
               >
                 <Send className="h-4 w-4" />
               </Button>
+            </div>
+            
+            {/* Connection Status */}
+            <div className="flex items-center justify-center gap-2 text-xs">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-muted-foreground">
+                {isConnected ? 'Real-time chat connected' : 'Connecting to chat...'}
+              </span>
             </div>
           </div>
         </CardContent>

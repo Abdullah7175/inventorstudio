@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
@@ -928,5 +929,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server for real-time chat
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store active connections with user info
+  const connections = new Map<string, { ws: WebSocket; userId: string; role: string }>();
+  
+  wss.on('connection', (ws: WebSocket, req) => {
+    console.log('New WebSocket connection');
+    
+    ws.on('message', (message: string) => {
+      try {
+        const data = JSON.parse(message);
+        
+        if (data.type === 'auth') {
+          // Store user connection info
+          connections.set(data.userId, {
+            ws,
+            userId: data.userId,
+            role: data.role
+          });
+          console.log(`User ${data.userId} (${data.role}) connected to WebSocket`);
+        } else if (data.type === 'chat_message') {
+          // Broadcast message to all connected users in the same project
+          const messageData = {
+            type: 'chat_message',
+            projectId: data.projectId,
+            message: data.message,
+            senderId: data.senderId,
+            senderRole: data.senderRole,
+            timestamp: new Date().toISOString(),
+            id: Date.now()
+          };
+          
+          // Send to all connections (in a real app, filter by project access)
+          connections.forEach(({ ws: clientWs }) => {
+            if (clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(JSON.stringify(messageData));
+            }
+          });
+        } else if (data.type === 'typing') {
+          // Broadcast typing indicator
+          const typingData = {
+            type: 'typing',
+            projectId: data.projectId,
+            senderId: data.senderId,
+            senderRole: data.senderRole,
+            isTyping: data.isTyping
+          };
+          
+          connections.forEach(({ ws: clientWs, userId }) => {
+            if (clientWs.readyState === WebSocket.OPEN && userId !== data.senderId) {
+              clientWs.send(JSON.stringify(typingData));
+            }
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      // Remove connection on close
+      for (const [userId, connection] of connections.entries()) {
+        if (connection.ws === ws) {
+          connections.delete(userId);
+          console.log(`User ${userId} disconnected from WebSocket`);
+          break;
+        }
+      }
+    });
+  });
+  
   return httpServer;
 }
