@@ -125,6 +125,17 @@ export default function Navigation() {
                     </Link>
                   )}
 
+                  {/* Project Management */}
+                  <Link href="/projects">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
+                    >
+                      Projects
+                    </Button>
+                  </Link>
+
                   {/* Client Portal */}
                   <Link href="/client-portal">
                     <Button 

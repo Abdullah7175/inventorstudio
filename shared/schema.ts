@@ -10,6 +10,7 @@ import {
   serial,
   integer,
 } from "drizzle-orm/pg-core";
+
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -189,6 +190,183 @@ export const insertPartnershipSchema = createInsertSchema(partnerships).omit({
 });
 
 // Types
+// Project Management System Tables
+
+// Service cart/bucket for clients
+export const serviceCarts = pgTable("service_carts", {
+  id: serial("id").primaryKey(),
+  clientId: varchar("client_id").notNull(),
+  serviceIds: text("service_ids").array(),
+  projectName: varchar("project_name").notNull(),
+  notes: text("notes"),
+  budget: varchar("budget"),
+  timeline: varchar("timeline"),
+  files: text("files").array(), // File URLs or paths
+  status: varchar("status").default("pending"), // pending, approved, rejected, in-progress, completed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Project requests (from cart to admin review)
+export const projectRequests = pgTable("project_requests", {
+  id: serial("id").primaryKey(),
+  cartId: integer("cart_id").references(() => serviceCarts.id),
+  clientId: varchar("client_id").notNull(),
+  projectName: varchar("project_name").notNull(),
+  serviceIds: text("service_ids").array(),
+  description: text("description"),
+  budget: varchar("budget"),
+  timeline: varchar("timeline"),
+  attachedFiles: text("attached_files").array(),
+  status: varchar("status").default("pending"), // pending, approved, rejected, in-review
+  adminNotes: text("admin_notes"),
+  assignedTeamId: varchar("assigned_team_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Project tasks (Kanban board style)
+export const projectTasks = pgTable("project_tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projectRequests.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  assignedTo: varchar("assigned_to"), // team member ID
+  status: varchar("status").default("todo"), // todo, in-progress, review, done
+  priority: varchar("priority").default("medium"), // low, medium, high
+  dueDate: timestamp("due_date"),
+  files: text("files").array(),
+  position: integer("position").default(0), // for Kanban ordering
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Team members (separate from users for security)
+export const teamMembers = pgTable("team_members", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  name: varchar("name").notNull(),
+  role: varchar("role").notNull(), // developer, designer, manager
+  skills: text("skills").array(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Project files with role-based access
+export const projectFiles = pgTable("project_files", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projectRequests.id),
+  fileName: varchar("file_name").notNull(),
+  filePath: varchar("file_path").notNull(),
+  fileType: varchar("file_type"), // image, document, archive
+  uploadedBy: varchar("uploaded_by").notNull(),
+  uploadedByRole: varchar("uploaded_by_role").notNull(), // client, admin, team
+  isVisible: boolean("is_visible").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Invoicing system
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projectRequests.id),
+  clientId: varchar("client_id").notNull(),
+  invoiceNumber: varchar("invoice_number").notNull().unique(),
+  serviceBreakdown: text("service_breakdown"), // JSON string
+  subtotal: varchar("subtotal"),
+  tax: varchar("tax"),
+  discount: varchar("discount"),
+  total: varchar("total").notNull(),
+  status: varchar("status").default("unpaid"), // unpaid, paid, pending, overdue
+  dueDate: timestamp("due_date"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Chat/messaging system
+export const projectMessages = pgTable("project_messages", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projectRequests.id),
+  senderId: varchar("sender_id").notNull(),
+  senderRole: varchar("sender_role").notNull(), // client, admin, team
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").default(false), // true = admin/team only
+  attachments: text("attachments").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Project feedback and ratings
+export const projectFeedback = pgTable("project_feedback", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projectRequests.id),
+  clientId: varchar("client_id").notNull(),
+  rating: integer("rating"), // 1-5 stars
+  feedback: text("feedback"),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations
+export const serviceCartsRelations = relations(serviceCarts, ({ many }) => ({
+  requests: many(projectRequests),
+}));
+
+export const projectRequestsRelations = relations(projectRequests, ({ one, many }) => ({
+  cart: one(serviceCarts, { fields: [projectRequests.cartId], references: [serviceCarts.id] }),
+  tasks: many(projectTasks),
+  files: many(projectFiles),
+  messages: many(projectMessages),
+  invoice: one(invoices, { fields: [projectRequests.id], references: [invoices.projectId] }),
+  feedback: one(projectFeedback, { fields: [projectRequests.id], references: [projectFeedback.projectId] }),
+}));
+
+export const projectTasksRelations = relations(projectTasks, ({ one }) => ({
+  project: one(projectRequests, { fields: [projectTasks.projectId], references: [projectRequests.id] }),
+}));
+
+export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
+  project: one(projectRequests, { fields: [projectFiles.projectId], references: [projectRequests.id] }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  project: one(projectRequests, { fields: [invoices.projectId], references: [projectRequests.id] }),
+}));
+
+export const projectMessagesRelations = relations(projectMessages, ({ one }) => ({
+  project: one(projectRequests, { fields: [projectMessages.projectId], references: [projectRequests.id] }),
+}));
+
+export const projectFeedbackRelations = relations(projectFeedback, ({ one }) => ({
+  project: one(projectRequests, { fields: [projectFeedback.projectId], references: [projectRequests.id] }),
+}));
+
+// Insert schemas for forms
+export const insertServiceCartSchema = createInsertSchema(serviceCarts);
+export const insertProjectRequestSchema = createInsertSchema(projectRequests);
+export const insertProjectTaskSchema = createInsertSchema(projectTasks);
+export const insertTeamMemberSchema = createInsertSchema(teamMembers);
+export const insertProjectFileSchema = createInsertSchema(projectFiles);
+export const insertInvoiceSchema = createInsertSchema(invoices);
+export const insertProjectMessageSchema = createInsertSchema(projectMessages);
+export const insertProjectFeedbackSchema = createInsertSchema(projectFeedback);
+
+// Types
+export type ServiceCart = typeof serviceCarts.$inferSelect;
+export type InsertServiceCart = z.infer<typeof insertServiceCartSchema>;
+export type ProjectRequest = typeof projectRequests.$inferSelect;
+export type InsertProjectRequest = z.infer<typeof insertProjectRequestSchema>;
+export type ProjectTask = typeof projectTasks.$inferSelect;
+export type InsertProjectTask = z.infer<typeof insertProjectTaskSchema>;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type ProjectFile = typeof projectFiles.$inferSelect;
+export type InsertProjectFile = z.infer<typeof insertProjectFileSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type ProjectMessage = typeof projectMessages.$inferSelect;
+export type InsertProjectMessage = z.infer<typeof insertProjectMessageSchema>;
+export type ProjectFeedback = typeof projectFeedback.$inferSelect;
+export type InsertProjectFeedback = z.infer<typeof insertProjectFeedbackSchema>;
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Service = typeof services.$inferSelect;

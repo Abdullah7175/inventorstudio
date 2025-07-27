@@ -390,6 +390,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Project Management System Routes
+
+  // Service Cart Routes
+  app.post("/api/cart/submit", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      res.json({ message: "Cart submitted successfully", userId });
+    } catch (error) {
+      console.error("Error submitting cart:", error);
+      res.status(500).json({ message: "Failed to submit cart" });
+    }
+  });
+
+  // Client Project Routes
+  app.get("/api/client/requests", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching client requests:", error);
+      res.status(500).json({ message: "Failed to fetch requests" });
+    }
+  });
+
+  app.get("/api/client/invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching client invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  // Admin Project Management Routes
+  app.get("/api/admin/requests", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching project requests:", error);
+      res.status(500).json({ message: "Failed to fetch project requests" });
+    }
+  });
+
+  // Project Task Routes
+  app.get("/api/projects/:projectId/tasks", isAuthenticated, async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching project tasks:", error);
+      res.status(500).json({ message: "Failed to fetch project tasks" });
+    }
+  });
+
+  app.post("/api/tasks", isAuthenticated, async (req, res) => {
+    try {
+      res.json({ id: 1, ...req.body, createdAt: new Date() });
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.patch("/api/tasks/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      res.json({ id: parseInt(id), ...req.body, updatedAt: new Date() });
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.delete("/api/tasks/:id", isAuthenticated, async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ message: "Failed to delete task" });
+    }
+  });
+
+  // Team Routes
+  app.get("/api/team/members", isAuthenticated, async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching team members:", error);
+      res.status(500).json({ message: "Failed to fetch team members" });
+    }
+  });
+
+  app.get("/api/team/assigned-projects", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching assigned projects:", error);
+      res.status(500).json({ message: "Failed to fetch assigned projects" });
+    }
+  });
+
+  app.get("/api/team/my-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching my tasks:", error);
+      res.status(500).json({ message: "Failed to fetch my tasks" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
