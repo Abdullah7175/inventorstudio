@@ -25,7 +25,7 @@ import TeamPortal from "@/pages/TeamPortal";
 import ClientPortalNew from "@/pages/ClientPortalNew";
 import Setup from "@/pages/Setup";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
-import MobileNavigation from "@/components/MobileNavigation";
+import Navigation from "@/components/Navigation";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -84,13 +84,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="mobile-first min-h-screen">
-          <MobileNavigation />
-          <main className="pt-14 sm:pt-16">
+        <div className="min-h-screen bg-background text-foreground">
+          <Navigation />
+          <main>
             <Router />
           </main>
-          <Toaster />
           <AddToHomeScreen />
+          <Toaster />
         </div>
       </TooltipProvider>
     </QueryClientProvider>
