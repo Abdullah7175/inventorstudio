@@ -12,11 +12,12 @@ interface UseWebSocketOptions {
   onDisconnect?: () => void;
 }
 
-export function useWebSocket(options: UseWebSocketOptions = {}) {
+export function useWebSocket(path: string = '', options: UseWebSocketOptions = {}) {
   const { user, isAuthenticated } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [lastMessage, setLastMessage] = useState<string | null>(null);
 
   const connect = useCallback(() => {
     if (!isAuthenticated || !user) {
@@ -25,7 +26,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     try {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const wsUrl = `${protocol}//${window.location.host}/ws${path}`;
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -51,6 +52,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       ws.onmessage = (event) => {
         try {
+          setLastMessage(event.data);
           const message = JSON.parse(event.data);
           options.onMessage?.(message);
         } catch (error) {
@@ -140,15 +142,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     if (isAuthenticated) {
       connect();
     }
-
-    return () => {
-      disconnect();
-    };
+    return disconnect;
   }, [isAuthenticated, connect, disconnect]);
 
   return {
     isConnected,
     connectionError,
+    lastMessage,
     sendMessage,
     sendChatMessage,
     sendTypingIndicator,

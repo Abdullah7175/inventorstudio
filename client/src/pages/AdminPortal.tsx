@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import KanbanBoard from "@/components/KanbanBoard";
 import BlogManager from "@/components/BlogManager";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import OnboardingTour, { useOnboarding } from "@/components/OnboardingTour";
 
 interface ProjectRequest {
   id: number;
@@ -51,8 +53,10 @@ interface TeamMember {
 }
 
 export default function AdminPortal() {
+  const [activeTab, setActiveTab] = useState("dashboard");
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { isOpen: isTourOpen, startTour, closeTour } = useOnboarding();
   const [selectedRequest, setSelectedRequest] = useState<ProjectRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [assignedTeam, setAssignedTeam] = useState("");
@@ -63,7 +67,7 @@ export default function AdminPortal() {
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || user?.role !== "admin")) {
+    if (!isLoading && (!isAuthenticated || (user as any)?.role !== "admin")) {
       toast({
         title: "Access Denied",
         description: "You don't have permission to access this area.",
@@ -78,19 +82,19 @@ export default function AdminPortal() {
 
   const { data: requests = [], error: requestsError } = useQuery({
     queryKey: ["/api/admin/project-requests"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user as any)?.role === "admin",
     retry: false,
   });
 
   const { data: teamMembers = [] } = useQuery({
     queryKey: ["/api/admin/team-members"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user as any)?.role === "admin",
     retry: false,
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ["/api/admin/all-projects"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user as any)?.role === "admin",
     retry: false,
   });
 
@@ -269,8 +273,12 @@ export default function AdminPortal() {
           </div>
 
           {/* Admin Tabs */}
-          <Tabs defaultValue="requests" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 mobile-button">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 mobile-button">
+              <TabsTrigger value="dashboard" className="text-xs lg:text-sm" data-tour="dashboard-tab">
+                <Settings className="h-4 w-4 mr-1 lg:mr-2" />
+                Dashboard
+              </TabsTrigger>
               <TabsTrigger value="requests" className="text-xs lg:text-sm">
                 <FileText className="h-4 w-4 mr-1 lg:mr-2" />
                 Requests
@@ -297,6 +305,11 @@ export default function AdminPortal() {
               </TabsTrigger>
             </TabsList>
 
+            {/* Analytics Dashboard Tab */}
+            <TabsContent value="dashboard" className="space-y-6" data-tour="analytics-content">
+              <AnalyticsDashboard />
+            </TabsContent>
+
             {/* Request Review Tab */}
             <TabsContent value="requests" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -306,13 +319,13 @@ export default function AdminPortal() {
                     <CardTitle>Pending Requests</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {requests.filter((r: ProjectRequest) => r.status === "pending").length === 0 ? (
+                    {(requests as any[]).filter((r: ProjectRequest) => r.status === "pending").length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         No pending requests.
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {requests
+                        {(requests as any[])
                           .filter((r: ProjectRequest) => r.status === "pending")
                           .map((request: ProjectRequest) => (
                           <div
@@ -455,13 +468,13 @@ export default function AdminPortal() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {teamMembers.length === 0 ? (
+                  {(teamMembers as any[]).length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
                       No team members found.
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {teamMembers.map((member: TeamMember) => (
+                      {(teamMembers as any[]).map((member: TeamMember) => (
                         <div
                           key={member.id}
                           className="p-4 border border-border rounded-lg"
@@ -549,7 +562,7 @@ export default function AdminPortal() {
                             <SelectValue placeholder="Select project" />
                           </SelectTrigger>
                           <SelectContent>
-                            {allProjects.map((project: any) => (
+                            {(allProjects as any[]).map((project: any) => (
                               <SelectItem key={project.id} value={project.id.toString()}>
                                 {project.projectName}
                               </SelectItem>
@@ -603,6 +616,34 @@ export default function AdminPortal() {
               <BlogManager />
             </TabsContent>
           </Tabs>
+          
+          {/* Onboarding Tour */}
+          <OnboardingTour
+            isOpen={isTourOpen}
+            onClose={closeTour}
+            steps={[
+              {
+                id: "dashboard-tab",
+                title: "Analytics Dashboard",
+                description: "View real-time project metrics, team performance, and business insights.",
+                target: "[data-tour='dashboard-tab']",
+                position: "bottom"
+              },
+              {
+                id: "analytics-content",
+                title: "Comprehensive Analytics",
+                description: "Track active projects, monitor team productivity, and get detailed performance reports.",
+                target: "[data-tour='analytics-content']",
+                position: "top"
+              }
+            ]}
+            onComplete={() => {
+              toast({
+                title: "Welcome to Admin Portal!",
+                description: "You're now ready to manage projects efficiently.",
+              });
+            }}
+          />
         </div>
       </div>
       <Footer />

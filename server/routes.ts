@@ -307,6 +307,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics API Routes
+  app.get("/api/analytics/dashboard", isAuthenticated, requireRole(["admin"]), async (req: any, res) => {
+    try {
+      // Mock analytics data (replace with real database queries)
+      const analytics = {
+        totalProjects: 12,
+        activeProjects: 8,
+        completedProjects: 4,
+        totalClients: 15,
+        totalMessages: 342,
+        totalTasks: 87,
+        completedTasks: 65,
+        recentActivity: [
+          {
+            id: 1,
+            type: "project_created",
+            description: "New e-commerce project started",
+            timestamp: new Date().toISOString(),
+            user: "John Smith"
+          },
+          {
+            id: 2,
+            type: "task_completed",
+            description: "Homepage design completed",
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            user: "Sarah Johnson"
+          },
+          {
+            id: 3,
+            type: "message_sent",
+            description: "Client feedback received",
+            timestamp: new Date(Date.now() - 7200000).toISOString(),
+            user: "Mike Davis"
+          }
+        ],
+        projectStats: [
+          {
+            name: "E-commerce Platform",
+            progress: 75,
+            status: "in-progress",
+            dueDate: new Date(Date.now() + 14 * 24 * 3600000).toISOString()
+          },
+          {
+            name: "Mobile App Design",
+            progress: 100,
+            status: "completed",
+            dueDate: new Date(Date.now() - 7 * 24 * 3600000).toISOString()
+          },
+          {
+            name: "Brand Identity",
+            progress: 45,
+            status: "in-progress",
+            dueDate: new Date(Date.now() + 21 * 24 * 3600000).toISOString()
+          }
+        ]
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Analytics fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
   // FAQ
   app.get("/api/faq", async (req, res) => {
     try {

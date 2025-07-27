@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ArrowRight, User, LogOut, Shield, Home, Info, Briefcase, FolderOpen, MessageSquare, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
