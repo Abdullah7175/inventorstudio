@@ -6,6 +6,8 @@ import {
   clientProjects,
   contactSubmissions,
   faqItems,
+  certifications,
+  partnerships,
   type User,
   type UpsertUser,
   type Service,
@@ -20,6 +22,10 @@ import {
   type InsertContactSubmission,
   type FaqItem,
   type InsertFaqItem,
+  type Certification,
+  type InsertCertification,
+  type Partnership,
+  type InsertPartnership,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -259,6 +265,84 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFaqItem(id: number): Promise<void> {
     await db.delete(faqItems).where(eq(faqItems.id, id));
+  }
+
+  // Certifications
+  async getCertifications(): Promise<Certification[]> {
+    return await db.select().from(certifications).orderBy(certifications.order, certifications.createdAt);
+  }
+
+  async getCertificationById(id: number): Promise<Certification | undefined> {
+    const [cert] = await db.select().from(certifications).where(eq(certifications.id, id));
+    return cert;
+  }
+
+  async createCertification(certification: InsertCertification): Promise<Certification> {
+    const [newCert] = await db.insert(certifications).values(certification).returning();
+    return newCert;
+  }
+
+  async updateCertification(id: number, certification: Partial<InsertCertification>): Promise<Certification> {
+    const [updatedCert] = await db
+      .update(certifications)
+      .set({ ...certification, updatedAt: new Date() })
+      .where(eq(certifications.id, id))
+      .returning();
+    return updatedCert;
+  }
+
+  async deleteCertification(id: number): Promise<void> {
+    await db.delete(certifications).where(eq(certifications.id, id));
+  }
+
+  // Partnerships
+  async getPartnerships(): Promise<Partnership[]> {
+    return await db.select().from(partnerships).where(eq(partnerships.status, "active")).orderBy(partnerships.order, partnerships.createdAt);
+  }
+
+  async getPartnershipById(id: number): Promise<Partnership | undefined> {
+    const [partnership] = await db.select().from(partnerships).where(eq(partnerships.id, id));
+    return partnership;
+  }
+
+  async createPartnership(partnership: InsertPartnership): Promise<Partnership> {
+    const [newPartnership] = await db.insert(partnerships).values(partnership).returning();
+    return newPartnership;
+  }
+
+  async updatePartnership(id: number, partnership: Partial<InsertPartnership>): Promise<Partnership> {
+    const [updatedPartnership] = await db
+      .update(partnerships)
+      .set({ ...partnership, updatedAt: new Date() })
+      .where(eq(partnerships.id, id))
+      .returning();
+    return updatedPartnership;
+  }
+
+  async deletePartnership(id: number): Promise<void> {
+    await db.delete(partnerships).where(eq(partnerships.id, id));
+  }
+
+  // Admin user management
+  async createAdminUser(): Promise<void> {
+    // Create the dedicated admin user with pre-reserved credentials
+    const adminExists = await this.getUserByEmail("ebadm7251@gmail.com");
+    
+    if (!adminExists) {
+      await this.upsertUser({
+        id: "admin-ebadm7251",
+        email: "ebadm7251@gmail.com",
+        firstName: "Admin",
+        lastName: "User",
+        role: "admin",
+        profileImageUrl: null,
+      });
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 }
 

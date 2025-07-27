@@ -16,6 +16,8 @@ import Blog from "@/pages/Blog";
 import Contact from "@/pages/Contact";
 import FAQ from "@/pages/FAQ";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import Certifications from "@/pages/Certifications";
+import Partnerships from "@/pages/Partnerships";
 import ClientPortal from "@/pages/ClientPortal";
 import AdminPortal from "@/pages/AdminPortal";
 
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/services" component={Services} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/blog" component={Blog} />
+      <Route path="/certifications" component={Certifications} />
+      <Route path="/partnerships" component={Partnerships} />
       <Route path="/contact" component={Contact} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

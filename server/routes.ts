@@ -283,19 +283,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced blog management routes for SEO team
   app.post("/api/admin/blog", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
-      if (user?.role !== "admin") {
-        return res.status(403).json({ message: "Admin access required" });
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== "admin" && user.role !== "editor")) {
+        return res.status(403).json({ message: "Insufficient permissions" });
       }
 
-      const validatedData = insertBlogPostSchema.parse(req.body);
-      const post = await storage.createBlogPost(validatedData);
-      res.json(post);
+      const blogPost = insertBlogPostSchema.parse(req.body);
+      const newPost = await storage.createBlogPost({
+        ...blogPost,
+        authorId: userId,
+        publishedAt: blogPost.published ? new Date() : null,
+      });
+      
+      res.json(newPost);
     } catch (error: any) {
       console.error("Error creating blog post:", error);
       res.status(400).json({ message: error.message || "Failed to create blog post" });
+    }
+  });
+
+  app.put("/api/admin/blog/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== "admin" && user.role !== "editor")) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // If publishing for the first time, set publishedAt
+      if (updates.published && !updates.publishedAt) {
+        updates.publishedAt = new Date();
+      }
+      
+      const updatedPost = await storage.updateBlogPost(id, updates);
+      res.json(updatedPost);
+    } catch (error: any) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ message: "Failed to update blog post" });
+    }
+  });
+
+  app.delete("/api/admin/blog/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deleteBlogPost(id);
+      res.json({ message: "Blog post deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ message: "Failed to delete blog post" });
+    }
+  });
+
+  // Get all blog posts for admin (including unpublished)
+  app.get("/api/admin/blog", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== "admin" && user.role !== "editor")) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const posts = await storage.getBlogPosts(); // All posts regardless of published status
+      res.json(posts);
+    } catch (error: any) {
+      console.error("Error fetching admin blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  // Certifications routes
+  app.get("/api/certifications", async (req, res) => {
+    try {
+      const certifications = await storage.getCertifications();
+      res.json(certifications);
+    } catch (error) {
+      console.error("Error fetching certifications:", error);
+      res.status(500).json({ message: "Failed to fetch certifications" });
+    }
+  });
+
+  // Partnerships routes
+  app.get("/api/partnerships", async (req, res) => {
+    try {
+      const partnerships = await storage.getPartnerships();
+      res.json(partnerships);
+    } catch (error) {
+      console.error("Error fetching partnerships:", error);
+      res.status(500).json({ message: "Failed to fetch partnerships" });
     }
   });
 

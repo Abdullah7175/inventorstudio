@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
+import BlogManagement from "@/components/BlogManagement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,11 +28,14 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  BarChart3
 } from "lucide-react";
 import { type ClientProject, type ContactSubmission, type InsertClientProject } from "@shared/schema";
 
 export default function AdminPortal() {
+  const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -45,7 +49,7 @@ export default function AdminPortal() {
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || user?.role !== "admin")) {
+    if (!isLoading && (!isAuthenticated || (user && 'role' in user && user.role !== "admin"))) {
       toast({
         title: "Unauthorized",
         description: "Admin access required. Redirecting...",
@@ -60,13 +64,13 @@ export default function AdminPortal() {
 
   const { data: projects = [], isLoading: projectsLoading, error: projectsError } = useQuery<ClientProject[]>({
     queryKey: ["/api/admin/projects"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user && 'role' in user && user.role === "admin",
     retry: false,
   });
 
   const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useQuery<ContactSubmission[]>({
     queryKey: ["/api/admin/contacts"],
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user && 'role' in user && user.role === "admin",
     retry: false,
   });
 
@@ -192,7 +196,7 @@ export default function AdminPortal() {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "admin") {
+  if (!isAuthenticated || !user || !('role' in user) || user.role !== "admin") {
     return null; // Will redirect
   }
 
@@ -260,8 +264,16 @@ export default function AdminPortal() {
       {/* Main Content */}
       <section className="pb-20">
         <div className="container mx-auto px-6">
-          <Tabs defaultValue="projects" className="space-y-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="overview" className="space-y-8">
             <TabsList className="glass-effect border-border">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-black">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="blog" className="data-[state=active]:bg-primary data-[state=active]:text-black">
+                <FileText className="h-4 w-4 mr-2" />
+                Blog Management
+              </TabsTrigger>
               <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-black">
                 <FolderOpen className="h-4 w-4 mr-2" />
                 Projects ({projects.length})
@@ -271,6 +283,102 @@ export default function AdminPortal() {
                 Contacts ({contacts.length})
               </TabsTrigger>
             </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview">
+              <AnimatedSection>
+                <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <Card className="glass-effect border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FolderOpen className="h-5 w-5" />
+                        Recent Projects
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {projects.slice(0, 3).map((project) => (
+                          <div key={project.id} className="flex justify-between items-center">
+                            <span className="text-sm truncate">{project.title}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {project.status}
+                            </Badge>
+                          </div>
+                        ))}
+                        {projects.length === 0 && (
+                          <p className="text-muted-foreground text-sm">No projects yet</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-effect border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5" />
+                        Recent Contacts
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {contacts.slice(0, 3).map((contact) => (
+                          <div key={contact.id} className="flex justify-between items-center">
+                            <span className="text-sm truncate">{contact.name}</span>
+                            <Badge variant={contact.responded ? "default" : "secondary"} className="text-xs">
+                              {contact.responded ? "Responded" : "Pending"}
+                            </Badge>
+                          </div>
+                        ))}
+                        {contacts.length === 0 && (
+                          <p className="text-muted-foreground text-sm">No contacts yet</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-effect border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Quick Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <Button 
+                        onClick={() => setActiveTab("blog")} 
+                        variant="outline" 
+                        className="w-full justify-start"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Create Blog Post
+                      </Button>
+                      <Button 
+                        onClick={() => setActiveTab("projects")} 
+                        variant="outline" 
+                        className="w-full justify-start"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Project
+                      </Button>
+                      <Button 
+                        onClick={() => setActiveTab("contacts")} 
+                        variant="outline" 
+                        className="w-full justify-start"
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        View Contacts
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </AnimatedSection>
+            </TabsContent>
+
+            {/* Blog Management Tab */}
+            <TabsContent value="blog">
+              <BlogManagement />
+            </TabsContent>
 
             {/* Projects Tab */}
             <TabsContent value="projects">
@@ -292,7 +400,7 @@ export default function AdminPortal() {
                         <div>
                           <label className="block text-sm font-semibold mb-2">Project Title *</label>
                           <Input
-                            value={newProject.title}
+                            value={newProject.title || ""}
                             onChange={(e) => setNewProject(prev => ({ ...prev, title: e.target.value }))}
                             placeholder="Enter project title"
                             className="bg-white/10 border-border focus:border-primary"
@@ -301,7 +409,7 @@ export default function AdminPortal() {
                         <div>
                           <label className="block text-sm font-semibold mb-2">Client ID *</label>
                           <Input
-                            value={newProject.clientId}
+                            value={newProject.clientId || ""}
                             onChange={(e) => setNewProject(prev => ({ ...prev, clientId: e.target.value }))}
                             placeholder="Client user ID"
                             className="bg-white/10 border-border focus:border-primary"
@@ -372,9 +480,9 @@ export default function AdminPortal() {
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3 mb-2">
                                   <h3 className="text-lg font-semibold">{project.title}</h3>
-                                  {getStatusIcon(project.status)}
-                                  <Badge variant="secondary" className={getStatusColor(project.status)}>
-                                    {project.status.replace("-", " ").toUpperCase()}
+                                  {getStatusIcon(project.status || "pending")}
+                                  <Badge variant="secondary" className={getStatusColor(project.status || "pending")}>
+                                    {(project.status || "pending").replace("-", " ").toUpperCase()}
                                   </Badge>
                                 </div>
                                 <p className="text-muted-foreground text-sm mb-3">
@@ -390,7 +498,7 @@ export default function AdminPortal() {
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Select
-                                  value={project.status}
+                                  value={project.status || "pending"}
                                   onValueChange={(value) => handleStatusChange(project.id, value)}
                                 >
                                   <SelectTrigger className="w-32 h-8 text-xs">
