@@ -72,7 +72,7 @@ export default function About() {
               About <span className="gradient-text">Our Studio</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Founded with a vision to transform digital experiences, Inventer Design Studio has been at the forefront of innovation, delivering exceptional solutions across the globe.
+              Founded with a vision to transform digital experiences, Inventor Design Studio has been at the forefront of innovation, delivering exceptional solutions across the globe.
             </p>
           </AnimatedSection>
         </div>

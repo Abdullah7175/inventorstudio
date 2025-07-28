@@ -40,7 +40,7 @@ export default function Home() {
       company: "TechStart",
       avatar: "SM",
       rating: 5,
-      content: "Inventer Design Studio transformed our online presence completely. Their attention to detail and innovative approach exceeded our expectations."
+      content: "Inventor Design Studio transformed our online presence completely. Their attention to detail and innovative approach exceeded our expectations."
     },
     {
       name: "Michael Johnson",

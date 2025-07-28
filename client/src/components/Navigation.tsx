@@ -5,6 +5,7 @@ import { Menu, X, ArrowRight, User, LogOut, Shield, Home, Info, Briefcase, Folde
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import ThemeSwitcher from "./ThemeSwitcher";
+import { InventorDesignStudioLogo, IDSLogoSimple } from "@/assets/logo";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -75,18 +76,13 @@ export default function Navigation() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center space-x-2 cursor-pointer group"
+                className="cursor-pointer"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/60 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-sm">I</span>
-                </div>
                 <div className="hidden sm:block">
-                  <div className="text-lg font-bold text-white group-hover:text-primary transition-colors">
-                    Inventer Design
-                  </div>
-                  <div className="text-xs text-gray-400 -mt-1">
-                    Studio
-                  </div>
+                  <InventorDesignStudioLogo className="text-white" />
+                </div>
+                <div className="sm:hidden">
+                  <IDSLogoSimple />
                 </div>
               </motion.div>
             </Link>

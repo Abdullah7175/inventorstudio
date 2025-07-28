@@ -47,7 +47,7 @@ export default function Landing() {
             className="text-5xl md:text-7xl font-bold mb-6"
           >
             Welcome to{" "}
-            <span className="gradient-text">Inventer Design Studio</span>
+            <span className="gradient-text">Inventor Design Studio</span>
           </motion.h1>
 
           <motion.p

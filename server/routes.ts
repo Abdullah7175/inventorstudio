@@ -1317,6 +1317,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Add error handler for the WebSocket connection
     ws.on('error', (error) => {
       console.error('WebSocket connection error:', error);
+      // Clean up connection on error
+      for (const [userId, connection] of Array.from(connections.entries())) {
+        if (connection.ws === ws) {
+          connections.delete(userId);
+          break;
+        }
+      }
     });
     
     ws.on('message', (messageBuffer) => {
@@ -1351,7 +1358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           // Send to all connections (in a real app, filter by project access)
-          connections.forEach(({ ws: clientWs }) => {
+          connections.forEach(({ ws: clientWs, userId }) => {
             try {
               if (clientWs.readyState === WebSocket.OPEN) {
                 clientWs.send(JSON.stringify(messageData));
