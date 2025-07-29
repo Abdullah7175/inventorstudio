@@ -185,6 +185,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/portfolio/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Check if ID is valid number
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
       const project = await storage.getProjectById(id);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
@@ -410,6 +416,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/client/projects/:id", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
       const project = await storage.getClientProjectById(id);
       
       if (!project) {
@@ -432,6 +443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/client/projects/:id/feedback", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
       const { feedback } = req.body;
       const userId = req.user.claims.sub;
 
