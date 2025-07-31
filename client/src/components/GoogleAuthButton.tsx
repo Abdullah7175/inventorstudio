@@ -39,10 +39,18 @@ export function GoogleAuthButton({ isAuthenticated, className }: GoogleAuthButto
     setLoading(true);
     try {
       await signOut(auth);
+      // Also clear any temp admin session
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      
       toast({
         title: "Signed Out",
         description: "Successfully signed out",
       });
+      
+      // Force page reload to clear all cached data
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     } catch (error: any) {
       console.error("Sign-out error:", error);
       toast({

@@ -105,8 +105,17 @@ export async function setupGoogleAuth(app: Express) {
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    // For Firebase, logout is handled client-side
-    // We just need to acknowledge the logout
+    // Clear temp admin session if exists
+    if (req.session) {
+      (req.session as any).tempAdmin = undefined;
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destruction error:", err);
+        }
+      });
+    }
+    
+    res.clearCookie("connect.sid");
     res.json({ message: "Logged out successfully" });
   });
 }

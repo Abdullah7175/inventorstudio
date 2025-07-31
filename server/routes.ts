@@ -3,27 +3,24 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupGoogleAuth, isAuthenticated } from "./googleAuth";
-import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
 
-// Role-based middleware
+// Role-based access control middleware
 const requireRole = (roles: string[]) => {
-  return async (req: any, res: any, next: any) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (!user || !roles.includes(user.role)) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      req.currentUser = user;
-      next();
-    } catch (error) {
-      console.error("Role check error:", error);
-      res.status(500).json({ message: "Authorization check failed" });
+  return (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
+    
+    const userRole = req.user.role || req.user.claims?.role;
+    if (!roles.includes(userRole)) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    
+    next();
   };
 };
+
+import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
 import {
   insertContactSubmissionSchema,
   insertClientProjectSchema,
@@ -132,10 +129,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin user management routes
+  app.get("/api/admin/users", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.put("/api/admin/users/:userId/role", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+      
+      if (!["client", "editor", "admin"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const user = await storage.updateUserRole(userId, role);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
   // Quick setup endpoint - set user role (for development)
   app.post("/api/setup/role", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.claims?.sub || req.user.id;
       const { role } = req.body; // "admin", "team", or "client"
       
       if (!["admin", "team", "client"].includes(role)) {
@@ -157,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Public routes
   
-  // Services
+  // Services - Public and Admin
   app.get("/api/services", async (req, res) => {
     try {
       const services = await storage.getServices();
@@ -165,6 +190,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching services:", error);
       res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+
+  app.post("/api/services", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const service = await storage.createService(req.body);
+      res.json(service);
+    } catch (error) {
+      console.error("Error creating service:", error);
+      res.status(500).json({ message: "Failed to create service" });
+    }
+  });
+
+  app.put("/api/services/:id", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const service = await storage.updateService(id, req.body);
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating service:", error);
+      res.status(500).json({ message: "Failed to update service" });
+    }
+  });
+
+  app.delete("/api/services/:id", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteService(id);
+      res.json({ message: "Service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Failed to delete service" });
     }
   });
 
@@ -178,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Portfolio
+  // Portfolio - Public and Admin
   app.get("/api/portfolio", async (req, res) => {
     try {
       const category = req.query.category as string;
@@ -187,6 +244,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching portfolio:", error);
       res.status(500).json({ message: "Failed to fetch portfolio" });
+    }
+  });
+
+  app.post("/api/portfolio", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const project = await storage.createProject(req.body);
+      res.json(project);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      res.status(500).json({ message: "Failed to create project" });
+    }
+  });
+
+  app.put("/api/portfolio/:id", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.updateProject(id, req.body);
+      res.json(project);
+    } catch (error) {
+      console.error("Error updating project:", error);
+      res.status(500).json({ message: "Failed to update project" });
+    }
+  });
+
+  app.delete("/api/portfolio/:id", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteProject(id);
+      res.json({ message: "Project deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      res.status(500).json({ message: "Failed to delete project" });
     }
   });
 
@@ -222,15 +311,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Blog routes
+  // Blog - Public and Admin Routes
   app.get("/api/blog", async (req, res) => {
     try {
-      const published = req.query.published === "true";
+      const published = req.query.published !== 'false'; // Default to published only
       const posts = await storage.getBlogPosts(published);
       res.json(posts);
     } catch (error) {
       console.error("Error fetching blog posts:", error);
       res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.post("/api/blog", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const post = await storage.createBlogPost({
+        ...req.body,
+        authorId: req.user.id || req.user.claims?.sub
+      });
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ message: "Failed to create blog post" });
+    }
+  });
+
+  app.put("/api/blog/:id", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const post = await storage.updateBlogPost(id, req.body);
+      res.json(post);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ message: "Failed to update blog post" });
+    }
+  });
+
+  app.delete("/api/blog/:id", isAuthenticated, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBlogPost(id);
+      res.json({ message: "Blog post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ message: "Failed to delete blog post" });
     }
   });
 
@@ -247,8 +371,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Helper function to check roles
-  const requireRole = (roles: string[]) => {
+  // Helper function to check roles (alternative implementation)
+  const requireRole2 = (roles: string[]) => {
     return async (req: any, res: any, next: any) => {
       try {
         // Check temp admin first

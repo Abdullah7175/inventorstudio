@@ -31,6 +31,7 @@ import RealTimeChatTest from "@/components/RealTimeChatTest";
 import AdminLogin from "@/pages/AdminLogin";
 import TempAdminLogin from "@/pages/TempAdminLogin";
 import GoogleAuthTest from "@/pages/GoogleAuthTest";
+import SuperAdminPanel from "@/pages/SuperAdminPanel";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -58,6 +59,7 @@ function Router() {
       {/* Protected routes - Admin Portal */}
       <Route path="/admin" component={AdminPortal} />
       <Route path="/admin-portal" component={AdminPortal} />
+      <Route path="/super-admin" component={SuperAdminPanel} />
       
       {/* Project Management Routes */}
       <Route path="/projects" component={ProjectManagement} />
