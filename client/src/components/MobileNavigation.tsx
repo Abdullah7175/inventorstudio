@@ -120,48 +120,8 @@ export default function MobileNavigation() {
                       <span className="text-xs lg:text-sm text-muted-foreground truncate max-w-20 lg:max-w-none">
                         {(user as any)?.firstName || (user as any)?.email?.split('@')[0]}
                       </span>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs"
-                        onClick={async () => {
-                          try {
-                            // Clear all authentication tokens first
-                            (window as any).__authToken = null;
-                            
-                            // Clear server-side sessions
-                            await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-                            
-                            // Clear Firebase auth state
-                            const { signOut } = await import("firebase/auth");
-                            const { auth } = await import("@/lib/firebase");
-                            await signOut(auth);
-                            
-                            // Clear all cached data
-                            const { queryClient } = await import("@/lib/queryClient");
-                            queryClient.clear();
-                            
-                            // Clear local storage and session storage
-                            localStorage.clear();
-                            sessionStorage.clear();
-                            
-                            // Clear cookies
-                            document.cookie.split(";").forEach((c) => {
-                              const eqPos = c.indexOf("=");
-                              const name = eqPos > -1 ? c.substr(0, eqPos) : c;
-                              document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-                            });
-                            
-                            // Force complete page reload
-                            window.location.replace("/");
-                          } catch (error) {
-                            console.error("Logout error:", error);
-                            // Force reload even if logout partially failed
-                            window.location.replace("/");
-                          }
-                        }}
-                      >
-                        Logout
+                      <Button variant="outline" size="sm" asChild className="text-xs">
+                        <a href="/api/logout">Logout</a>
                       </Button>
                     </div>
                   ) : (

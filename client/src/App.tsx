@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
 // Pages
 import NotFound from "@/pages/not-found";
@@ -30,8 +29,6 @@ import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
 import AdminLogin from "@/pages/AdminLogin";
 import TempAdminLogin from "@/pages/TempAdminLogin";
-import GoogleAuthTest from "@/pages/GoogleAuthTest";
-import SuperAdminPanel from "@/pages/SuperAdminPanel";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -59,7 +56,6 @@ function Router() {
       {/* Protected routes - Admin Portal */}
       <Route path="/admin" component={AdminPortal} />
       <Route path="/admin-portal" component={AdminPortal} />
-      <Route path="/super-admin" component={SuperAdminPanel} />
       
       {/* Project Management Routes */}
       <Route path="/projects" component={ProjectManagement} />
@@ -67,9 +63,6 @@ function Router() {
       
       {/* Real-time Chat Test Route */}
       <Route path="/chat-test" component={RealTimeChatTest} />
-      
-      {/* Google Auth Test Route */}
-      <Route path="/auth-test" component={GoogleAuthTest} />
       
       {/* Admin Login Routes */}
       <Route path="/admin-login" component={AdminLogin} />
@@ -100,9 +93,6 @@ function Router() {
 }
 
 function App() {
-  // Initialize Firebase auth listener
-  useFirebaseAuth();
-  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
