@@ -331,20 +331,38 @@ export default function Navigation() {
                         onClick={async () => {
                           setIsMobileMenuOpen(false);
                           try {
-                            // Clear any local storage/cache first
+                            // Clear all authentication tokens first
+                            (window as any).__authToken = null;
+                            
+                            // Clear server-side sessions
+                            await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                            
+                            // Clear Firebase auth state
+                            const { signOut } = await import("firebase/auth");
+                            const { auth } = await import("@/lib/firebase");
+                            await signOut(auth);
+                            
+                            // Clear all cached data
+                            const { queryClient } = await import("@/lib/queryClient");
+                            queryClient.clear();
+                            
+                            // Clear local storage and session storage
                             localStorage.clear();
                             sessionStorage.clear();
                             
-                            // Force logout by calling the API
-                            await fetch("/api/auth/logout", {
-                              method: "POST",
-                              credentials: "include"
+                            // Clear cookies
+                            document.cookie.split(";").forEach((c) => {
+                              const eqPos = c.indexOf("=");
+                              const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+                              document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
                             });
+                            
+                            // Force complete page reload
+                            window.location.replace("/");
                           } catch (error) {
-                            console.log("Logout error:", error);
-                          } finally {
-                            // Always redirect to home and reload
-                            window.location.href = "/";
+                            console.error("Logout error:", error);
+                            // Force reload even if logout partially failed
+                            window.location.replace("/");
                           }
                         }}
                         className="w-full text-gray-400 hover:text-red-400 transition-colors duration-300"

@@ -22,26 +22,15 @@ export function useFirebaseAuth() {
         // Invalidate auth queries to refetch with new token
         queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       } else {
-        // User is signed out, remove auth header
-        queryClient.setQueryDefaults([], {
-          queryFn: ({ queryKey }) => {
-            const [url] = queryKey as [string];
-            return fetch(url, {
-              credentials: 'include',
-            }).then(async (res) => {
-              if (!res.ok) {
-                if (res.status === 401) {
-                  throw new Error(`401: ${res.statusText}`);
-                }
-                throw new Error(`${res.status}: ${res.statusText}`);
-              }
-              return res.json();
-            });
-          },
-        });
-
-        // Invalidate auth queries
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        // User is signed out, clear all auth data
+        (window as any).__authToken = null;
+        
+        // Clear all cached queries
+        queryClient.clear();
+        
+        // Remove any stored auth data
+        localStorage.removeItem('firebase:authUser');
+        sessionStorage.clear();
       }
     });
 

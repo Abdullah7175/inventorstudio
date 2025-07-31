@@ -4,6 +4,7 @@ import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, LogIn } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
 
 interface GoogleAuthButtonProps {
   isAuthenticated: boolean;
@@ -37,29 +38,43 @@ export function GoogleAuthButton({ isAuthenticated, className }: GoogleAuthButto
 
   const handleSignOut = async () => {
     setLoading(true);
+    
+    toast({
+      title: "Signing Out",
+      description: "Clearing authentication...",
+    });
+    
     try {
+      // Clear all authentication tokens first
+      (window as any).__authToken = null;
+      
+      // Clear Firebase auth state
       await signOut(auth);
-      // Also clear any temp admin session
+      
+      // Clear server-side sessions
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       
-      toast({
-        title: "Signed Out",
-        description: "Successfully signed out",
+      // Clear all cached data
+      queryClient.clear();
+      
+      // Clear local storage and session storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear cookies by setting expired date
+      document.cookie.split(";").forEach((c) => {
+        const eqPos = c.indexOf("=");
+        const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
       });
       
-      // Force page reload to clear all cached data
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
+      // Force complete page reload to clear all state
+      window.location.replace("/");
+      
     } catch (error: any) {
       console.error("Sign-out error:", error);
-      toast({
-        title: "Sign-out Failed",
-        description: error.message || "Failed to sign out",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      // Force reload even if logout partially failed
+      window.location.replace("/");
     }
   };
 
