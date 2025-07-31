@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { X, ChevronRight, Home, Info, Briefcase, FileText, Phone, Users, Shield, HelpCircle, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { signInWithGoogle } from "@/lib/firebase";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -137,14 +138,14 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               {/* Footer */}
               <div className="border-t border-border p-6">
                 {!isAuthenticated ? (
-                  <motion.a
-                    href="/api/login"
+                  <motion.button
+                    onClick={() => signInWithGoogle()}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="block w-full bg-primary text-black text-center py-3 px-6 rounded-xl font-semibold hover:bg-primary/80 transition-all duration-300 touch-target"
                   >
-                    Sign In
-                  </motion.a>
+                    Sign In with Google
+                  </motion.button>
                 ) : (
                   <motion.button
                     onClick={logout}

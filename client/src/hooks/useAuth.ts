@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn, queryClient } from "@/lib/queryClient";
+import { signOutUser } from "@/lib/firebase";
 
 export function useAuth() {
-  // Try regular auth first
-  const { data: user, isLoading: regularLoading } = useQuery({
+  // Get user from backend (which validates JWT token)
+  const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
@@ -11,55 +12,30 @@ export function useAuth() {
     refetchOnWindowFocus: false,
   });
 
-  // Try temp admin auth if regular auth fails
-  const { data: tempUser, isLoading: tempLoading } = useQuery({
-    queryKey: ["/api/auth/temp-user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    retry: false,
-    enabled: !user && !regularLoading,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  const finalUser = user || tempUser;
-  const isLoading = regularLoading || tempLoading;
-
   const logout = async () => {
     try {
-      // Clear local storage
-      localStorage.clear();
-      sessionStorage.clear();
+      // Use Firebase sign out which also clears backend session
+      await signOutUser();
       
       // Clear React Query cache
       queryClient.clear();
-      
-      // Try both logout endpoints to handle both regular and temp admin sessions
-      try {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-          credentials: "include"
-        });
-      } catch {
-        // Fallback to the main logout endpoint
-        await fetch("/api/logout", {
-          method: "GET",
-          credentials: "include"
-        });
-      }
       
       // Force page redirect to complete logout
       window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if API call fails, clear local state and redirect
+      // Even if Firebase logout fails, clear local state and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      queryClient.clear();
       window.location.href = "/";
     }
   };
 
   return {
-    user: finalUser,
+    user,
     isLoading,
-    isAuthenticated: !!finalUser,
+    isAuthenticated: !!user,
     logout,
   };
 }

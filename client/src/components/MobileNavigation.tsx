@@ -17,6 +17,7 @@ import {
   Shield
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { signInWithGoogle } from "@/lib/firebase";
 
 export default function MobileNavigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -125,8 +126,8 @@ export default function MobileNavigation() {
                       </Button>
                     </div>
                   ) : (
-                    <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex text-xs">
-                      <a href="/api/login">Sign In</a>
+                    <Button variant="outline" size="sm" onClick={() => signInWithGoogle()} className="hidden sm:inline-flex text-xs">
+                      Sign In
                     </Button>
                   )}
                 </>
@@ -239,8 +240,8 @@ export default function MobileNavigation() {
                         </Button>
                       </div>
                     ) : (
-                      <Button size="sm" asChild className="w-full">
-                        <a href="/api/login">Sign In</a>
+                      <Button size="sm" onClick={() => signInWithGoogle()} className="w-full">
+                        Sign In with Google
                       </Button>
                     )}
                   </div>

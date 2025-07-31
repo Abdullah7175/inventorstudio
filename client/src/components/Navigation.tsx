@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ArrowRight, User, LogOut, Shield, Home, Info, Briefcase, FolderOpen, MessageSquare, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { signInWithGoogle } from "@/lib/firebase";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { InventorDesignStudioLogo, IDSLogoSimple } from "@/assets/logo";
 
@@ -185,10 +186,10 @@ export default function Navigation() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Button
-                      onClick={() => (window.location.href = "/api/login")}
+                      onClick={() => signInWithGoogle()}
                       className="bg-primary text-black hover:bg-primary/80 transition-all duration-300 group"
                     >
-                      Login
+                      Sign in with Google
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </motion.div>
@@ -364,7 +365,7 @@ export default function Navigation() {
                     <Button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        window.location.href = "/api/login";
+                        signInWithGoogle();
                       }}
                       className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
                     >

@@ -28,16 +28,16 @@ export default function ClientPortal() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
 
-  // Redirect to login if not authenticated
+  // Redirect to home if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
         title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        description: "Please sign in to access your client portal.",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/";
       }, 500);
       return;
     }
@@ -54,11 +54,11 @@ export default function ClientPortal() {
     if (error && isUnauthorizedError(error as Error)) {
       toast({
         title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        description: "Your session has expired. Please sign in again.",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/";
       }, 500);
     }
   }, [error, toast]);

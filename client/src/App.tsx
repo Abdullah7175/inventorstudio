@@ -27,8 +27,7 @@ import Setup from "@/pages/Setup";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
-import AdminLogin from "@/pages/AdminLogin";
-import TempAdminLogin from "@/pages/TempAdminLogin";
+
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -46,9 +45,6 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       
-      {/* Temporary admin access - accessible to all users */}
-      <Route path="/temp-admin" component={TempAdminLogin} />
-      
       {/* Protected routes - Client Portal */}
       <Route path="/client-portal" component={ClientPortal} />
       <Route path="/client-portal-new" component={ClientPortalNew} />
@@ -63,9 +59,6 @@ function Router() {
       
       {/* Real-time Chat Test Route */}
       <Route path="/chat-test" component={RealTimeChatTest} />
-      
-      {/* Admin Login Routes */}
-      <Route path="/admin-login" component={AdminLogin} />
       
       {/* Setup Route */}
       <Route path="/setup" component={Setup} />
