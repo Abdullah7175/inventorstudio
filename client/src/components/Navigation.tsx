@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { InventorDesignStudioLogo, IDSLogoSimple } from "@/assets/logo";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -169,45 +170,20 @@ export default function Navigation() {
                     )}
 
                     {/* Logout */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          // Clear any local storage/cache first
-                          localStorage.clear();
-                          sessionStorage.clear();
-                          
-                          // Force logout by calling the API
-                          await fetch("/api/auth/logout", {
-                            method: "POST",
-                            credentials: "include"
-                          });
-                        } catch (error) {
-                          console.log("Logout error:", error);
-                        } finally {
-                          // Always redirect to home and reload
-                          window.location.href = "/";
-                        }
-                      }}
-                      className="text-gray-400 hover:text-red-400 transition-colors duration-300"
-                      title="Logout"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
+                    <GoogleAuthButton 
+                      isAuthenticated={true}
+                      className="text-gray-400 hover:text-red-400 transition-colors duration-300 border-none bg-transparent hover:bg-transparent"
+                    />
                   </div>
                 ) : (
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button
-                      onClick={() => (window.location.href = "/api/login")}
-                      className="bg-primary text-black hover:bg-primary/80 transition-all duration-300 group"
-                    >
-                      Login
-                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    <GoogleAuthButton 
+                      isAuthenticated={false}
+                      className="bg-primary text-black hover:bg-primary/80 transition-all duration-300"
+                    />
                   </motion.div>
                 )}
               </div>

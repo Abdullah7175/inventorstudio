@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupGoogleAuth, isAuthenticated } from "./googleAuth";
 import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
 
 // Role-based middleware
@@ -35,17 +35,32 @@ import {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await setupGoogleAuth(app);
 
   // Auth routes
-  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
+  app.get("/api/auth/user", async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // Check Firebase auth
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split('Bearer ')[1];
+        const admin = (await import('firebase-admin')).default;
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const user = await storage.getUser(decodedToken.uid);
+        if (user) {
+          return res.json(user);
+        }
+      }
+      
+      // Check temp admin
+      if ((req.session as any).tempAdmin) {
+        return res.json((req.session as any).tempAdmin);
+      }
+      
+      res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      res.status(401).json({ message: "Unauthorized" });
     }
   });
 
