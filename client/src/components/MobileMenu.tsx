@@ -9,7 +9,7 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const menuItems = [
     { href: "/", label: "Home", icon: Home },
@@ -146,14 +146,14 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     Sign In
                   </motion.a>
                 ) : (
-                  <motion.a
-                    href="/api/logout"
+                  <motion.button
+                    onClick={logout}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="block w-full border border-primary text-primary text-center py-3 px-6 rounded-xl font-semibold hover:bg-primary hover:text-black transition-all duration-300 touch-target"
                   >
                     Sign Out
-                  </motion.a>
+                  </motion.button>
                 )}
               </div>
             </div>

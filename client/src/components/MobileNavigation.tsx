@@ -22,7 +22,7 @@ export default function MobileNavigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [location] = useLocation();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   // Handle scroll effect
   useEffect(() => {
@@ -120,8 +120,8 @@ export default function MobileNavigation() {
                       <span className="text-xs lg:text-sm text-muted-foreground truncate max-w-20 lg:max-w-none">
                         {(user as any)?.firstName || (user as any)?.email?.split('@')[0]}
                       </span>
-                      <Button variant="outline" size="sm" asChild className="text-xs">
-                        <a href="/api/logout">Logout</a>
+                      <Button variant="outline" size="sm" onClick={logout} className="text-xs">
+                        Logout
                       </Button>
                     </div>
                   ) : (
@@ -234,8 +234,8 @@ export default function MobileNavigation() {
                         <div className="text-sm text-muted-foreground">
                           Welcome, {(user as any)?.firstName || (user as any)?.email?.split('@')[0]}
                         </div>
-                        <Button variant="outline" size="sm" asChild className="w-full">
-                          <a href="/api/logout">Logout</a>
+                        <Button variant="outline" size="sm" onClick={logout} className="w-full">
+                          Logout
                         </Button>
                       </div>
                     ) : (

@@ -11,7 +11,7 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [location] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -172,24 +172,7 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={async () => {
-                        try {
-                          // Clear any local storage/cache first
-                          localStorage.clear();
-                          sessionStorage.clear();
-                          
-                          // Force logout by calling the API
-                          await fetch("/api/auth/logout", {
-                            method: "POST",
-                            credentials: "include"
-                          });
-                        } catch (error) {
-                          console.log("Logout error:", error);
-                        } finally {
-                          // Always redirect to home and reload
-                          window.location.href = "/";
-                        }
-                      }}
+                      onClick={logout}
                       className="text-gray-400 hover:text-red-400 transition-colors duration-300"
                       title="Logout"
                     >

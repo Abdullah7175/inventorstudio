@@ -57,6 +57,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Logout failed" });
       }
       
+      // Clear temp admin session if exists
+      if ((req.session as any).tempAdmin) {
+        delete (req.session as any).tempAdmin;
+      }
+      
       // Destroy session
       req.session.destroy((sessionErr) => {
         if (sessionErr) {

@@ -26,7 +26,7 @@ import { type ClientProject } from "@shared/schema";
 
 export default function ClientPortal() {
   const { toast } = useToast();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -321,7 +321,7 @@ export default function ClientPortal() {
                       <Button
                         variant="outline"
                         className="w-full border-primary text-primary hover:bg-primary hover:text-black"
-                        onClick={() => window.location.href = "/api/logout"}
+                        onClick={logout}
                       >
                         Sign Out
                       </Button>
