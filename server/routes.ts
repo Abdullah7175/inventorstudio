@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split('Bearer ')[1];
-        const admin = (await import('firebase-admin')).default;
+        const admin = await import('firebase-admin');
         const decodedToken = await admin.auth().verifyIdToken(token);
         const user = await storage.getUser(decodedToken.uid);
         if (user) {
@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check temp admin
-      if ((req.session as any).tempAdmin) {
+      if (req.session && (req.session as any).tempAdmin) {
         return res.json((req.session as any).tempAdmin);
       }
       
@@ -103,6 +103,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create a mock session for the admin user
+      if (!req.session) {
+        req.session = {} as any;
+      }
       (req.session as any).tempAdmin = {
         id: adminUser.id,
         email: adminUser.email,

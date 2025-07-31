@@ -52,6 +52,24 @@ export const verifyFirebaseToken: RequestHandler = async (req: any, res, next) =
 };
 
 export async function setupGoogleAuth(app: Express) {
+  // Set up session middleware for temp admin access
+  const session = (await import('express-session')).default;
+  const MemoryStore = (await import('memorystore')).default(session);
+  
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
   // Google auth routes
   app.post("/api/auth/google", async (req, res) => {
     try {
