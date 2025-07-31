@@ -3,6 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import jwt from 'jsonwebtoken';
 import type { Express, RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
+import { storage } from './storage';
 
 // Initialize Firebase Admin (only if not already initialized)
 if (!getApps().length) {
@@ -36,6 +37,10 @@ export const setupFirebaseAuth = (app: Express) => {
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       const { uid, email, name, picture } = decodedToken;
 
+      // Check if this is the first user (they become admin)
+      const existingUsers = await storage.getAllUsers();
+      const isFirstUser = existingUsers.length === 0;
+      
       // Create user data
       const userData = {
         id: uid,
@@ -43,7 +48,7 @@ export const setupFirebaseAuth = (app: Express) => {
         firstName: name?.split(' ')[0] || '',
         lastName: name?.split(' ').slice(1).join(' ') || '',
         avatar: picture || '',
-        role: 'client', // Default role
+        role: isFirstUser ? 'admin' : 'client', // First user becomes admin
         createdAt: new Date().toISOString(),
       };
 
@@ -66,12 +71,36 @@ export const setupFirebaseAuth = (app: Express) => {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      // Store user in database (you might want to check if user exists first)
-      // For now, we'll just return the user data
-      res.json({ 
-        message: 'Authentication successful',
-        user: userData 
-      });
+      // Store user in database or update if exists
+      try {
+        const existingUser = await storage.getUser(uid);
+        let dbUser;
+        
+        if (existingUser) {
+          // Update existing user with latest info from Google
+          dbUser = await storage.updateUser(uid, {
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            avatar: userData.avatar,
+          });
+        } else {
+          // Create new user
+          dbUser = await storage.createUser(userData);
+        }
+
+        res.json({ 
+          message: 'Authentication successful',
+          user: dbUser 
+        });
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Still return success even if DB fails
+        res.json({ 
+          message: 'Authentication successful',
+          user: userData 
+        });
+      }
 
     } catch (error) {
       console.error('Firebase auth error:', error);

@@ -59,7 +59,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quick setup endpoint - set user role (for development)
+  // Admin endpoint to get all users
+  app.get("/api/admin/users", verifyJWT, requireRole(['admin']), async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Admin endpoint to promote users to admin/team roles
+  app.post("/api/admin/promote-user", verifyJWT, requireRole(['admin']), async (req: any, res) => {
+    try {
+      const { userId, role } = req.body;
+      
+      if (!["admin", "team", "client"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, team, or client" });
+      }
+
+      // Update user role
+      const updatedUser = await storage.updateUser(userId, { role });
+      res.json({ message: `User promoted to ${role}`, user: updatedUser });
+    } catch (error) {
+      console.error("Error promoting user:", error);
+      res.status(500).json({ message: "Failed to promote user" });
+    }
+  });
+
+  // Quick setup endpoint - set user role (for development/first setup)
   app.post("/api/setup/role", verifyJWT, attachUserFromDB, async (req: any, res) => {
     try {
       const userId = req.user.id;
