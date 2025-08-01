@@ -443,6 +443,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check endpoint for Docker
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development"
+    });
+  });
+
   // AI-powered features
   app.post("/api/ai/design-recommendations", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
     try {

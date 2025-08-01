@@ -38,7 +38,8 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Database & Infrastructure
-- **Neon**: Serverless PostgreSQL hosting.
+- **Cross-Environment Database**: Supports both Neon (serverless) and standard PostgreSQL for local development.
+- **Docker Support**: Complete Docker Compose setup with PostgreSQL container.
 - **Replit**: Development and deployment platform.
 
 ### UI & Styling
@@ -54,3 +55,24 @@ Preferred communication style: Simple, everyday language.
 - **PostCSS**: CSS processing.
 - **OpenAI**: For AI-powered features (e.g., GPT-4o).
 - **WebSocket**: For real-time communication.
+
+## Cross-Environment Deployment
+
+### Local Development Support
+- **Automated Setup Script**: `local-setup.sh` for easy local deployment
+- **Environment Templates**: `.env.example` with all required configurations
+- **Docker Support**: Complete `docker-compose.yml` for containerized development
+- **Database Flexibility**: Automatic detection and support for both Neon and PostgreSQL
+- **Health Checks**: Built-in health monitoring for Docker deployments
+
+### Deployment Options
+- **Local PostgreSQL**: Direct connection to local PostgreSQL database
+- **Docker Compose**: Containerized setup with PostgreSQL and application
+- **Hybrid**: Local development with Docker database
+- **Cloud**: Neon serverless PostgreSQL for production
+
+### Configuration Management
+- **Environment Variables**: Comprehensive `.env.example` template
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Security**: JWT-based authentication with configurable secrets
+- **Firebase Integration**: Complete Firebase Authentication setup guide
