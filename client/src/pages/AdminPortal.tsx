@@ -71,16 +71,16 @@ export default function AdminPortal() {
   
   const queryClient = useQueryClient();
 
-  // Redirect to login if not authenticated or not admin
+  // Redirect to home if not authenticated or not admin
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || (user as any)?.role !== "admin")) {
       toast({
         title: "Access Denied",
-        description: "You don't have permission to access this area.",
+        description: "You don't have permission to access this area. Please sign in as admin.",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/";
       }, 500);
       return;
     }
@@ -195,7 +195,7 @@ export default function AdminPortal() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/";
       }, 500);
     }
   }, [requestsError, toast]);

@@ -174,9 +174,9 @@ export default function AdminUserManagement() {
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div className="flex items-center gap-4">
-                    {user.avatar ? (
+                    {user.profileImageUrl ? (
                       <img
-                        src={user.avatar}
+                        src={user.profileImageUrl}
                         alt={`${user.firstName} ${user.lastName}`}
                         className="h-10 w-10 rounded-full"
                       />

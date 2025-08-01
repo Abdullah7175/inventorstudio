@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { signInWithGoogle } from "@/lib/firebase";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ServiceCart from "@/components/ServiceCart";
@@ -107,7 +108,7 @@ export default function ProjectManagement() {
                 Manage your projects, track progress, and collaborate with our team.
               </p>
               <Button
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/"}
                 size="lg"
                 className="bg-primary text-black hover:bg-primary/80"
               >
@@ -133,7 +134,7 @@ export default function ProjectManagement() {
               Project <span className="gradient-text">Management</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Welcome back, {user && 'firstName' in user ? user.firstName || 'there' : 'there'}! Manage your projects and track progress.
+              Welcome back, {user ? (user as any).firstName || 'there' : 'there'}! Manage your projects and track progress.
             </p>
           </AnimatedSection>
         </div>

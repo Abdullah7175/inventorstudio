@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Code, Palette, Zap, Users } from "lucide-react";
+import { signInWithGoogle } from "@/lib/firebase";
 import Footer from "@/components/Footer";
 import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
 
@@ -66,7 +67,7 @@ export default function Landing() {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <Button
-              onClick={() => (window.location.href = "/api/login")}
+              onClick={() => (window.location.href = "/")}
               className="bg-primary text-black px-8 py-4 text-lg font-semibold hover:bg-primary/80 glow-animation group"
               size="lg"
             >
@@ -187,7 +188,7 @@ export default function Landing() {
               Join hundreds of satisfied clients who have transformed their digital presence with our expertise.
             </p>
             <Button
-              onClick={() => (window.location.href = "/api/login")}
+              onClick={() => (window.location.href = "/")}
               className="bg-primary text-black px-8 py-4 text-lg font-semibold hover:bg-primary/80 glow-animation group"
               size="lg"
             >

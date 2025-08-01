@@ -22,14 +22,14 @@ export async function apiRequest(
     ...options,
   });
 
-  // Handle 401 errors by redirecting to login
+  // Handle 401 errors by redirecting to home
   if (res.status === 401) {
     // Clear any cached data
     localStorage.clear();
     sessionStorage.clear();
-    // Redirect to login
-    window.location.href = "/api/login";
-    throw new Error("401: Unauthorized - Redirecting to login");
+    // Redirect to home to sign in
+    window.location.href = "/";
+    throw new Error("401: Unauthorized - Please sign in");
   }
 
   await throwIfResNotOk(res);

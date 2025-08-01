@@ -47,9 +47,9 @@ export const setupFirebaseAuth = (app: Express) => {
         email: email || '',
         firstName: name?.split(' ')[0] || '',
         lastName: name?.split(' ').slice(1).join(' ') || '',
-        avatar: picture || '',
+        profileImageUrl: picture || '',
         role: isFirstUser ? 'admin' : 'client', // First user becomes admin
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
       };
 
       // Create JWT token
@@ -82,7 +82,7 @@ export const setupFirebaseAuth = (app: Express) => {
             email: userData.email,
             firstName: userData.firstName,
             lastName: userData.lastName,
-            avatar: userData.avatar,
+            profileImageUrl: userData.profileImageUrl,
           });
         } else {
           // Create new user
