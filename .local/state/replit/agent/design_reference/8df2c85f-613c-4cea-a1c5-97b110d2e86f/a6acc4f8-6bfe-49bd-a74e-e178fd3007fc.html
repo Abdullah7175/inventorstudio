@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventer Design Studio - Modern Digital Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#D6FF2A',
+                        'secondary': '#FFFFFF', 
+                        'neutral-custom': '#D9D9D9',
+                        'bg-custom': '#000000'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slideInUp': 'slideInUp 0.6s ease-out',
+                        'fadeIn': 'fadeIn 0.8s ease-out'
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 20px #D6FF2A; }
+            to { box-shadow: 0 0 30px #D6FF2A, 0 0 40px #D6FF2A; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(45deg, #D6FF2A, #FFFFFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-inter overflow-x-hidden">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-effect transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-2xl font-bold gradient-text">
+                    Inventer Design Studio
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#home" class="hover:text-primary transition-colors duration-300">Home</a>
+                    <a href="#about" class="hover:text-primary transition-colors duration-300">About</a>
+                    <a href="#services" class="hover:text-primary transition-colors duration-300">Services</a>
+                    <a href="#portfolio" class="hover:text-primary transition-colors duration-300">Portfolio</a>
+                    <a href="#blog" class="hover:text-primary transition-colors duration-300">Blog</a>
+                    <a href="#contact" class="hover:text-primary transition-colors duration-300">Contact</a>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="openPortal('client')" class="bg-primary text-black px-4 py-2 rounded-full hover:animate-glow transition-all duration-300">Client Portal</button>
+                    <button class="md:hidden text-primary" onclick="toggleMobileMenu()">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden glass-effect border-t border-white border-opacity-10">
+            <div class="px-6 py-4 space-y-4">
+                <a href="#home" class="block hover:text-primary transition-colors duration-300">Home</a>
+                <a href="#about" class="block hover:text-primary transition-colors duration-300">About</a>
+                <a href="#services" class="block hover:text-primary transition-colors duration-300">Services</a>
+                <a href="#portfolio" class="block hover:text-primary transition-colors duration-300">Portfolio</a>
+                <a href="#blog" class="block hover:text-primary transition-colors duration-300">Blog</a>
+                <a href="#contact" class="block hover:text-primary transition-colors duration-300">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <!-- Background decoration -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary rounded-full filter blur-3xl animate-float"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary rounded-full filter blur-3xl animate-float" style="animation-delay: -3s;"></div>
+        </div>
+        
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 animate-slideInUp">
+                Transform Your 
+                <span class="gradient-text">Digital Vision</span>
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 text-neutral-custom max-w-3xl mx-auto animate-fadeIn" style="animation-delay: 0.3s;">
+                We craft exceptional digital experiences through innovative web development, creative design, and strategic marketing solutions.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fadeIn" style="animation-delay: 0.6s;">
+                <button onclick="scrollToSection('contact')" class="bg-primary text-black px-8 py-4 rounded-full font-semibold hover:animate-glow transition-all duration-300 transform hover:scale-105">
+                    Start Your Project
+                </button>
+                <button onclick="scrollToSection('portfolio')" class="border border-primary text-primary px-8 py-4 rounded-full font-semibold hover:bg-primary hover:text-black transition-all duration-300">
+                    View Our Work
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Company Snapshot -->
+    <section class="py-20 bg-gray-900 bg-opacity-50">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div class="animate-fadeIn">
+                    <div class="text-4xl font-bold text-primary mb-2">150+</div>
+                    <div class="text-neutral-custom">Projects Completed</div>
+                </div>
+                <div class="animate-fadeIn" style="animation-delay: 0.2s;">
+                    <div class="text-4xl font-bold text-primary mb-2">50+</div>
+                    <div class="text-neutral-custom">Happy Clients</div>
+                </div>
+                <div class="animate-fadeIn" style="animation-delay: 0.4s;">
+                    <div class="text-4xl font-bold text-primary mb-2">2</div>
+                    <div class="text-neutral-custom">Global Offices</div>
+                </div>
+                <div class="animate-fadeIn" style="animation-delay: 0.6s;">
+                    <div class="text-4xl font-bold text-primary mb-2">24/7</div>
+                    <div class="text-neutral-custom">Support Available</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Services -->
+    <section id="services" class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Our <span class="gradient-text">Services</span></h2>
+                <p class="text-xl text-neutral-custom max-w-3xl mx-auto">
+                    From concept to deployment, we provide comprehensive digital solutions tailored to your business needs.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Service Card 1 -->
+                <div class="glass-effect p-8 rounded-2xl hover:transform hover:scale-105 transition-all duration-300 group cursor-pointer">
+                    <div class="text-primary text-4xl mb-4 group-hover:animate-bounce">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Web & App Development</h3>
+                    <p class="text-neutral-custom mb-4">Custom websites and mobile applications built with cutting-edge technologies.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">React</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Node.js</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Flutter</span>
+                    </div>
+                </div>
+
+                <!-- Service Card 2 -->
+                <div class="glass-effect p-8 rounded-2xl hover:transform hover:scale-105 transition-all duration-300 group cursor-pointer">
+                    <div class="text-primary text-4xl mb-4 group-hover:animate-bounce">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">DevOps & Cloud Solutions</h3>
+                    <p class="text-neutral-custom mb-4">Streamlined deployment pipelines and scalable cloud infrastructure management.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">AWS</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Docker</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">CI/CD</span>
+                    </div>
+                </div>
+
+                <!-- Service Card 3 -->
+                <div class="glass-effect p-8 rounded-2xl hover:transform hover:scale-105 transition-all duration-300 group cursor-pointer">
+                    <div class="text-primary text-4xl mb-4 group-hover:animate-bounce">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Video & Motion Graphics</h3>
+                    <p class="text-neutral-custom mb-4">Professional video editing and stunning motion graphics for your brand.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">After Effects</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Premiere</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">3D Animation</span>
+                    </div>
+                </div>
+
+                <!-- Service Card 4 -->
+                <div class="glass-effect p-8 rounded-2xl hover:transform hover:scale-105 transition-all duration-300 group cursor-pointer">
+                    <div class="text-primary text-4xl mb-4 group-hover:animate-bounce">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Digital Marketing</h3>
+                    <p class="text-neutral-custom mb-4">Strategic marketing campaigns that drive engagement and conversions.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">SEO</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">SMM</span>
+                        <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Analytics</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Preview -->
+    <section id="portfolio" class="py-20 bg-gray-900 bg-opacity-30">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Our <span class="gradient-text">Portfolio</span></h2>
+                <p class="text-xl text-neutral-custom max-w-3xl mx-auto mb-8">
+                    Explore our latest projects and see how we've helped businesses transform their digital presence.
+                </p>
+                
+                <!-- Portfolio Filters -->
+                <div class="flex flex-wrap justify-center gap-4 mb-12">
+                    <button onclick="filterPortfolio('all')" class="portfolio-filter active bg-primary text-black px-6 py-2 rounded-full font-semibold transition-all duration-300">All</button>
+                    <button onclick="filterPortfolio('web')" class="portfolio-filter border border-primary text-primary px-6 py-2 rounded-full font-semibold hover:bg-primary hover:text-black transition-all duration-300">Web Development</button>
+                    <button onclick="filterPortfolio('mobile')" class="portfolio-filter border border-primary text-primary px-6 py-2 rounded-full font-semibold hover:bg-primary hover:text-black transition-all duration-300">Mobile Apps</button>
+                    <button onclick="filterPortfolio('video')" class="portfolio-filter border border-primary text-primary px-6 py-2 rounded-full font-semibold hover:bg-primary hover:text-black transition-all duration-300">Video Production</button>
+                    <button onclick="filterPortfolio('marketing')" class="portfolio-filter border border-primary text-primary px-6 py-2 rounded-full font-semibold hover:bg-primary hover:text-black transition-all duration-300">Digital Marketing</button>
+                </div>
+            </div>
+
+            <!-- Portfolio Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="portfolioGrid">
+                <!-- Portfolio Item 1 -->
+                <div class="portfolio-item web glass-effect rounded-2xl overflow-hidden group cursor-pointer hover:transform hover:scale-105 transition-all duration-300" onclick="openPortfolioModal('project1')">
+                    <!-- Modern e-commerce website with clean interface and shopping features -->
+                    <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="E-commerce Website Project" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">E-Commerce Platform</h3>
+                        <p class="text-neutral-custom mb-4">Modern online store with advanced features</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">React</span>
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Node.js</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Item 2 -->
+                <div class="portfolio-item mobile glass-effect rounded-2xl overflow-hidden group cursor-pointer hover:transform hover:scale-105 transition-all duration-300" onclick="openPortfolioModal('project2')">
+                    <!-- Mobile app interface showing modern design and user experience -->
+                    <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Mobile App Project" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">Fitness Tracking App</h3>
+                        <p class="text-neutral-custom mb-4">Cross-platform mobile application</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Flutter</span>
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Firebase</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Item 3 -->
+                <div class="portfolio-item video glass-effect rounded-2xl overflow-hidden group cursor-pointer hover:transform hover:scale-105 transition-all duration-300" onclick="openPortfolioModal('project3')">
+                    <!-- Professional video production setup with cameras and lighting equipment -->
+                    <img src="https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Video Production Project" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">Brand Campaign Video</h3>
+                        <p class="text-neutral-custom mb-4">Corporate branding and promotional content</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">After Effects</span>
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Premiere Pro</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Item 4 -->
+                <div class="portfolio-item web glass-effect rounded-2xl overflow-hidden group cursor-pointer hover:transform hover:scale-105 transition-all duration-300" onclick="openPortfolioModal('project4')">
+                    <!-- Modern corporate website design with professional layout -->
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Corporate Website Project" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">Corporate Website</h3>
+                        <p class="text-neutral-custom mb-4">Professional business website with CMS</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">WordPress</span>
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Custom Theme</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Item 5 -->
+                <div class="portfolio-item marketing glass-effect rounded-2xl overflow-hidden group cursor-pointer hover:transform hover:scale-105 transition-all duration-300" onclick="openPortfolioModal('project5')">
+                    <!-- Digital marketing campaign visualization with analytics and social media -->
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Digital Marketing Campaign" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">Social Media Campaign</h3>
+                        <p class="text-neutral-custom mb-4">Complete digital marketing strategy</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Facebook Ads</span>
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">Google Analytics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Item 6 -->
+                <div class="portfolio-item mobile glass-effect rounded-2xl overflow-hidden group cursor-pointer hover:transform hover:scale-105 transition-all duration-300" onclick="openPortfolioModal('project6')">
+                    <!-- Mobile app development workspace with code and design elements -->
+                    <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Mobile Development Project" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">Restaurant Booking App</h3>
+                        <p class="text-neutral-custom mb-4">Food delivery and reservation system</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">React Native</span>
+                            <span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">MongoDB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-6">About <span class="gradient-text">Our Studio</span></h2>
+                    <p class="text-xl text-neutral-custom mb-6">
+                        Founded with a vision to transform digital experiences, Inventer Design Studio has been at the forefront of innovation, delivering exceptional solutions across the globe.
+                    </p>
+                    <p class="text-neutral-custom mb-8">
+                        With offices in Lahore and UAE, our international team combines creativity with technical expertise to bring your digital vision to life. We specialize in creating seamless user experiences that drive business growth.
+                    </p>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-primary rounded-full mr-4"></div>
+                            <span>Expert team of designers and developers</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-primary rounded-full mr-4"></div>
+                            <span>International presence in Lahore and UAE</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-primary rounded-full mr-4"></div>
+                            <span>24/7 support and maintenance</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-primary rounded-full mr-4"></div>
+                            <span>Agile development methodology</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <!-- Modern design studio workspace with computers and creative materials -->
+                    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Design Studio Workspace" class="rounded-2xl shadow-2xl" />
+                    <div class="absolute -bottom-8 -left-8 glass-effect p-6 rounded-2xl">
+                        <div class="text-2xl font-bold text-primary">5+</div>
+                        <div class="text-sm text-neutral-custom">Years Experience</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-20 bg-gray-900 bg-opacity-30">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Client <span class="gradient-text">Testimonials</span></h2>
+                <p class="text-xl text-neutral-custom max-w-3xl mx-auto">
+                    Don't just take our word for it - hear what our clients have to say about working with us.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-effect p-8 rounded-2xl">
+                    <div class="flex items-center mb-4">
+                        <div class="flex text-primary">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-neutral-custom mb-6">"Inventer Design Studio transformed our online presence completely. Their attention to detail and innovative approach exceeded our expectations."</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-black font-bold mr-4">
+                            SM
+                        </div>
+                        <div>
+                            <div class="font-semibold">Sarah Mitchell</div>
+                            <div class="text-sm text-neutral-custom">CEO, TechStart</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-effect p-8 rounded-2xl">
+                    <div class="flex items-center mb-4">
+                        <div class="flex text-primary">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-neutral-custom mb-6">"The mobile app they developed for us has been a game-changer. Professional, responsive, and delivered on time."</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-black font-bold mr-4">
+                            MJ
+                        </div>
+                        <div>
+                            <div class="font-semibold">Michael Johnson</div>
+                            <div class="text-sm text-neutral-custom">Founder, FitLife</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-effect p-8 rounded-2xl">
+                    <div class="flex items-center mb-4">
+                        <div class="flex text-primary">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-neutral-custom mb-6">"Their digital marketing campaign doubled our online engagement. Highly recommend their services!"</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-black font-bold mr-4">
+                            AR
+                        </div>
+                        <div>
+                            <div class="font-semibold">Alex Rodriguez</div>
+                            <div class="text-sm text-neutral-custom">Marketing Director, BrandCorp</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section id="blog" class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Latest <span class="gradient-text">Insights</span></h2>
+                <p class="text-xl text-neutral-custom max-w-3xl mx-auto">
+                    Stay updated with the latest trends, tips, and insights from the world of digital design and development.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <article class="glass-effect rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300">
+                    <!-- Web development workspace with multiple monitors showing code -->
+                    <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400" alt="Web Development Trends 2024" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <div class="text-primary text-sm mb-2">Dec 15, 2023</div>
+                        <h3 class="text-xl font-semibold mb-3">Top Web Development Trends for 2024</h3>
+                        <p class="text-neutral-custom mb-4">Discover the latest technologies and frameworks that will shape web development in the coming year.</p>
+                        <a href="#" class="text-primary hover:underline">Read More →</a>
+                    </div>
+                </article>
+
+                <article class="glass-effect rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300">
+                    <!-- Design team collaboration with wireframes and mockups -->
+                    <img src="https://images.unsplash.com/photo-1559028006-448665bd7c7f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400" alt="UI UX Design Best Practices" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <div class="text-primary text-sm mb-2">Dec 10, 2023</div>
+                        <h3 class="text-xl font-semibold mb-3">UI/UX Design Best Practices</h3>
+                        <p class="text-neutral-custom mb-4">Learn essential principles and techniques for creating user-centered design experiences.</p>
+                        <a href="#" class="text-primary hover:underline">Read More →</a>
+                    </div>
+                </article>
+
+                <article class="glass-effect rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300">
+                    <!-- Digital marketing analytics dashboard showing growth metrics -->
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400" alt="Digital Marketing ROI Guide" class="w-full h-48 object-cover" />
+                    <div class="p-6">
+                        <div class="text-primary text-sm mb-2">Dec 5, 2023</div>
+                        <h3 class="text-xl font-semibold mb-3">Maximizing Digital Marketing ROI</h3>
+                        <p class="text-neutral-custom mb-4">Strategies and tools to measure and improve your digital marketing campaign performance.</p>
+                        <a href="#" class="text-primary hover:underline">Read More →</a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-20 bg-gray-900 bg-opacity-30">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Frequently Asked <span class="gradient-text">Questions</span></h2>
+                <p class="text-xl text-neutral-custom max-w-3xl mx-auto">
+                    Get answers to the most common questions about our services and processes.
+                </p>
+            </div>
+
+            <div class="max-w-4xl mx-auto space-y-4">
+                <div class="glass-effect rounded-2xl overflow-hidden">
+                    <button class="w-full text-left p-6 focus:outline-none" onclick="toggleFAQ(1)">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">What is your typical project timeline?</h3>
+                            <i class="fas fa-chevron-down transition-transform duration-300" id="faq-icon-1"></i>
+                        </div>
+                    </button>
+                    <div class="px-6 pb-6 hidden" id="faq-content-1">
+                        <p class="text-neutral-custom">Project timelines vary depending on complexity and scope. Typically, a standard website takes 4-6 weeks, mobile apps 8-12 weeks, and complex enterprise solutions 12-16 weeks. We provide detailed timelines during our initial consultation.</p>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl overflow-hidden">
+                    <button class="w-full text-left p-6 focus:outline-none" onclick="toggleFAQ(2)">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">What formats do you deliver final projects in?</h3>
+                            <i class="fas fa-chevron-down transition-transform duration-300" id="faq-icon-2"></i>
+                        </div>
+                    </button>
+                    <div class="px-6 pb-6 hidden" id="faq-content-2">
+                        <p class="text-neutral-custom">We deliver projects in industry-standard formats including source code, design files (Figma, Adobe), documentation, deployment guides, and training materials. All deliverables are provided through our secure client portal.</p>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl overflow-hidden">
+                    <button class="w-full text-left p-6 focus:outline-none" onclick="toggleFAQ(3)">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Do you provide post-launch support?</h3>
+                            <i class="fas fa-chevron-down transition-transform duration-300" id="faq-icon-3"></i>
+                        </div>
+                    </button>
+                    <div class="px-6 pb-6 hidden" id="faq-content-3">
+                        <p class="text-neutral-custom">Yes, we offer comprehensive post-launch support including bug fixes, updates, maintenance, and feature enhancements. Our support packages range from basic maintenance to full managed services.</p>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl overflow-hidden">
+                    <button class="w-full text-left p-6 focus:outline-none" onclick="toggleFAQ(4)">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">What are your payment terms?</h3>
+                            <i class="fas fa-chevron-down transition-transform duration-300" id="faq-icon-4"></i>
+                        </div>
+                    </button>
+                    <div class="px-6 pb-6 hidden" id="faq-content-4">
+                        <p class="text-neutral-custom">We typically work with a 50% upfront payment and 50% upon completion for smaller projects. Larger projects may be broken into milestones. We accept bank transfers, online payments, and cryptocurrency.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Get In <span class="gradient-text">Touch</span></h2>
+                <p class="text-xl text-neutral-custom max-w-3xl mx-auto">
+                    Ready to start your next project? Let's discuss how we can help bring your vision to life.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div>
+                    <div class="space-y-8">
+                        <div class="flex items-start">
+                            <div class="text-primary text-2xl mr-4 mt-1">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-2">Office Locations</h3>
+                                <p class="text-neutral-custom">Lahore, Pakistan</p>
+                                <p class="text-neutral-custom">Dubai, UAE</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="text-primary text-2xl mr-4 mt-1">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-2">Phone</h3>
+                                <p class="text-neutral-custom">+92 XXX XXXXXXX</p>
+                                <p class="text-neutral-custom">+971 XX XXXXXXX</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="text-primary text-2xl mr-4 mt-1">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-2">Email</h3>
+                                <p class="text-neutral-custom">hello@inventerdesignstudio.com</p>
+                                <p class="text-neutral-custom">projects@inventerdesignstudio.com</p>
+                            </div>
+                        </div>
+
+                        <div class="flex space-x-4">
+                            <a href="#" class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-black transition-all duration-300">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-black transition-all duration-300">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-black transition-all duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-black transition-all duration-300">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <form class="glass-effect p-8 rounded-2xl" onsubmit="handleContactForm(event)">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Name *</label>
+                                <input type="text" required class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="Your Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Email *</label>
+                                <input type="email" required class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="your@email.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Service Needed</label>
+                                <select class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true">
+                                    <option value="">Select a service</option>
+                                    <option value="web">Web Development</option>
+                                    <option value="mobile">Mobile App</option>
+                                    <option value="devops">DevOps</option>
+                                    <option value="video">Video Production</option>
+                                    <option value="marketing">Digital Marketing</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Message *</label>
+                                <textarea required rows="5" class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="Tell us about your project..."></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-primary text-black py-3 rounded-lg font-semibold hover:animate-glow transition-all duration-300">
+                                Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 bg-opacity-50 py-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="text-2xl font-bold gradient-text mb-4">
+                        Inventer Design Studio
+                    </div>
+                    <p class="text-neutral-custom mb-4">
+                        Transforming digital visions into reality with innovative design and development solutions.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Web Development</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Mobile Apps</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">DevOps</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Video Production</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Digital Marketing</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#about" class="text-neutral-custom hover:text-primary transition-colors duration-300">About Us</a></li>
+                        <li><a href="#portfolio" class="text-neutral-custom hover:text-primary transition-colors duration-300">Portfolio</a></li>
+                        <li><a href="#blog" class="text-neutral-custom hover:text-primary transition-colors duration-300">Blog</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Careers</a></li>
+                        <li><a href="#contact" class="text-neutral-custom hover:text-primary transition-colors duration-300">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" onclick="openPortal('client')" class="text-neutral-custom hover:text-primary transition-colors duration-300">Client Portal</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">FAQ</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Privacy Policy</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Terms of Service</a></li>
+                        <li><a href="#" class="text-neutral-custom hover:text-primary transition-colors duration-300">Help Center</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-white border-opacity-10 mt-12 pt-8 text-center">
+                <p class="text-neutral-custom">
+                    © 2023 Inventer Design Studio. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    
+    <!-- Client Portal Modal -->
+    <div id="clientPortalModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="glass-effect p-8 rounded-2xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Client Portal</h2>
+                <button onclick="closeModal('clientPortalModal')" class="text-neutral-custom hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <!-- TODO: Implement authentication with Replit Auth -->
+            <form onsubmit="handleClientLogin(event)" data-mock="true">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Email</label>
+                        <input type="email" required class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Password</label>
+                        <input type="password" required class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-black py-3 rounded-lg font-semibold hover:animate-glow transition-all duration-300">
+                        Login to Portal
+                    </button>
+                </div>
+            </form>
+            <div class="text-center mt-4">
+                <a href="#" class="text-primary hover:underline text-sm">Forgot your password?</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Portal Modal -->
+    <div id="adminPortalModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="glass-effect p-8 rounded-2xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Admin Portal</h2>
+                <button onclick="closeModal('adminPortalModal')" class="text-neutral-custom hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <!-- TODO: Implement secure admin authentication -->
+            <form onsubmit="handleAdminLogin(event)" data-mock="true">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Admin Email</label>
+                        <input type="email" required class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="admin@inventerdesignstudio.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Admin Password</label>
+                        <input type="password" required class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3 focus:outline-none focus:border-primary transition-all duration-300" data-mock="true" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-black py-3 rounded-lg font-semibold hover:animate-glow transition-all duration-300">
+                        Access Admin Panel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Portfolio Modal -->
+    <div id="portfolioModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="glass-effect p-8 rounded-2xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold" id="portfolioModalTitle">Project Details</h2>
+                <button onclick="closeModal('portfolioModal')" class="text-neutral-custom hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="portfolioModalContent">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-primary mb-4"></div>
+            <p class="text-white">Loading...</p>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Navigation scroll effect
+            window.addEventListener('scroll', function() {
+                const navbar = document.getElementById('navbar');
+                if (window.scrollY > 50) {
+                    navbar.classList.add('bg-opacity-90');
+                } else {
+                    navbar.classList.remove('bg-opacity-90');
+                }
+            });
+
+            // Mobile menu toggle
+            window.toggleMobileMenu = function() {
+                const mobileMenu = document.getElementById('mobileMenu');
+                mobileMenu.classList.toggle('hidden');
+            };
+
+            // Smooth scroll to sections
+            window.scrollToSection = function(sectionId) {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            // Portfolio filter functionality
+            window.filterPortfolio = function(category) {
+                const items = document.querySelectorAll('.portfolio-item');
+                const filters = document.querySelectorAll('.portfolio-filter');
+                
+                // Update active filter
+                filters.forEach(filter => {
+                    filter.classList.remove('active', 'bg-primary', 'text-black');
+                    filter.classList.add('border', 'border-primary', 'text-primary');
+                });
+                
+                const activeFilter = event.target;
+                activeFilter.classList.add('active', 'bg-primary', 'text-black');
+                activeFilter.classList.remove('border', 'border-primary', 'text-primary');
+                
+                // Filter items
+                items.forEach(item => {
+                    if (category === 'all' || item.classList.contains(category)) {
+                        item.style.display = 'block';
+                        item.style.animation = 'fadeIn 0.5s ease-out';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            };
+
+            // FAQ toggle functionality
+            window.toggleFAQ = function(faqNumber) {
+                const content = document.getElementById(`faq-content-${faqNumber}`);
+                const icon = document.getElementById(`faq-icon-${faqNumber}`);
+                
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    content.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            };
+
+            // Modal functionality
+            window.openPortal = function(type) {
+                if (type === 'client') {
+                    document.getElementById('clientPortalModal').classList.remove('hidden');
+                } else if (type === 'admin') {
+                    document.getElementById('adminPortalModal').classList.remove('hidden');
+                }
+            };
+
+            window.closeModal = function(modalId) {
+                document.getElementById(modalId).classList.add('hidden');
+            };
+
+            // Portfolio modal
+            window.openPortfolioModal = function(projectId) {
+                const modal = document.getElementById('portfolioModal');
+                const title = document.getElementById('portfolioModalTitle');
+                const content = document.getElementById('portfolioModalContent');
+                
+                // TODO: Replace with dynamic content from database
+                const projectData = {
+                    project1: {
+                        title: 'E-Commerce Platform',
+                        description: 'A comprehensive online shopping platform with advanced features including inventory management, payment processing, and customer analytics.',
+                        technologies: ['React', 'Node.js', 'MongoDB', 'Stripe API'],
+                        features: ['Product Management', 'Shopping Cart', 'Payment Gateway', 'Admin Dashboard', 'Customer Reviews'],
+                        image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600'
+                    }
+                    // Add more project data as needed
+                };
+                
+                const project = projectData[projectId] || projectData.project1;
+                
+                title.textContent = project.title;
+                content.innerHTML = `
+                    <img src="${project.image}" alt="${project.title}" class="w-full h-64 object-cover rounded-lg mb-6" />
+                    <p class="text-neutral-custom mb-6">${project.description}</p>
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Technologies Used</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${project.technologies.map(tech => `<span class="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm">${tech}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3">Key Features</h3>
+                        <ul class="space-y-2">
+                            ${project.features.map(feature => `<li class="flex items-center"><div class="w-2 h-2 bg-primary rounded-full mr-3"></div>${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                
+                modal.classList.remove('hidden');
+            };
+
+            // Form handlers
+            window.handleContactForm = function(event) {
+                event.preventDefault();
+                // TODO: Implement contact form submission
+                alert('Thank you for your message! We will get back to you soon.');
+            };
+
+            window.handleClientLogin = function(event) {
+                event.preventDefault();
+                // TODO: Implement client authentication
+                alert('Client login functionality will be implemented with Replit Auth');
+            };
+
+            window.handleAdminLogin = function(event) {
+                event.preventDefault();
+                // TODO: Implement admin authentication
+                alert('Admin login functionality will be implemented with secure authentication');
+            };
+
+            // Smooth scroll for navigation links
+            document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Intersection Observer for animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'fadeIn 0.8s ease-out';
+                        entry.target.style.opacity = '1';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe elements for animation
+            document.querySelectorAll('.glass-effect, .portfolio-item, .animate-fadeIn').forEach(el => {
+                el.style.opacity = '0';
+                observer.observe(el);
+            });
+
+            // Close modals when clicking outside
+            document.addEventListener('click', function(event) {
+                const modals = ['clientPortalModal', 'adminPortalModal', 'portfolioModal'];
+                modals.forEach(modalId => {
+                    const modal = document.getElementById(modalId);
+                    if (!modal.classList.contains('hidden') && event.target === modal) {
+                        closeModal(modalId);
+                    }
+                });
+            });
+
+            // Initialize portfolio filter
+            document.addEventListener('DOMContentLoaded', function() {
+                const firstFilter = document.querySelector('.portfolio-filter');
+                if (firstFilter) {
+                    firstFilter.classList.add('active', 'bg-primary', 'text-black');
+                    firstFilter.classList.remove('border', 'border-primary', 'text-primary');
+                }
+            });
+
+        })();
+    </script>
+
+</body>
+</html>
