@@ -73,6 +73,7 @@ export interface IStorage {
   createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission>;
   getContactSubmissions(): Promise<ContactSubmission[]>;
   markContactSubmissionResponded(id: number): Promise<void>;
+  deleteContactSubmission(id: number): Promise<void>;
 
   // FAQ
   getFaqItems(): Promise<FaqItem[]>;
@@ -277,6 +278,10 @@ export class DatabaseStorage implements IStorage {
 
   async markContactSubmissionResponded(id: number): Promise<void> {
     await db.update(contactSubmissions).set({ responded: true }).where(eq(contactSubmissions.id, id));
+  }
+
+  async deleteContactSubmission(id: number): Promise<void> {
+    await db.delete(contactSubmissions).where(eq(contactSubmissions.id, id));
   }
 
   // FAQ

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupFirebaseAuth, verifyJWT, requireRole } from "./firebaseAuth";
+import { setupAuth, verifyJWT, requireRole } from "./auth";
 import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
 
 import {
@@ -32,32 +32,8 @@ const attachUserFromDB = async (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Firebase auth middleware
-  setupFirebaseAuth(app);
-
-  // Auth routes
-  app.get("/api/auth/user", verifyJWT, attachUserFromDB, async (req: any, res) => {
-    try {
-      // If user doesn't exist in DB, create them
-      if (!req.currentUser && req.user) {
-        const newUser = {
-          id: req.user.id,
-          email: req.user.email,
-          firstName: req.user.email.split('@')[0], // Fallback
-          lastName: '',
-          role: 'client',
-          createdAt: new Date(),
-        };
-        await storage.createUser(newUser);
-        req.currentUser = newUser;
-      }
-      
-      res.json(req.currentUser || req.user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Setup auth middleware
+  setupAuth(app);
 
   // Admin endpoint to get all users
   app.get("/api/admin/users", verifyJWT, requireRole(['admin']), async (req: any, res) => {
@@ -222,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/portfolio", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
     try {
       const projectData = insertPortfolioProjectSchema.parse(req.body);
-      const newProject = await storage.createPortfolioProject(projectData);
+      const newProject = await storage.createProject(projectData);
       res.json(newProject);
     } catch (error: any) {
       console.error("Error creating portfolio project:", error);
@@ -234,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      const updatedProject = await storage.updatePortfolioProject(id, updates);
+      const updatedProject = await storage.updateProject(id, updates);
       res.json(updatedProject);
     } catch (error) {
       console.error("Error updating portfolio project:", error);
@@ -245,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/portfolio/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deletePortfolioProject(id);
+      await storage.deleteProject(id);
       res.json({ message: "Portfolio project deleted successfully" });
     } catch (error) {
       console.error("Error deleting portfolio project:", error);
@@ -323,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Client Project Management Routes
   app.get("/api/admin/client-projects", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
     try {
-      const projects = await storage.getClientProjects();
+      const projects = await storage.getAllClientProjects();
       res.json(projects);
     } catch (error) {
       console.error("Error fetching client projects:", error);
@@ -369,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/client/projects", verifyJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const projects = await storage.getClientProjectsByUserId(userId);
+      const projects = await storage.getClientProjects(userId);
       res.json(projects);
     } catch (error) {
       console.error("Error fetching user projects:", error);
@@ -400,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/blog", async (req, res) => {
     try {
-      const posts = await storage.getPublishedBlogPosts();
+      const posts = await storage.getBlogPosts(true);
       res.json(posts);
     } catch (error) {
       console.error("Error fetching blog posts:", error);
@@ -456,7 +432,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/design-recommendations", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
     try {
       const { projectData, designElements } = req.body;
-      const recommendations = await generateDesignRecommendations(projectData, designElements);
+      const recommendations = await generateDesignRecommendations({
+        projectType: projectData.projectType || 'website',
+        targetAudience: projectData.targetAudience || 'general',
+        brandGuidelines: projectData.brandGuidelines || '',
+        currentDesigns: designElements || []
+      });
       res.json(recommendations);
     } catch (error) {
       console.error("Error generating design recommendations:", error);
@@ -467,11 +448,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/project-health", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
     try {
       const { projectId } = req.body;
-      const project = await storage.getClientProject(projectId);
+      const project = await storage.getClientProjectById(projectId);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      const healthAnalysis = await analyzeProjectHealth(project);
+      const healthAnalysis = await analyzeProjectHealth({
+        projectData: project,
+        timelineData: {},
+        teamData: {},
+        clientFeedback: {}
+      });
       res.json(healthAnalysis);
     } catch (error) {
       console.error("Error analyzing project health:", error);
@@ -482,7 +468,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/communication", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
     try {
       const { clientId, projectId, communicationType, context } = req.body;
-      const content = await generateCommunicationContent(clientId, projectId, communicationType, context);
+      const content = await generateCommunicationContent({
+        type: communicationType,
+        context: context,
+        clientInfo: { id: clientId },
+        projectInfo: { id: projectId },
+        tone: 'professional'
+      });
       res.json({ content });
     } catch (error) {
       console.error("Error generating communication content:", error);

@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,6 +16,7 @@ import Blog from "@/pages/Blog";
 import Contact from "@/pages/Contact";
 import FAQ from "@/pages/FAQ";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 import Certifications from "@/pages/Certifications";
 import Partnerships from "@/pages/Partnerships";
 import ClientPortal from "@/pages/ClientPortal";
@@ -24,6 +25,9 @@ import ProjectManagement from "@/pages/ProjectManagement";
 import TeamPortal from "@/pages/TeamPortal";
 import ClientPortalNew from "@/pages/ClientPortalNew";
 import Setup from "@/pages/Setup";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import CustomerConsole from "@/pages/CustomerConsole";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
@@ -44,9 +48,15 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      
+      {/* Authentication routes */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       
       {/* Protected routes - Client Portal */}
-      <Route path="/client-portal" component={ClientPortal} />
+      <Route path="/client-portal" component={CustomerConsole} />
+      <Route path="/client-portal-old" component={ClientPortal} />
       <Route path="/client-portal-new" component={ClientPortalNew} />
       
       {/* Protected routes - Admin Portal */}
@@ -86,6 +96,33 @@ function Router() {
 }
 
 function App() {
+  const [location] = useLocation();
+  
+  // Check if we're on auth pages
+  const isAuthPage = location === "/login" || location === "/register";
+  
+  // Debug logging
+  console.log("App.tsx - Current location:", location);
+  console.log("App.tsx - Is auth page:", isAuthPage);
+
+  // Render different layouts for auth vs non-auth pages
+  if (isAuthPage) {
+    // Simple layout for auth pages - no header, no footer, no animations
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <main>
+              <Router />
+            </main>
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Full layout for all other pages
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

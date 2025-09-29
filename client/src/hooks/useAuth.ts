@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn, queryClient } from "@/lib/queryClient";
-import { signOutUser } from "@/lib/firebase";
+import { logoutUser } from "@/lib/auth";
 
 export function useAuth() {
   // Get user from backend (which validates JWT token)
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
@@ -14,8 +14,8 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      // Use Firebase sign out which also clears backend session
-      await signOutUser();
+      // Use new logout function
+      await logoutUser();
       
       // Clear React Query cache
       queryClient.clear();
@@ -24,7 +24,7 @@ export function useAuth() {
       window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if Firebase logout fails, clear local state and redirect
+      // Even if logout fails, clear local state and redirect
       localStorage.clear();
       sessionStorage.clear();
       queryClient.clear();
@@ -37,5 +37,6 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
     logout,
+    refetch,
   };
 }

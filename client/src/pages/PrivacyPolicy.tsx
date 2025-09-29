@@ -2,7 +2,7 @@ import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 import ServiceBackgroundElements from "@/components/ServiceBackgroundElements";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Lock, Eye, UserCheck, FileText, Calendar } from "lucide-react";
+import { Shield, Lock, Eye, UserCheck, FileText, Calendar, Mail, MapPin } from "lucide-react";
 
 export default function PrivacyPolicy() {
   const sections = [
@@ -11,11 +11,11 @@ export default function PrivacyPolicy() {
       title: "Information We Collect",
       icon: UserCheck,
       content: [
-        "Personal information such as name, email address, and phone number when you contact us or use our services",
-        "Business information including company name, website, and project requirements",
-        "Technical information such as IP address, browser type, and device information for website analytics",
-        "Communication records including emails, chat messages, and support tickets",
-        "Project files and content that you provide for our services"
+        "We may collect the following types of information:",
+        "Personal Information: Name, email address, phone number, company name, billing details.",
+        "Technical Information: IP address, browser type, operating system, device details, cookies, and analytics data.",
+        "Usage Data: How you interact with our website and services.",
+        "Client Project Data: Files, documents, or materials you provide for project completion."
       ]
     },
     {
@@ -23,23 +23,23 @@ export default function PrivacyPolicy() {
       title: "How We Use Your Information",
       icon: Eye,
       content: [
-        "To provide and improve our design and development services",
-        "To communicate with you about projects, updates, and support",
-        "To process payments and manage client accounts",
-        "To analyze website usage and optimize user experience",
-        "To comply with legal obligations and protect our rights"
+        "We use the collected data to:",
+        "Deliver and improve our services.",
+        "Communicate with you regarding inquiries, contracts, and updates.",
+        "Process payments and invoices.",
+        "Send marketing or promotional material (with your consent).",
+        "Ensure compliance with legal and security requirements."
       ]
     },
     {
       id: "information-sharing",
-      title: "Information Sharing",
+      title: "Sharing of Information",
       icon: Shield,
       content: [
-        "We do not sell, trade, or rent your personal information to third parties",
-        "We may share information with trusted service providers who assist in our operations",
-        "Information may be disclosed if required by law or to protect our rights",
-        "Client project information is kept confidential and not shared without permission",
-        "Anonymous, aggregated data may be used for business analytics"
+        "We do not sell or rent your personal data. We may share information with:",
+        "Trusted third-party vendors (e.g., hosting, payment processors, cloud storage).",
+        "Legal authorities if required by law or court order.",
+        "Business transfers in the event of a merger, acquisition, or sale of assets."
       ]
     },
     {
@@ -47,36 +47,52 @@ export default function PrivacyPolicy() {
       title: "Data Security",
       icon: Lock,
       content: [
-        "We implement industry-standard security measures to protect your data",
-        "All client communications and file transfers are encrypted",
-        "Access to client information is restricted to authorized personnel only",
-        "Regular security audits and updates are performed on our systems",
-        "Secure backup systems ensure data integrity and availability"
+        "We use industry-standard measures (encryption, firewalls, secure servers) to protect your information.",
+        "However, no system is 100% secure, and we cannot guarantee absolute security."
       ]
+    },
+    {
+      id: "cookies-tracking",
+      title: "Cookies & Tracking Technologies",
+      icon: Calendar,
+      content: "Our website uses cookies and similar technologies to improve user experience, analyze traffic, and personalize content. You can disable cookies in your browser settings, but some site features may not function properly."
     },
     {
       id: "client-rights",
       title: "Your Rights",
       icon: FileText,
       content: [
-        "Access: You can request access to your personal information we hold",
-        "Correction: You can request correction of inaccurate or incomplete information",
-        "Deletion: You can request deletion of your personal information (subject to legal requirements)",
-        "Portability: You can request a copy of your data in a structured format",
-        "Objection: You can object to certain processing of your personal information"
+        "Depending on your location, you may have rights to:",
+        "Access, correct, or delete your personal data.",
+        "Withdraw consent for marketing communications.",
+        "Request a copy of the data we hold about you.",
+        "File a complaint with your local data protection authority.",
+        "To exercise these rights, contact us at info@inventerdesignstudio.com."
       ]
     },
     {
-      id: "cookies",
-      title: "Cookies and Tracking",
+      id: "data-retention",
+      title: "Data Retention",
       icon: Calendar,
-      content: [
-        "We use cookies to improve website functionality and user experience",
-        "Analytics cookies help us understand how visitors use our website",
-        "Performance cookies optimize website loading and functionality",
-        "You can control cookie settings through your browser preferences",
-        "Essential cookies are required for basic website functionality"
-      ]
+      content: "We retain your data only as long as necessary to provide our services, comply with legal obligations, and resolve disputes."
+    },
+    {
+      id: "international-transfers",
+      title: "International Data Transfers",
+      icon: MapPin,
+      content: "If you access our services from outside Pakistan, your data may be transferred to servers located in other countries with different data protection laws."
+    },
+    {
+      id: "children-privacy",
+      title: "Children's Privacy",
+      icon: UserCheck,
+      content: "Our services are not directed to children under 13. We do not knowingly collect personal data from children."
+    },
+    {
+      id: "policy-changes",
+      title: "Changes to Privacy Policy",
+      icon: FileText,
+      content: "We may update this Privacy Policy at any time. Updates will be posted on this page with the \"Last Updated\" date."
     }
   ];
 
@@ -91,38 +107,14 @@ export default function PrivacyPolicy() {
           <AnimatedSection className="text-center mb-16">
             <Shield className="h-16 w-16 text-primary mx-auto mb-6" />
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Privacy <span className="gradient-text">Policy</span>
+              📑 Privacy <span className="gradient-text">Policy</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Your privacy is important to us. This policy explains how we collect, use, and protect your personal information when you use our services.
+              At Inventor Design Studio, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
             </p>
             <div className="mt-8 text-sm text-muted-foreground">
-              Last updated: December 2024
+              Last Updated: September 21, 2025
             </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Introduction */}
-      <section className="py-20 bg-gray-900 bg-opacity-30">
-        <div className="container mx-auto px-6">
-          <AnimatedSection>
-            <Card className="glass-effect border-border max-w-4xl mx-auto">
-              <CardContent className="p-8">
-                <h2 className="text-3xl font-bold mb-6">Introduction</h2>
-                <div className="space-y-4 text-muted-foreground">
-                  <p>
-                    Welcome to Inventer Design Studio. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains our practices regarding the collection, use, and disclosure of information when you use our website and services.
-                  </p>
-                  <p>
-                    By using our services, you agree to the collection and use of information in accordance with this policy. We will not use or share your information with anyone except as described in this Privacy Policy.
-                  </p>
-                  <p>
-                    This policy applies to all visitors, users, and clients of Inventer Design Studio's website and services, regardless of location.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </AnimatedSection>
         </div>
       </section>
@@ -133,6 +125,8 @@ export default function PrivacyPolicy() {
           <div className="max-w-4xl mx-auto space-y-8">
             {sections.map((section, index) => {
               const Icon = section.icon;
+              const isArray = Array.isArray(section.content);
+              
               return (
                 <AnimatedSection key={section.id} delay={index * 0.1}>
                   <Card className="glass-effect border-border">
@@ -141,14 +135,32 @@ export default function PrivacyPolicy() {
                         <Icon className="h-8 w-8 text-primary mr-4" />
                         <h2 className="text-2xl font-bold">{section.title}</h2>
                       </div>
-                      <ul className="space-y-3">
-                        {section.content.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-start">
-                            <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-4 flex-shrink-0" />
-                            <span className="text-muted-foreground">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      
+                      {isArray ? (
+                        <div className="space-y-3">
+                          {(section.content as string[]).map((item, itemIndex) => {
+                            const isIntroText = itemIndex === 0 && (
+                              item.includes("We may collect") || 
+                              item.includes("We use the collected") || 
+                              item.includes("We do not sell") || 
+                              item.includes("Depending on your location")
+                            );
+                            
+                            return isIntroText ? (
+                              <p key={itemIndex} className="text-muted-foreground mb-4">
+                                {item}
+                              </p>
+                            ) : (
+                              <div key={itemIndex} className="flex items-start">
+                                <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-4 flex-shrink-0" />
+                                <span className="text-muted-foreground">{item}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">{section.content as string}</p>
+                      )}
                     </CardContent>
                   </Card>
                 </AnimatedSection>
@@ -164,61 +176,20 @@ export default function PrivacyPolicy() {
           <AnimatedSection>
             <Card className="glass-effect border-border max-w-4xl mx-auto">
               <CardContent className="p-8 text-center">
-                <h2 className="text-3xl font-bold mb-6">Contact Us About Privacy</h2>
+                <h2 className="text-3xl font-bold mb-6">Contact Us</h2>
                 <p className="text-muted-foreground mb-8">
-                  If you have any questions about this Privacy Policy, your rights, or how we handle your personal information, please don't hesitate to contact us.
+                  If you have questions about this Privacy Policy or our data practices, please contact us:
                 </p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">General Inquiries</h3>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p>📧 privacy@inventerdesignstudio.com</p>
-                      <p>📞 +92 XXX XXXXXXX</p>
-                      <p>📍 Lahore, Pakistan</p>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Data Protection Officer</h3>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p>📧 dpo@inventerdesignstudio.com</p>
-                      <p>📞 +971 XX XXXXXXX</p>
-                      <p>📍 Dubai, UAE</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-8 pt-6 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    We will respond to all privacy-related inquiries within 30 days.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Updates Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-6">
-          <AnimatedSection>
-            <Card className="glass-effect border-border max-w-4xl mx-auto">
-              <CardContent className="p-8">
-                <h2 className="text-3xl font-bold mb-6">Policy Updates</h2>
                 <div className="space-y-4 text-muted-foreground">
-                  <p>
-                    We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. When we make changes to this policy, we will:
-                  </p>
-                  <ul className="space-y-2 ml-6">
-                    <li className="list-disc">Update the "Last updated" date at the top of this policy</li>
-                    <li className="list-disc">Notify existing clients of significant changes via email</li>
-                    <li className="list-disc">Post the updated policy on our website</li>
-                    <li className="list-disc">Provide a summary of changes if they are substantial</li>
-                  </ul>
-                  <p>
-                    Your continued use of our services after any changes to this Privacy Policy constitutes your acceptance of the updated policy.
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <Mail className="h-5 w-5 text-primary" />
+                    <span>📧 Email: info@inventerdesignstudio.com</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <span>📍 Address: First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, Pakistan</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

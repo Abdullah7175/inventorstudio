@@ -38,7 +38,7 @@ export default function Footer() {
     { label: "Client Portal", href: "/client-portal" },
     { label: "FAQ", href: "/faq" },
     { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "#" },
+    { label: "Terms of Service", href: "/terms-of-service" },
     { label: "Help Center", href: "#" },
   ];
 

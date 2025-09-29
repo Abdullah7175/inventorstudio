@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X, Download, Smartphone, Monitor } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -18,6 +19,9 @@ export default function AddToHomeScreen() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('mobile');
+  const [location] = useLocation();
+
+  // AddToHomeScreen visibility is now handled at App level
 
   useEffect(() => {
     // Check if already installed

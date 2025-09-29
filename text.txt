@@ -1,0 +1,147 @@
+i need some changes in this website .
+you see there are some portals in this fisrt of all i want you to seperate the portals from website then i want you to remmove google auth for now . we will implement it later pleasse do this and make totaly diff folder for portals . 
+
+i need 3 types of portals with this website 
+1 portal is for my team and 1 is for customers and 1 is for my SEO expert who will be incharge of maintaining blogs and SEO content in my website and every thing he will do from front end means the blogs page in my website will be managed by my SEO expert he should have an account which i will make from admin panel and give him access to the blogs page and other content adding pages  
+and an admin portal for me 
+
+now other than admin there are 2 main types of users 
+1 is my team and in my team there will be roles 
+like manager , software developer , mobile app  developer , and more depending on my demands of the client i will hire more roles and add in my team later 
+and 2nd is customers type: these users will register there selfs they should have a registeration page then login page then they will login by there id we will add the email confirmation and google auth method in the customer registeration later 
+
+now i want these portals to be diff from each other like the admin panel and my team portal will be in white background and totaly diff from the customer portal .
+
+and the customer portal will be same theme as my webiste is . 
+
+now these customer portal and my admin and my team portals are joined via APIs 
+since this website is for projects handling and the cusotmers will come and add there project they want to make like in the fiver or upwork the client add there need that they want to make a project the client add his discriptions and pictures and videos and link what he want to make and then that request will be popupped on admin portal and manager of that categoory then that project will be assigned to the concern team mate like a software project wil be assigned to my software team it can be a single member or i can assign more than  one software developer 
+then the software developer see the project in his portal with  the details added by client . now the team will start the project and on first milestone the developer will add the first update on his portal which then will be showed to the client portal directly via APIs customer can see his project status in his portal as a tree like structure that where is his project now every status will be updated to the customers that there project is on what stage 
+ 
+i also wants a chat bot in my project i will use free bot for now by google gemni this bot helps the customer to get there answeres and this bot should know all about the projects that are in progress so that he can help the customers in there answers related to there project and if a new customer comes he should know about our services and can enetertain the customers in there queries and if the customer wants to talk directly to our team this bot will help to join there communication like if the developer is already assigned to a customers project then the bot will join the customer and team mate or if the team mate is not availabel then the bot send the customer msage to the team mate email id as notification also the bot will send the notification to the team mate portal as system notification 
+so this is i want 
+
+and please donot change any thing in my website it is proper and working i need changes in things i asked only please start 
+
+
+
+
+
+root@inventerdesignstudio:~# history
+    1  ls
+    2  cd
+    3  cd ..
+    4  ls
+    5  cd home/
+    6  ls
+    7  sudo apt update
+    8  sudo apt install postgresql postgresql-contrib -y
+    9  sudo systemctl status postgresql
+   10  sudo systemctl start postgresql
+   11  sudo systemctl enable postgresql
+   12  sudo -i -u postgres
+   13  sudo nano /etc/postgresql/*/main/postgresql.conf
+   14  sudo nano /etc/postgresql/*/main/pg_hba.conf
+   15  sudo systemctl restart postgresql
+   16  sudo ufw status
+   17  sudo systemctl restart postgresql
+   18  sudo nano /etc/postgresql/*/main/postgresql.conf
+   19  sudo -i -u postgres
+   20  ls
+   21  cd ..
+   22  ls
+   23  cd root/
+   24  ls
+   25  cd /home/
+   26  sudo apt install git curl build-essential ufw -y
+   27  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+   28  sudo apt install -y nodejsnode -v
+   29  npm -v
+   30  sudo apt install -y nodejsnode -v
+   31  sudo npm install -g pm2
+   32  sudo apt update && sudo apt upgrade -y
+   33  sudo apt install -y nodejs
+   34  sudo apt install -y npm
+   35  node -v
+   36  npm -v
+   37  sudo npm install -g pm2
+   38  pm2 status
+   39  sudo apt install nginx -y
+   40  systemctl status nginx
+   41  sudo ufw allow OpenSSH
+   42  cd /var/www/
+   43  s
+   44  ls
+   45  git clone https://github.com/Abdullah7175/inventorstudio.git
+   46  ls
+   47  cd /var/
+   48  ls
+   49  cd www/
+   50  ls
+   51  cd inventorstudio/
+   52  ls
+   53  npm install
+   54  npm install vite@6
+   55  npm install
+   56  npm start
+   57  npm run dev
+   58  nano .env
+   59  ls -a
+   60  nano .env
+   61  npm run dev
+   62  cd /var/www/inventorstudio/
+   63  git pull
+   64  npm install
+   65  npm run dev
+   66  cd /var/www/
+   67  cd inventorstudio/
+   68  git pull
+   69  git
+   70  git stash
+   71  git pull
+   72  ls
+   73  ls -a
+   74  nano .env
+   75  npm install
+   76  npm run dev
+   77  cat .env
+   78  cd /var/www/inventorstudio/
+   79  npm run dev
+   80  cd /var/www/
+   81  ls
+   82  cd inventorstudio/n
+   83  cd inventorstudio/
+   84  pm2 start npm --name "studio" -- run start
+   85  pm2 status
+   86  npm run build
+   87  pm2 start npm --name "studio" -- run start
+   88  pm2 status
+   89  pm2 kill
+   90  pm2 status
+   91  npm run deve
+   92  npm run dev
+   93  nano /etc/hostname
+   94  nano /etc/hosts
+   95  nano /etc/hostname
+   96  nano /etc/hosts
+   97  init 6
+   98  cd /var/www/inventorstudio/
+   99  ls
+  100  npm run dev
+  101  pm2 start npm --name inventorstudio -- run dev
+  102  pm2 status
+  103  pm2 logs inventorstudio
+  104  pm2 startup systemd
+  105  pm2 save
+  106  sudo apt install nginx -y
+  107  sudo nano /etc/nginx/sites-available/inventorstudio
+  108  sudo ln -s /etc/nginx/sites-available/inventorstudio /etc/nginx/sites-enabled/
+  109  sudo nginx -t
+  110  sudo systemctl reload nginx
+  111  sudo apt install certbot python3-certbot-nginx -y
+  112  sudo certbot renew --dry-run
+  113  sudo certbot --nginx -d inventerdesignstudio.com -d www.inventerdesignstudio.com
+  114  sudo certbot --nginx -d inventerdesignstudio.com -d www.inventerdesignstudio.com
+  115  sudo nginx -t
+  116  sudo systemctl reload nginx
+  117  ls

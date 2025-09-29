@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ArrowRight, User, LogOut, Shield, Home, Info, Briefcase, FolderOpen, MessageSquare, HelpCircle } from "lucide-react";
+import { Menu, X, ArrowRight, User, LogOut, Shield, Home, Info, Briefcase, FolderOpen, MessageSquare, HelpCircle, LogIn, UserPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { signInWithGoogle } from "@/lib/firebase";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { InventorDesignStudioLogo, IDSLogoSimple } from "@/assets/logo";
 
@@ -13,6 +12,8 @@ export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [location] = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+
+  // Navigation visibility is now handled at App level
 
   useEffect(() => {
     const handleScroll = () => {
@@ -131,8 +132,8 @@ export default function Navigation() {
                     </div>
 
                     {/* Portal Links - Role-based access */}
-                    {(user as any)?.role === "client" && (
-                      <Link href="/client-portal-new">
+                    {((user as any)?.role === "customer" || (user as any)?.role === "client") && (
+                      <Link href="/client-portal">
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -181,18 +182,28 @@ export default function Navigation() {
                     </Button>
                   </div>
                 ) : (
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      onClick={() => signInWithGoogle()}
-                      className="bg-primary text-black hover:bg-primary/80 transition-all duration-300 group"
-                    >
-                      Sign in with Google
-                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </motion.div>
+                  <div className="flex items-center space-x-2">
+                    <Link href="/login">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:text-primary transition-colors duration-300"
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/register">
+                      <Button
+                        className="bg-primary text-black hover:bg-primary/80 transition-all duration-300 group"
+                        size="sm"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Register
+                        <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
 
@@ -299,8 +310,8 @@ export default function Navigation() {
                       </div>
                       
                       {/* Role-based Portal Access */}
-                      {(user as any)?.role === "client" && (
-                        <Link href="/client-portal-new">
+                      {((user as any)?.role === "customer" || (user as any)?.role === "client") && (
+                        <Link href="/client-portal">
                           <Button 
                             className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -362,16 +373,27 @@ export default function Navigation() {
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        signInWithGoogle();
-                      }}
-                      className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
-                    >
-                      Login
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <div className="space-y-3">
+                      <Link href="/login">
+                        <Button
+                          variant="outline"
+                          className="w-full border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <LogIn className="h-4 w-4 mr-2" />
+                          Login
+                        </Button>
+                      </Link>
+                      <Link href="/register">
+                        <Button
+                          className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Register
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>

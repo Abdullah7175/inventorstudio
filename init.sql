@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR,
     last_name VARCHAR,
     profile_image_url VARCHAR,
-    role VARCHAR DEFAULT 'client' NOT NULL CHECK (role IN ('client', 'admin', 'team')),
+    role VARCHAR DEFAULT 'customer' NOT NULL CHECK (role IN ('customer', 'client', 'admin', 'team', 'seo', 'manager', 'developer', 'mobile_developer')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
