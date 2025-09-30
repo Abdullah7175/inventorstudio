@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
-import { loginUser } from "@/lib/auth";
+import { loginUser, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,34 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { refetch } = useAuth();
+  const { refetch, user, isAuthenticated } = useAuth();
+
+  // Auto-redirect if user is already logged in (but not if they just logged out)
+  useEffect(() => {
+    // Check if user just logged out - if so, don't auto-redirect
+    const userJustLoggedOut = sessionStorage.getItem('userLoggedOut');
+    if (userJustLoggedOut) {
+      // Clear the flag and don't auto-redirect
+      sessionStorage.removeItem('userLoggedOut');
+      return;
+    }
+
+    // Only redirect if user is actually authenticated and has valid role
+    const typedUser = user as AuthUser | null;
+    if (isAuthenticated && typedUser && typedUser.id && typedUser.role) {
+      const userRole = typedUser.role;
+      if (userRole === 'team') {
+        window.location.href = "/team";
+      } else if (userRole === 'customer' || userRole === 'client') {
+        window.location.href = "/client-portal";
+      } else if (userRole === 'admin') {
+        // For now, redirect admin to home page since admin portal doesn't exist yet
+        window.location.href = "/";
+      } else {
+        window.location.href = "/";
+      }
+    }
+  }, [isAuthenticated, user]);
 
   const {
     register,
@@ -38,9 +65,26 @@ export default function Login() {
     setError(null);
 
     try {
-      await loginUser(data);
+      const response = await loginUser(data);
+      
+      // Clear any logout flags since user is now successfully logged in
+      sessionStorage.removeItem('userLoggedOut');
+      sessionStorage.removeItem('logoutInProgress');
+      
       await refetch(); // Refresh user data
-      window.location.href = "/client-portal"; // Redirect to client portal
+      
+      // Redirect based on user role
+      const userRole = response.user?.role;
+      if (userRole === 'team') {
+        window.location.href = "/team";
+      } else if (userRole === 'customer' || userRole === 'client') {
+        window.location.href = "/client-portal";
+      } else if (userRole === 'admin') {
+        // For now, redirect admin to home page since admin portal doesn't exist yet
+        window.location.href = "/";
+      } else {
+        window.location.href = "/";
+      }
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {

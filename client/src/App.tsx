@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ import TermsOfService from "@/pages/TermsOfService";
 import Certifications from "@/pages/Certifications";
 import Partnerships from "@/pages/Partnerships";
 import ClientPortal from "@/pages/ClientPortal";
-import AdminPortal from "@/pages/AdminPortal";
+// Admin portal removed for security
 import ProjectManagement from "@/pages/ProjectManagement";
 import TeamPortal from "@/pages/TeamPortal";
 import ClientPortalNew from "@/pages/ClientPortalNew";
@@ -28,9 +29,16 @@ import Setup from "@/pages/Setup";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CustomerConsole from "@/pages/CustomerConsole";
+import ClientProjects from "@/pages/ClientProjects";
+import ClientMessages from "@/pages/ClientMessages";
+import ClientProfile from "@/pages/ClientProfile";
+import ClientSettings from "@/pages/ClientSettings";
+import ApiDocumentation from "@/pages/ApiDocumentation";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
+import AuthGuard from "@/components/AuthGuard";
+import CustomerLayout from "@/components/CustomerLayout";
 
 
 function Router() {
@@ -49,26 +57,65 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/api-docs" component={ApiDocumentation} />
       
       {/* Authentication routes */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       
       {/* Protected routes - Client Portal */}
-      <Route path="/client-portal" component={CustomerConsole} />
-      <Route path="/client-portal-old" component={ClientPortal} />
-      <Route path="/client-portal-new" component={ClientPortalNew} />
+      <Route path="/client-portal">
+        <AuthGuard requiredRole={['customer', 'client']}>
+          <CustomerLayout>
+            <CustomerConsole />
+          </CustomerLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/client-portal/projects">
+        <AuthGuard requiredRole={['customer', 'client']}>
+          <CustomerLayout>
+            <ClientProjects />
+          </CustomerLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/client-portal/messages">
+        <AuthGuard requiredRole={['customer', 'client']}>
+          <CustomerLayout>
+            <ClientMessages />
+          </CustomerLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/client-portal/profile">
+        <AuthGuard requiredRole={['customer', 'client']}>
+          <CustomerLayout>
+            <ClientProfile />
+          </CustomerLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/client-portal/settings">
+        <AuthGuard requiredRole={['customer', 'client']}>
+          <CustomerLayout>
+            <ClientSettings />
+          </CustomerLayout>
+        </AuthGuard>
+      </Route>
       
-      {/* Protected routes - Admin Portal */}
-      <Route path="/admin" component={AdminPortal} />
-      <Route path="/admin-portal" component={AdminPortal} />
+      {/* Admin portal removed for security */}
       
       {/* Project Management Routes */}
-      <Route path="/projects" component={ProjectManagement} />
+      <Route path="/projects">
+        <AuthGuard>
+          <ProjectManagement />
+        </AuthGuard>
+      </Route>
       <Route path="/team" component={TeamPortal} />
       
       {/* Real-time Chat Test Route */}
-      <Route path="/chat-test" component={RealTimeChatTest} />
+      <Route path="/chat-test">
+        <AuthGuard>
+          <RealTimeChatTest />
+        </AuthGuard>
+      </Route>
       
       {/* Setup Route */}
       <Route path="/setup" component={Setup} />
@@ -98,16 +145,38 @@ function Router() {
 function App() {
   const [location] = useLocation();
   
-  // Check if we're on auth pages
+  // Check if we're on auth pages or client portal pages
   const isAuthPage = location === "/login" || location === "/register";
-  
-  // Debug logging
-  console.log("App.tsx - Current location:", location);
-  console.log("App.tsx - Is auth page:", isAuthPage);
+  const isClientPortalPage = location.startsWith("/client-portal");
+
+  // Clean up logout flags when navigating to non-auth pages
+  React.useEffect(() => {
+    if (!isAuthPage) {
+      // Clear logout flags when not on auth pages
+      sessionStorage.removeItem('userLoggedOut');
+      sessionStorage.removeItem('logoutInProgress');
+    }
+  }, [location, isAuthPage]);
 
   // Render different layouts for auth vs non-auth pages
   if (isAuthPage) {
     // Simple layout for auth pages - no header, no footer, no animations
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <main>
+              <Router />
+            </main>
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Client portal pages - use CustomerLayout (no public navigation)
+  if (isClientPortalPage) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>

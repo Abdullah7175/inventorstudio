@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
@@ -37,11 +38,14 @@ export default function TeamPortal() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
   
+  // Enable 5-minute session timeout
+  useSessionTimeout(5);
+  
   const queryClient = useQueryClient();
 
   // Redirect to login if not authenticated or not team member
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || user?.role !== "team")) {
+    if (!isLoading && (!isAuthenticated || (user as any)?.role !== "team")) {
       toast({
         title: "Access Denied",
         description: "You don't have permission to access this area.",
@@ -56,15 +60,15 @@ export default function TeamPortal() {
 
   const { data: assignedProjects = [], error: projectsError } = useQuery({
     queryKey: ["/api/team/assigned-projects"],
-    enabled: isAuthenticated && user?.role === "team",
+    enabled: isAuthenticated && (user as any)?.role === "team",
     retry: false,
-  });
+  }) as { data: AssignedProject[], error?: any };
 
   const { data: teamTasks = [] } = useQuery({
     queryKey: ["/api/team/tasks"],
-    enabled: isAuthenticated && user?.role === "team",
+    enabled: isAuthenticated && (user as any)?.role === "team",
     retry: false,
-  });
+  }) as { data: any[], error?: any };
 
   const uploadFileMutation = useMutation({
     mutationFn: async (fileData: FormData) => {
@@ -230,7 +234,7 @@ export default function TeamPortal() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {teamTasks.filter((t: any) => t.status !== "done").length}
+                  {(teamTasks as any[]).filter((t: any) => t.status !== "done").length}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Awaiting completion
@@ -247,7 +251,7 @@ export default function TeamPortal() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {teamTasks.filter((t: any) => t.status === "done").length}
+                  {(teamTasks as any[]).filter((t: any) => t.status === "done").length}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   This month

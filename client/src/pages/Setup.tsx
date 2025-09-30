@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Users, UserCheck, Settings } from "lucide-react";
+import { Users, UserCheck, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -62,13 +62,6 @@ export default function Setup() {
   };
 
   const roleOptions = [
-    {
-      value: "admin",
-      label: "Admin",
-      description: "Full access to all features including project management, client management, and system settings",
-      icon: Shield,
-      color: "text-red-500"
-    },
     {
       value: "team",
       label: "Team Member",

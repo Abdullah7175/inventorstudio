@@ -22,13 +22,19 @@ export async function apiRequest(
     ...options,
   });
 
-  // Handle 401 errors by redirecting to home
+  // Handle 401 errors by redirecting to login (not home)
   if (res.status === 401) {
-    // Clear any cached data
-    localStorage.clear();
-    sessionStorage.clear();
-    // Redirect to home to sign in
-    window.location.href = "/";
+    // Don't redirect if user just logged out or we're already on login page
+    const userLoggedOut = sessionStorage.getItem('userLoggedOut');
+    const isOnLoginPage = window.location.pathname === '/login';
+    
+    if (!userLoggedOut && !isOnLoginPage) {
+      // Clear any cached data
+      localStorage.clear();
+      sessionStorage.clear();
+      // Redirect to login page
+      window.location.href = "/login";
+    }
     throw new Error("401: Unauthorized - Please sign in");
   }
 
@@ -42,7 +48,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    // Handle queryKey properly - only join string parts
+    const url = queryKey.filter(key => typeof key === 'string').join('/');
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
 

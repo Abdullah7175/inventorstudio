@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ArrowRight, User, LogOut, Shield, Home, Info, Briefcase, FolderOpen, MessageSquare, HelpCircle, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, ArrowRight, User, LogOut, Home, Info, Briefcase, FolderOpen, MessageSquare, HelpCircle, LogIn, UserPlus, Code } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -12,6 +12,23 @@ export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [location] = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+
+  // Check if we're on a page that should show user info
+  // Only show user info on authenticated pages, not on public website
+  const shouldShowUserInfo = isAuthenticated && (
+    location.startsWith("/client-portal") || 
+    location.startsWith("/team-portal") || 
+    location.startsWith("/projects") || 
+    location.startsWith("/chat-test")
+  );
+
+  // For public pages, ALWAYS show login/register buttons, even if user is authenticated
+  const isPublicPage = !location.startsWith("/client-portal") && 
+                      !location.startsWith("/team-portal") && 
+                      !location.startsWith("/projects") && 
+                      !location.startsWith("/chat-test") &&
+                      !location.startsWith("/login") &&
+                      !location.startsWith("/register");
 
   // Navigation visibility is now handled at App level
 
@@ -33,25 +50,11 @@ export default function Navigation() {
     { label: "Blog", href: "/blog", icon: MessageSquare },
     { label: "Contact", href: "/contact", icon: MessageSquare },
     { label: "FAQ", href: "/faq", icon: HelpCircle },
+    // { label: "API Docs", href: "/api-docs", icon: Code },
   ];
 
-  // Authenticated user navigation items (only when logged in)
-  const authNavItems = [
-    { label: "Projects", href: "/projects", icon: FolderOpen },
-    { label: "Chat Test", href: "/chat-test", icon: MessageSquare },
-  ];
-
-  // Get navigation items based on authentication status
-  const getNavItems = () => {
-    if (!isAuthenticated) {
-      return publicNavItems;
-    }
-    
-    // For authenticated users, show public items + authenticated features
-    return [...publicNavItems, ...authNavItems];
-  };
-
-  const navItems = getNavItems();
+  // Only show public navigation items - no auth-specific items in public navbar
+  const navItems = publicNavItems;
 
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
@@ -121,7 +124,27 @@ export default function Navigation() {
             <div className="flex items-center space-x-3">
               {/* Desktop Actions - Only show on large screens */}
               <div className="hidden lg:flex items-center space-x-3">
-                {isAuthenticated ? (
+                {isPublicPage ? (
+                  <div className="flex items-center space-x-3">
+                    <Link href="/login">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/register">
+                      <Button 
+                        size="sm" 
+                        className="bg-primary text-black hover:bg-primary/90 transition-all duration-300"
+                      >
+                        Register
+                      </Button>
+                    </Link>
+                  </div>
+                ) : shouldShowUserInfo ? (
                   <div className="flex items-center space-x-3">
                     {/* User Info */}
                     <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-white/10">
@@ -156,19 +179,7 @@ export default function Navigation() {
                       </Link>
                     )}
 
-                    {/* Admin Portal */}
-                    {(user as any)?.role === "admin" && (
-                      <Link href="/admin-portal">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300 group"
-                        >
-                          <Shield className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform" />
-                          Admin
-                        </Button>
-                      </Link>
-                    )}
+                    {/* Admin Portal removed for security */}
 
                     {/* Logout */}
                     <Button
@@ -300,7 +311,27 @@ export default function Navigation() {
 
                 {/* Mobile Auth Actions */}
                 <div className="mt-8 px-6 space-y-4">
-                  {isAuthenticated ? (
+                  {isPublicPage ? (
+                    <div className="space-y-4">
+                      <Link href="/login">
+                        <Button 
+                          className="w-full bg-primary text-black hover:bg-primary/80 transition-all duration-300"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Login
+                        </Button>
+                      </Link>
+                      <Link href="/register">
+                        <Button 
+                          variant="outline"
+                          className="w-full border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Register
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (shouldShowUserInfo && !isPublicPage) ? (
                     <>
                       <div className="flex items-center space-x-3 px-4 py-3 bg-white/5 rounded-lg">
                         <User className="h-5 w-5 text-primary" />
@@ -332,39 +363,13 @@ export default function Navigation() {
                         </Link>
                       )}
 
-                      {(user as any)?.role === "admin" && (
-                        <Link href="/admin-portal">
-                          <Button 
-                            variant="outline" 
-                            className="w-full border-primary/30 text-primary hover:bg-primary hover:text-black transition-all duration-300"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Admin Portal
-                          </Button>
-                        </Link>
-                      )}
+                      {/* Admin Portal removed for security */}
 
                       <Button
                         variant="ghost"
-                        onClick={async () => {
+                        onClick={() => {
                           setIsMobileMenuOpen(false);
-                          try {
-                            // Clear any local storage/cache first
-                            localStorage.clear();
-                            sessionStorage.clear();
-                            
-                            // Force logout by calling the API
-                            await fetch("/api/auth/logout", {
-                              method: "POST",
-                              credentials: "include"
-                            });
-                          } catch (error) {
-                            console.log("Logout error:", error);
-                          } finally {
-                            // Always redirect to home and reload
-                            window.location.href = "/";
-                          }
+                          logout();
                         }}
                         className="w-full text-gray-400 hover:text-red-400 transition-colors duration-300"
                       >

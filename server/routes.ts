@@ -1,9 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import jwt from 'jsonwebtoken';
 import { storage } from "./storage";
-import { setupAuth, verifyJWT, requireRole } from "./auth";
+import { setupAuth, verifyJWT, requireRole, verifyApiSecurityToken } from "./auth";
 import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 import {
   insertContactSubmissionSchema,
@@ -35,43 +38,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth middleware
   setupAuth(app);
 
-  // Admin endpoint to get all users
-  app.get("/api/admin/users", verifyJWT, requireRole(['admin']), async (req: any, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
-
-  // Admin endpoint to promote users to admin/team roles
-  app.post("/api/admin/promote-user", verifyJWT, requireRole(['admin']), async (req: any, res) => {
-    try {
-      const { userId, role } = req.body;
-      
-      if (!["admin", "team", "client"].includes(role)) {
-        return res.status(400).json({ message: "Invalid role. Must be admin, team, or client" });
-      }
-
-      // Update user role
-      const updatedUser = await storage.updateUser(userId, { role });
-      res.json({ message: `User promoted to ${role}`, user: updatedUser });
-    } catch (error) {
-      console.error("Error promoting user:", error);
-      res.status(500).json({ message: "Failed to promote user" });
-    }
-  });
+  // Admin endpoints removed for security
 
   // Quick setup endpoint - set user role (for development/first setup)
   app.post("/api/setup/role", verifyJWT, attachUserFromDB, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { role } = req.body; // "admin", "team", or "client"
+      const { role } = req.body; // "team" or "client"
       
-      if (!["admin", "team", "client"].includes(role)) {
-        return res.status(400).json({ message: "Invalid role. Must be admin, team, or client" });
+      if (!["team", "client"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be team or client" });
       }
 
       // Update user role
@@ -83,263 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin Blog Management Routes
-  app.get("/api/admin/blog", verifyJWT, requireRole(["admin", "editor"]), async (req: any, res) => {
-    try {
-      const posts = await storage.getBlogPosts(); // Get all posts, published and draft
-      res.json(posts);
-    } catch (error) {
-      console.error("Error fetching admin blog posts:", error);
-      res.status(500).json({ message: "Failed to fetch blog posts" });
-    }
-  });
-
-  app.post("/api/admin/blog", verifyJWT, requireRole(["admin", "editor"]), async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const postData = req.body;
-      
-      // Add author ID
-      postData.authorId = userId;
-      
-      const newPost = await storage.createBlogPost(postData);
-      res.json(newPost);
-    } catch (error: any) {
-      console.error("Error creating blog post:", error);
-      res.status(400).json({ message: error.message || "Failed to create blog post" });
-    }
-  });
-
-  app.put("/api/admin/blog/:id", verifyJWT, requireRole(["admin", "editor"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      
-      // If publishing for the first time, set publishedAt
-      if (updates.published && !updates.publishedAt) {
-        updates.publishedAt = new Date();
-      }
-      
-      const updatedPost = await storage.updateBlogPost(id, updates);
-      res.json(updatedPost);
-    } catch (error: any) {
-      console.error("Error updating blog post:", error);
-      res.status(500).json({ message: "Failed to update blog post" });
-    }
-  });
-
-  app.delete("/api/admin/blog/:id", verifyJWT, requireRole(["admin", "editor"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteBlogPost(id);
-      res.json({ message: "Blog post deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting blog post:", error);
-      res.status(500).json({ message: "Failed to delete blog post" });
-    }
-  });
-
-  // Admin Service Management Routes
-  app.get("/api/admin/services", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const services = await storage.getServices();
-      res.json(services);
-    } catch (error) {
-      console.error("Error fetching admin services:", error);
-      res.status(500).json({ message: "Failed to fetch services" });
-    }
-  });
-
-  app.post("/api/admin/services", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const serviceData = insertServiceSchema.parse(req.body);
-      const newService = await storage.createService(serviceData);
-      res.json(newService);
-    } catch (error: any) {
-      console.error("Error creating service:", error);
-      res.status(400).json({ message: error.message || "Failed to create service" });
-    }
-  });
-
-  app.put("/api/admin/services/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      const updatedService = await storage.updateService(id, updates);
-      res.json(updatedService);
-    } catch (error) {
-      console.error("Error updating service:", error);
-      res.status(500).json({ message: "Failed to update service" });
-    }
-  });
-
-  app.delete("/api/admin/services/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteService(id);
-      res.json({ message: "Service deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting service:", error);
-      res.status(500).json({ message: "Failed to delete service" });
-    }
-  });
-
-  // Admin Portfolio Management Routes
-  app.get("/api/admin/portfolio", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const projects = await storage.getPortfolioProjects();
-      res.json(projects);
-    } catch (error) {
-      console.error("Error fetching admin portfolio:", error);
-      res.status(500).json({ message: "Failed to fetch portfolio projects" });
-    }
-  });
-
-  app.post("/api/admin/portfolio", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const projectData = insertPortfolioProjectSchema.parse(req.body);
-      const newProject = await storage.createProject(projectData);
-      res.json(newProject);
-    } catch (error: any) {
-      console.error("Error creating portfolio project:", error);
-      res.status(400).json({ message: error.message || "Failed to create portfolio project" });
-    }
-  });
-
-  app.put("/api/admin/portfolio/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      const updatedProject = await storage.updateProject(id, updates);
-      res.json(updatedProject);
-    } catch (error) {
-      console.error("Error updating portfolio project:", error);
-      res.status(500).json({ message: "Failed to update portfolio project" });
-    }
-  });
-
-  app.delete("/api/admin/portfolio/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteProject(id);
-      res.json({ message: "Portfolio project deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting portfolio project:", error);
-      res.status(500).json({ message: "Failed to delete portfolio project" });
-    }
-  });
-
-  // Admin FAQ Management Routes
-  app.get("/api/admin/faq", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const faqs = await storage.getFaqItems();
-      res.json(faqs);
-    } catch (error) {
-      console.error("Error fetching admin FAQ:", error);
-      res.status(500).json({ message: "Failed to fetch FAQ items" });
-    }
-  });
-
-  app.post("/api/admin/faq", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const faqData = insertFaqItemSchema.parse(req.body);
-      const newFaq = await storage.createFaqItem(faqData);
-      res.json(newFaq);
-    } catch (error: any) {
-      console.error("Error creating FAQ item:", error);
-      res.status(400).json({ message: error.message || "Failed to create FAQ item" });
-    }
-  });
-
-  app.put("/api/admin/faq/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      const updatedFaq = await storage.updateFaqItem(id, updates);
-      res.json(updatedFaq);
-    } catch (error) {
-      console.error("Error updating FAQ item:", error);
-      res.status(500).json({ message: "Failed to update FAQ item" });
-    }
-  });
-
-  app.delete("/api/admin/faq/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteFaqItem(id);
-      res.json({ message: "FAQ item deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting FAQ item:", error);
-      res.status(500).json({ message: "Failed to delete FAQ item" });
-    }
-  });
-
-  // Admin Contact Management Routes
-  app.get("/api/admin/contacts", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const contacts = await storage.getContactSubmissions();
-      res.json(contacts);
-    } catch (error) {
-      console.error("Error fetching contact submissions:", error);
-      res.status(500).json({ message: "Failed to fetch contact submissions" });
-    }
-  });
-
-  app.delete("/api/admin/contacts/:id", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteContactSubmission(id);
-      res.json({ message: "Contact submission deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting contact submission:", error);
-      res.status(500).json({ message: "Failed to delete contact submission" });
-    }
-  });
-
-  // Admin Client Project Management Routes
-  app.get("/api/admin/client-projects", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
-    try {
-      const projects = await storage.getAllClientProjects();
-      res.json(projects);
-    } catch (error) {
-      console.error("Error fetching client projects:", error);
-      res.status(500).json({ message: "Failed to fetch client projects" });
-    }
-  });
-
-  app.post("/api/admin/client-projects", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
-    try {
-      const projectData = insertClientProjectSchema.parse(req.body);
-      const newProject = await storage.createClientProject(projectData);
-      res.json(newProject);
-    } catch (error: any) {
-      console.error("Error creating client project:", error);
-      res.status(400).json({ message: error.message || "Failed to create client project" });
-    }
-  });
-
-  app.put("/api/admin/client-projects/:id", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      const updatedProject = await storage.updateClientProject(id, updates);
-      res.json(updatedProject);
-    } catch (error) {
-      console.error("Error updating client project:", error);
-      res.status(500).json({ message: "Failed to update client project" });
-    }
-  });
-
-  app.delete("/api/admin/client-projects/:id", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteClientProject(id);
-      res.json({ message: "Client project deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting client project:", error);
-      res.status(500).json({ message: "Failed to delete client project" });
-    }
-  });
+  // Admin endpoints removed for security
 
   // Client routes
   app.get("/api/client/projects", verifyJWT, async (req: any, res) => {
@@ -419,6 +139,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mobile-specific API endpoints (all require API security token)
+  app.post('/api/mobile/refresh-token', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.isActive) {
+        return res.status(401).json({ message: 'User not found or inactive' });
+      }
+
+      // Create new JWT token
+      const jwtToken = jwt.sign(
+        { 
+          uid: user.id, 
+          email: user.email, 
+          role: user.role 
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        message: 'Token refreshed successfully',
+        token: jwtToken,
+        expiresIn: '7d'
+      });
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      res.status(500).json({ message: 'Failed to refresh token' });
+    }
+  });
+
+  app.post('/api/mobile/update-device-token', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { deviceToken, deviceType } = req.body;
+
+      if (!deviceToken) {
+        return res.status(400).json({ message: 'Device token is required' });
+      }
+
+      await storage.updateUser(userId, { 
+        deviceToken, 
+        deviceType: deviceType || 'unknown' 
+      });
+
+      res.json({ message: 'Device token updated successfully' });
+    } catch (error) {
+      console.error('Device token update error:', error);
+      res.status(500).json({ message: 'Failed to update device token' });
+    }
+  });
+
+  app.get('/api/mobile/user-profile', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Remove sensitive information
+      const { passwordHash, verificationToken, deviceToken, ...userProfile } = user;
+      
+      res.json(userProfile);
+    } catch (error) {
+      console.error('Get user profile error:', error);
+      res.status(500).json({ message: 'Failed to get user profile' });
+    }
+  });
+
+  app.put('/api/mobile/user-profile', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, phone } = req.body;
+
+      const updateData: any = {};
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
+      if (phone) updateData.phone = phone;
+
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      // Remove sensitive information
+      const { passwordHash, verificationToken, deviceToken, ...userProfile } = updatedUser;
+      
+      res.json({
+        message: 'Profile updated successfully',
+        user: userProfile
+      });
+    } catch (error) {
+      console.error('Update user profile error:', error);
+      res.status(500).json({ message: 'Failed to update profile' });
+    }
+  });
+
+  // Mobile project APIs
+  app.get('/api/mobile/projects', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const projects = await storage.getClientProjects(userId);
+      res.json(projects);
+    } catch (error) {
+      console.error('Error fetching mobile user projects:', error);
+      res.status(500).json({ message: 'Failed to fetch projects' });
+    }
+  });
+
+  app.get('/api/mobile/projects/:id', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getClientProjectById(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+
+      // Verify user owns this project
+      if (project.clientId !== userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      res.json(project);
+    } catch (error) {
+      console.error('Error fetching mobile project:', error);
+      res.status(500).json({ message: 'Failed to fetch project' });
+    }
+  });
+
+  app.post('/api/mobile/projects', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { title, description, files, feedback } = req.body;
+
+      const projectData = {
+        clientId: userId,
+        title,
+        description: description || null,
+        files: files || [],
+        feedback: feedback || null,
+        status: 'pending'
+      };
+
+      const newProject = await storage.createClientProject(projectData);
+      res.status(201).json(newProject);
+    } catch (error) {
+      console.error('Error creating mobile project:', error);
+      res.status(500).json({ message: 'Failed to create project' });
+    }
+  });
+
+  app.put('/api/mobile/projects/:id', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const projectId = parseInt(req.params.id);
+      const { title, description, feedback } = req.body;
+
+      // Verify project exists and user owns it
+      const existingProject = await storage.getClientProjectById(projectId);
+      if (!existingProject) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+
+      if (existingProject.clientId !== userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const updateData: any = {};
+      if (title) updateData.title = title;
+      if (description !== undefined) updateData.description = description;
+      if (feedback !== undefined) updateData.feedback = feedback;
+
+      const updatedProject = await storage.updateClientProject(projectId, updateData);
+      res.json(updatedProject);
+    } catch (error) {
+      console.error('Error updating mobile project:', error);
+      res.status(500).json({ message: 'Failed to update project' });
+    }
+  });
+
+  // Mobile dashboard data
+  app.get('/api/mobile/dashboard', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get user profile
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Get user's projects
+      const projects = await storage.getClientProjects(userId);
+      
+      // Get active mobile sessions
+      const activeSessions = await storage.getActiveMobileSessions(userId);
+
+      // Calculate project statistics
+      const projectStats = {
+        total: projects.length,
+        pending: projects.filter(p => p.status === 'pending').length,
+        inProgress: projects.filter(p => p.status === 'in-progress').length,
+        review: projects.filter(p => p.status === 'review').length,
+        completed: projects.filter(p => p.status === 'completed').length
+      };
+
+      const dashboardData = {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt
+        },
+        projects: projects.slice(0, 5), // Recent 5 projects
+        projectStats,
+        activeSessions: activeSessions.length,
+        recentActivity: projects
+          .sort((a, b) => {
+            const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+            const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+            return dateB - dateA;
+          })
+          .slice(0, 3)
+      };
+
+      res.json(dashboardData);
+    } catch (error) {
+      console.error('Error fetching mobile dashboard:', error);
+      res.status(500).json({ message: 'Failed to fetch dashboard data' });
+    }
+  });
+
+  // Mobile services and portfolio (public data)
+  app.get('/api/mobile/services', async (req, res) => {
+    try {
+      const services = await storage.getServices();
+      res.json(services);
+    } catch (error) {
+      console.error('Error fetching mobile services:', error);
+      res.status(500).json({ message: 'Failed to fetch services' });
+    }
+  });
+
+  app.get('/api/mobile/portfolio', async (req, res) => {
+    try {
+      const projects = await storage.getPortfolioProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error('Error fetching mobile portfolio:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio' });
+    }
+  });
+
+  // Mobile contact submission
+  app.post('/api/mobile/contact', async (req, res) => {
+    try {
+      const contactData = insertContactSubmissionSchema.parse(req.body);
+      await storage.createContactSubmission(contactData);
+      res.json({ message: 'Contact submission received successfully' });
+    } catch (error: any) {
+      console.error('Error creating mobile contact submission:', error);
+      res.status(400).json({ message: error.message || 'Failed to submit contact form' });
+    }
+  });
+
   // Health check endpoint for Docker
   app.get("/api/health", (req, res) => {
     res.status(200).json({ 
@@ -429,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered features
-  app.post("/api/ai/design-recommendations", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
+  app.post("/api/ai/design-recommendations", verifyJWT, requireRole(["team"]), async (req: any, res) => {
     try {
       const { projectData, designElements } = req.body;
       const recommendations = await generateDesignRecommendations({
@@ -445,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ai/project-health", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
+  app.post("/api/ai/project-health", verifyJWT, requireRole(["team"]), async (req: any, res) => {
     try {
       const { projectId } = req.body;
       const project = await storage.getClientProjectById(projectId);
@@ -465,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ai/communication", verifyJWT, requireRole(["admin", "team"]), async (req: any, res) => {
+  app.post("/api/ai/communication", verifyJWT, requireRole(["team"]), async (req: any, res) => {
     try {
       const { clientId, projectId, communicationType, context } = req.body;
       const content = await generateCommunicationContent({

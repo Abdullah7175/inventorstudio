@@ -13,8 +13,7 @@ import {
   HelpCircle,
   Settings,
   Users,
-  UserCircle,
-  Shield
+  UserCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { signInWithGoogle } from "@/lib/firebase";
@@ -53,7 +52,6 @@ export default function MobileNavigation() {
     ...publicNavItems,
     { href: "/client-portal", label: "Client Portal", icon: UserCircle },
     { href: "/projects", label: "Projects", icon: Settings },
-    { href: "/admin", label: "Admin", icon: Shield },
     { href: "/team", label: "Team", icon: Users },
   ];
 

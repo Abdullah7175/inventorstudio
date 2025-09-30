@@ -23,10 +23,14 @@ import {
   Calendar
 } from "lucide-react";
 import { type ClientProject } from "@shared/schema";
+import { type AuthUser } from "@/lib/auth";
 
 export default function ClientPortal() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  
+  // Type assertion for user object
+  const typedUser = user as AuthUser | null;
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -123,7 +127,7 @@ export default function ClientPortal() {
           <AnimatedSection className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Welcome back, <span className="gradient-text">{user?.firstName || "Client"}</span>
+                Welcome back, <span className="gradient-text">{typedUser?.firstName || "Client"}</span>
               </h1>
               <p className="text-xl text-muted-foreground">
                 Track your projects, download files, and communicate with our team.
@@ -201,9 +205,9 @@ export default function ClientPortal() {
                               <div>
                                 <CardTitle className="text-lg mb-2">{project.title}</CardTitle>
                                 <div className="flex items-center space-x-2">
-                                  {getStatusIcon(project.status)}
-                                  <Badge variant="secondary" className={getStatusColor(project.status)}>
-                                    {project.status.replace("-", " ").toUpperCase()}
+                                  {getStatusIcon(project.status || "pending")}
+                                  <Badge variant="secondary" className={getStatusColor(project.status || "pending")}>
+                                    {(project.status || "pending").replace("-", " ").toUpperCase()}
                                   </Badge>
                                 </div>
                               </div>
@@ -288,21 +292,21 @@ export default function ClientPortal() {
                     <CardContent className="space-y-4">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Name</label>
-                        <p className="text-lg">{user?.firstName} {user?.lastName}</p>
+                        <p className="text-lg">{typedUser?.firstName || ""} {typedUser?.lastName || ""}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Email</label>
-                        <p className="text-lg">{user?.email}</p>
+                        <p className="text-lg">{typedUser?.email || ""}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Role</label>
                         <Badge variant="secondary" className="bg-primary/20 text-primary">
-                          {user?.role || "Client"}
+                          {typedUser?.role || "Client"}
                         </Badge>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Member Since</label>
-                        <p className="text-lg">{formatDate(user?.createdAt)}</p>
+                        <p className="text-lg">{formatDate(typedUser?.createdAt || null)}</p>
                       </div>
                     </CardContent>
                   </Card>

@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"),
   emailVerified: boolean("email_verified").default(false),
   verificationToken: varchar("verification_token"),
+  deviceToken: varchar("device_token"), // For push notifications
+  deviceType: varchar("device_type"), // ios, android, web
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -313,6 +315,57 @@ export const projectFeedback = pgTable("project_feedback", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// OTP codes for desktop login authorization
+export const otpCodes = pgTable("otp_codes", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  code: varchar("code", { length: 6 }).notNull(), // 6-digit code
+  type: varchar("type").default("desktop_login"), // desktop_login, mobile_verification
+  deviceInfo: text("device_info"), // Browser/device info for desktop login
+  isUsed: boolean("is_used").default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  usedAt: timestamp("used_at"),
+});
+
+// Mobile app sessions for tracking logged-in devices
+export const mobileSessions = pgTable("mobile_sessions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  deviceToken: varchar("device_token").notNull(),
+  deviceType: varchar("device_type").notNull(), // ios, android
+  deviceInfo: text("device_info"), // JSON string with device details
+  sessionToken: varchar("session_token"), // 7-day login session token
+  sessionExpiresAt: timestamp("session_expires_at"), // Session expiration
+  isActive: boolean("is_active").default(true),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Mobile biometric security settings
+export const mobileBiometricSettings = pgTable("mobile_biometric_settings", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  deviceToken: varchar("device_token").notNull(), // Device-specific settings
+  biometricType: varchar("biometric_type").notNull(), // fingerprint, pin, face_id, touch_id
+  isEnabled: boolean("is_enabled").default(false),
+  encryptedPin: varchar("encrypted_pin"), // Encrypted PIN if using PIN
+  biometricData: text("biometric_data"), // Encrypted biometric template (if needed)
+  settings: text("settings"), // JSON string with additional settings
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Token blacklist for invalidated JWT tokens
+export const tokenBlacklist = pgTable("token_blacklist", {
+  id: serial("id").primaryKey(),
+  tokenHash: varchar("token_hash").notNull(), // SHA256 hash of the JWT token
+  userId: varchar("user_id").references(() => users.id),
+  reason: varchar("reason").default("logout"), // logout, security, expired
+  expiresAt: timestamp("expires_at"), // When the token would naturally expire
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const serviceCartsRelations = relations(serviceCarts, ({ many }) => ({
   requests: many(projectRequests),
@@ -356,6 +409,10 @@ export const insertProjectFileSchema = createInsertSchema(projectFiles);
 export const insertInvoiceSchema = createInsertSchema(invoices);
 export const insertProjectMessageSchema = createInsertSchema(projectMessages);
 export const insertProjectFeedbackSchema = createInsertSchema(projectFeedback);
+export const insertOtpCodeSchema = createInsertSchema(otpCodes);
+export const insertMobileSessionSchema = createInsertSchema(mobileSessions);
+export const insertMobileBiometricSettingsSchema = createInsertSchema(mobileBiometricSettings);
+export const insertTokenBlacklistSchema = createInsertSchema(tokenBlacklist);
 
 // Types
 export type ServiceCart = typeof serviceCarts.$inferSelect;
@@ -374,6 +431,14 @@ export type ProjectMessage = typeof projectMessages.$inferSelect;
 export type InsertProjectMessage = z.infer<typeof insertProjectMessageSchema>;
 export type ProjectFeedback = typeof projectFeedback.$inferSelect;
 export type InsertProjectFeedback = z.infer<typeof insertProjectFeedbackSchema>;
+export type OtpCode = typeof otpCodes.$inferSelect;
+export type InsertOtpCode = z.infer<typeof insertOtpCodeSchema>;
+export type MobileSession = typeof mobileSessions.$inferSelect;
+export type InsertMobileSession = z.infer<typeof insertMobileSessionSchema>;
+export type MobileBiometricSettings = typeof mobileBiometricSettings.$inferSelect;
+export type InsertMobileBiometricSettings = z.infer<typeof insertMobileBiometricSettingsSchema>;
+export type TokenBlacklist = typeof tokenBlacklist.$inferSelect;
+export type InsertTokenBlacklist = z.infer<typeof insertTokenBlacklistSchema>;
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;

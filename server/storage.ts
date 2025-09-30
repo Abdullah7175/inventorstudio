@@ -8,6 +8,10 @@ import {
   faqItems,
   certifications,
   partnerships,
+  otpCodes,
+  mobileSessions,
+  mobileBiometricSettings,
+  tokenBlacklist,
   type User,
   type UpsertUser,
   type Service,
@@ -26,9 +30,17 @@ import {
   type InsertCertification,
   type Partnership,
   type InsertPartnership,
+  type OtpCode,
+  type InsertOtpCode,
+  type MobileSession,
+  type InsertMobileSession,
+  type MobileBiometricSettings,
+  type InsertMobileBiometricSettings,
+  type TokenBlacklist,
+  type InsertTokenBlacklist,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, lt } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - mandatory for Firebase Auth
@@ -80,6 +92,30 @@ export interface IStorage {
   createFaqItem(item: InsertFaqItem): Promise<FaqItem>;
   updateFaqItem(id: number, item: Partial<InsertFaqItem>): Promise<FaqItem>;
   deleteFaqItem(id: number): Promise<void>;
+
+  // OTP operations
+  createOtpCode(otpData: InsertOtpCode): Promise<OtpCode>;
+  getOtpCode(userId: string, code: string): Promise<OtpCode | undefined>;
+  invalidateOtpCode(id: number): Promise<void>;
+  cleanupExpiredOtpCodes(): Promise<void>;
+
+  // Mobile session operations
+  createMobileSession(sessionData: InsertMobileSession): Promise<MobileSession>;
+  getMobileSession(userId: string, deviceToken: string): Promise<MobileSession | undefined>;
+  updateMobileSession(userId: string, deviceToken: string, updates: Partial<MobileSession>): Promise<MobileSession>;
+  deactivateMobileSession(userId: string, deviceToken: string): Promise<void>;
+  getActiveMobileSessions(userId: string): Promise<MobileSession[]>;
+
+  // Mobile biometric settings operations
+  createBiometricSettings(settingsData: InsertMobileBiometricSettings): Promise<MobileBiometricSettings>;
+  getBiometricSettings(userId: string, deviceToken: string): Promise<MobileBiometricSettings | undefined>;
+  updateBiometricSettings(userId: string, deviceToken: string, updates: Partial<MobileBiometricSettings>): Promise<MobileBiometricSettings>;
+  deleteBiometricSettings(userId: string, deviceToken: string): Promise<void>;
+
+  // Token blacklist operations
+  addTokenToBlacklist(tokenHash: string, userId?: string, reason?: string, expiresAt?: Date): Promise<TokenBlacklist>;
+  isTokenBlacklisted(tokenHash: string): Promise<boolean>;
+  cleanupExpiredTokens(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -359,26 +395,157 @@ export class DatabaseStorage implements IStorage {
     await db.delete(partnerships).where(eq(partnerships.id, id));
   }
 
-  // Admin user management
-  async createAdminUser(): Promise<void> {
-    // Create the dedicated admin user with pre-reserved credentials
-    const adminExists = await this.getUserByEmail("ebadm7251@gmail.com");
-    
-    if (!adminExists) {
-      await this.upsertUser({
-        id: "admin-ebadm7251",
-        email: "ebadm7251@gmail.com",
-        firstName: "Admin",
-        lastName: "User",
-        role: "admin",
-        profileImageUrl: null,
-      });
-    }
-  }
+  // Admin user management removed for security
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
+  }
+
+  // OTP operations
+  async createOtpCode(otpData: InsertOtpCode): Promise<OtpCode> {
+    const [otpCode] = await db.insert(otpCodes).values(otpData).returning();
+    return otpCode;
+  }
+
+  async getOtpCode(userId: string, code: string): Promise<OtpCode | undefined> {
+    const [otpCode] = await db
+      .select()
+      .from(otpCodes)
+      .where(and(
+        eq(otpCodes.userId, userId),
+        eq(otpCodes.code, code),
+        eq(otpCodes.isUsed, false)
+      ));
+    return otpCode;
+  }
+
+  async invalidateOtpCode(id: number): Promise<void> {
+    await db
+      .update(otpCodes)
+      .set({ isUsed: true, usedAt: new Date() })
+      .where(eq(otpCodes.id, id));
+  }
+
+  async cleanupExpiredOtpCodes(): Promise<void> {
+    await db
+      .delete(otpCodes)
+      .where(eq(otpCodes.expiresAt, new Date()));
+  }
+
+  // Mobile session operations
+  async createMobileSession(sessionData: InsertMobileSession): Promise<MobileSession> {
+    const [session] = await db.insert(mobileSessions).values(sessionData).returning();
+    return session;
+  }
+
+  async getMobileSession(userId: string, deviceToken: string): Promise<MobileSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(mobileSessions)
+      .where(and(
+        eq(mobileSessions.userId, userId),
+        eq(mobileSessions.deviceToken, deviceToken),
+        eq(mobileSessions.isActive, true)
+      ));
+    return session;
+  }
+
+  async updateMobileSession(userId: string, deviceToken: string, updates: Partial<MobileSession>): Promise<MobileSession> {
+    const [session] = await db
+      .update(mobileSessions)
+      .set(updates)
+      .where(and(
+        eq(mobileSessions.userId, userId),
+        eq(mobileSessions.deviceToken, deviceToken)
+      ))
+      .returning();
+    return session;
+  }
+
+  async deactivateMobileSession(userId: string, deviceToken: string): Promise<void> {
+    await db
+      .update(mobileSessions)
+      .set({ isActive: false })
+      .where(and(
+        eq(mobileSessions.userId, userId),
+        eq(mobileSessions.deviceToken, deviceToken)
+      ));
+  }
+
+  async getActiveMobileSessions(userId: string): Promise<MobileSession[]> {
+    return await db
+      .select()
+      .from(mobileSessions)
+      .where(and(
+        eq(mobileSessions.userId, userId),
+        eq(mobileSessions.isActive, true)
+      ))
+      .orderBy(desc(mobileSessions.lastActivity));
+  }
+
+  // Mobile biometric settings operations
+  async createBiometricSettings(settingsData: InsertMobileBiometricSettings): Promise<MobileBiometricSettings> {
+    const [settings] = await db.insert(mobileBiometricSettings).values(settingsData).returning();
+    return settings;
+  }
+
+  async getBiometricSettings(userId: string, deviceToken: string): Promise<MobileBiometricSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(mobileBiometricSettings)
+      .where(and(
+        eq(mobileBiometricSettings.userId, userId),
+        eq(mobileBiometricSettings.deviceToken, deviceToken)
+      ));
+    return settings;
+  }
+
+  async updateBiometricSettings(userId: string, deviceToken: string, updates: Partial<MobileBiometricSettings>): Promise<MobileBiometricSettings> {
+    const [settings] = await db
+      .update(mobileBiometricSettings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(mobileBiometricSettings.userId, userId),
+        eq(mobileBiometricSettings.deviceToken, deviceToken)
+      ))
+      .returning();
+    return settings;
+  }
+
+  async deleteBiometricSettings(userId: string, deviceToken: string): Promise<void> {
+    await db
+      .delete(mobileBiometricSettings)
+      .where(and(
+        eq(mobileBiometricSettings.userId, userId),
+        eq(mobileBiometricSettings.deviceToken, deviceToken)
+      ));
+  }
+
+  // Token blacklist operations
+  async addTokenToBlacklist(tokenHash: string, userId?: string, reason?: string, expiresAt?: Date): Promise<TokenBlacklist> {
+    const [blacklistEntry] = await db.insert(tokenBlacklist).values({
+      tokenHash,
+      userId: userId || null,
+      reason: reason || 'logout',
+      expiresAt: expiresAt || null
+    }).returning();
+    return blacklistEntry;
+  }
+
+  async isTokenBlacklisted(tokenHash: string): Promise<boolean> {
+    const [blacklistEntry] = await db
+      .select()
+      .from(tokenBlacklist)
+      .where(eq(tokenBlacklist.tokenHash, tokenHash));
+    return !!blacklistEntry;
+  }
+
+  async cleanupExpiredTokens(): Promise<void> {
+    // Clean up tokens that have expired
+    await db
+      .delete(tokenBlacklist)
+      .where(lt(tokenBlacklist.expiresAt, new Date()));
   }
 }
 

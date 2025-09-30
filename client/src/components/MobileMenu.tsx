@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { X, ChevronRight, Home, Info, Briefcase, FileText, Phone, Users, Shield, HelpCircle, UserCheck } from "lucide-react";
+import { X, ChevronRight, Home, Info, Briefcase, FileText, Phone, Users, HelpCircle, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { signInWithGoogle } from "@/lib/firebase";
 
@@ -26,7 +26,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { href: "/projects", label: "Project Management", icon: Briefcase },
     { href: "/team", label: "Team Portal", icon: Users },
     { href: "/client-portal", label: "Client Portal", icon: Users },
-    { href: "/admin", label: "Admin Portal", icon: Shield },
   ];
 
   return (
