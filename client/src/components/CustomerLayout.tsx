@@ -17,8 +17,8 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   
-  // Enable 5-minute session timeout
-  useSessionTimeout(5);
+  // Enable 30-minute session timeout (more reasonable for web apps)
+  useSessionTimeout(30);
 
   const sidebarItems = [
     { label: "Dashboard", href: "/client-portal", icon: Home },

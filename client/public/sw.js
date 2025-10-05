@@ -50,6 +50,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Skip Vite development files and API calls
+  const url = new URL(event.request.url);
+  if (url.pathname.includes('/src/') || 
+      url.pathname.includes('/@vite/') || 
+      url.pathname.includes('/@react-refresh') ||
+      url.pathname.startsWith('/api/')) {
+    return; // Let these pass through without caching
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -72,8 +81,13 @@ self.addEventListener('fetch', event => {
 
           caches.open(CACHE_NAME)
             .then(cache => {
-              // Only cache GET requests to same origin
-              if (event.request.method === 'GET' && event.request.url.startsWith(self.location.origin)) {
+              // Only cache GET requests to same origin and not development files
+              if (event.request.method === 'GET' && 
+                  event.request.url.startsWith(self.location.origin) &&
+                  !url.pathname.includes('/src/') &&
+                  !url.pathname.includes('/@vite/') &&
+                  !url.pathname.includes('/@react-refresh') &&
+                  !url.pathname.startsWith('/api/')) {
                 cache.put(event.request, responseToCache);
               }
             });

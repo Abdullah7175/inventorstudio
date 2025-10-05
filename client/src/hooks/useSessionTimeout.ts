@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 
-export function useSessionTimeout(timeoutMinutes: number = 5) {
+export function useSessionTimeout(timeoutMinutes: number = 30) {
   const { logout, isAuthenticated } = useAuth();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
@@ -47,9 +47,19 @@ export function useSessionTimeout(timeoutMinutes: number = 5) {
     } catch (error) {
       console.error('Session timeout logout API error:', error);
     } finally {
+      // CRITICAL FIX: Preserve logout flags during session timeout cleanup
+      const logoutFlags = {
+        userLoggedOut: sessionStorage.getItem('userLoggedOut'),
+        logoutInProgress: sessionStorage.getItem('logoutInProgress')
+      };
+      
       // Clear all local storage
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Restore logout flags immediately
+      sessionStorage.setItem('userLoggedOut', logoutFlags.userLoggedOut || 'true');
+      sessionStorage.setItem('logoutInProgress', 'false'); // Session timeout is complete
       
       // Clear all cookies manually
       document.cookie.split(";").forEach(function(c) { 
@@ -60,9 +70,6 @@ export function useSessionTimeout(timeoutMinutes: number = 5) {
       const { queryClient } = await import('@/lib/queryClient');
       queryClient.clear();
       queryClient.removeQueries();
-      
-      // Set a flag to prevent auto-redirect after session timeout
-      sessionStorage.setItem('userLoggedOut', 'true');
       
       // Force a hard reload to clear all state and go to login page
       window.location.replace("/login");

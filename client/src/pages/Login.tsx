@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,33 +24,110 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refetch, user, isAuthenticated } = useAuth();
+  const hasRedirected = useRef(false); // Prevent infinite redirects
 
   // Auto-redirect if user is already logged in (but not if they just logged out)
   useEffect(() => {
-    // Check if user just logged out - if so, don't auto-redirect
+    console.log('Login useEffect triggered:', { 
+      isAuthenticated, 
+      user: !!user, 
+      isLoading,
+      hasRedirected: hasRedirected.current,
+      userRole: (user as AuthUser | null)?.role,
+      userId: (user as AuthUser | null)?.id 
+    });
+    
+    // Prevent infinite redirects
+    if (hasRedirected.current) {
+      console.log('🚫 Redirect already attempted, skipping');
+      return;
+    }
+    
+    // Enhanced logout detection - check multiple flags
     const userJustLoggedOut = sessionStorage.getItem('userLoggedOut');
-    if (userJustLoggedOut) {
-      // Clear the flag and don't auto-redirect
+    const logoutInProgress = sessionStorage.getItem('logoutInProgress');
+    const recentLogin = sessionStorage.getItem('recentLogin');
+    
+    console.log('Login state flags:', { userJustLoggedOut, logoutInProgress, recentLogin });
+    
+    // CRITICAL: If user just logged out or logout is in progress, NEVER auto-redirect
+    if (userJustLoggedOut === 'true' || logoutInProgress === 'true') {
+      console.log('🚫 Preventing auto-redirect: User just logged out or logout in progress');
+      
+      // Clear logout flags but stay on login page
       sessionStorage.removeItem('userLoggedOut');
+      sessionStorage.removeItem('logoutInProgress');
+      
+      console.log('✅ Logout flags cleared, staying on login page');
       return;
     }
 
-    // Only redirect if user is actually authenticated and has valid role
+    // Only proceed with auto-redirect if user is authenticated AND it's not a post-logout visit
     const typedUser = user as AuthUser | null;
-    if (isAuthenticated && typedUser && typedUser.id && typedUser.role) {
+    if (isAuthenticated && typedUser && typedUser.id && typedUser.role && !isLoading) {
+      console.log('✅ User is authenticated, auto-redirecting to portal:', typedUser.role);
+      
+      hasRedirected.current = true; // Mark that we've attempted a redirect
+      
       const userRole = typedUser.role;
       if (userRole === 'team') {
         window.location.href = "/team";
       } else if (userRole === 'customer' || userRole === 'client') {
         window.location.href = "/client-portal";
       } else if (userRole === 'admin') {
-        // For now, redirect admin to home page since admin portal doesn't exist yet
-        window.location.href = "/";
+        window.location.href = "/admin";
       } else {
         window.location.href = "/";
       }
+    } else {
+      console.log('❌ User not authenticated or missing data:', { 
+        isAuthenticated, 
+        hasUser: !!typedUser, 
+        userId: typedUser?.id, 
+        role: typedUser?.role,
+        isLoading
+      });
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, isLoading]);
+
+  // Clear logout flag once server confirms user is not authenticated
+  useEffect(() => {
+    if (!isLoading && !user && !isAuthenticated) {
+      // Server confirms user is not authenticated - clear the "just logged out" guard
+      console.log('Server confirms user is not authenticated - clearing logout flags');
+      sessionStorage.removeItem('userLoggedOut');
+      sessionStorage.removeItem('logoutInProgress');
+    }
+  }, [isLoading, user, isAuthenticated]);
+
+  // Additional safety check: Clear logout flags after a delay to prevent them from persisting too long
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const userJustLoggedOut = sessionStorage.getItem('userLoggedOut');
+      const logoutInProgress = sessionStorage.getItem('logoutInProgress');
+      
+      if (userJustLoggedOut === 'true' || logoutInProgress === 'true') {
+        console.log('🕐 Clearing logout flags after timeout (safety measure)');
+        sessionStorage.removeItem('userLoggedOut');
+        sessionStorage.removeItem('logoutInProgress');
+      }
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // Clear recent login flag after 10 seconds as a safety measure
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const recentLogin = sessionStorage.getItem('recentLogin');
+      if (recentLogin === 'true') {
+        console.log('Clearing recent login flag after timeout');
+        sessionStorage.removeItem('recentLogin');
+      }
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   const {
     register,
@@ -65,27 +142,48 @@ export default function Login() {
     setError(null);
 
     try {
+      console.log('Starting login process...');
       const response = await loginUser(data);
+      
+      console.log('Login successful, response:', response);
+      console.log('User role from response:', response.user?.role);
       
       // Clear any logout flags since user is now successfully logged in
       sessionStorage.removeItem('userLoggedOut');
       sessionStorage.removeItem('logoutInProgress');
       
-      await refetch(); // Refresh user data
+      // Reset redirect flag for successful login
+      hasRedirected.current = false;
       
-      // Redirect based on user role
+      // Set recent login flag to allow redirect
+      sessionStorage.setItem('recentLogin', 'true');
+      
+      console.log('About to call refetch...');
+      // Wait for user data to be refreshed
+      await refetch();
+      console.log('Refetch completed');
+      
+      // Force redirect immediately - don't rely on useEffect
       const userRole = response.user?.role;
+      console.log('About to redirect to:', userRole);
+      
+      // Use href instead of replace to test
       if (userRole === 'team') {
+        console.log('Redirecting to team portal');
         window.location.href = "/team";
       } else if (userRole === 'customer' || userRole === 'client') {
+        console.log('Redirecting to client portal');
         window.location.href = "/client-portal";
       } else if (userRole === 'admin') {
-        // For now, redirect admin to home page since admin portal doesn't exist yet
-        window.location.href = "/";
+        console.log('Redirecting to admin portal');
+        window.location.href = "/admin";
       } else {
+        console.log('Redirecting to home (default)');
         window.location.href = "/";
       }
+      
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message || "Login failed");
     } finally {
       setIsLoading(false);

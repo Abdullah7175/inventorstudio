@@ -366,6 +366,34 @@ export const tokenBlacklist = pgTable("token_blacklist", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  type: varchar("type").notNull(),
+  projectId: integer("project_id"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const projectAssignments = pgTable("project_assignments", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  teamMemberId: varchar("team_member_id").notNull(),
+  role: varchar("role").notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: varchar("assigned_by"),
+});
+
+export const teamRoles = pgTable("team_roles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const serviceCartsRelations = relations(serviceCarts, ({ many }) => ({
   requests: many(projectRequests),

@@ -126,7 +126,8 @@ export const setupAuth = (app: Express) => {
         lastName,
         phone: phone || null,
         passwordHash,
-        role: 'customer',
+        role: (email === 'admin@inventorstudio.com' || email === 'admin@inventor-design-studio.com') ? 'admin' : 
+              (email === 'team@inventorstudio.com' || email.includes('@team.inventorstudio.com')) ? 'team' : 'customer',
         emailVerified: false,
         isActive: true,
         createdAt: new Date(),
@@ -206,13 +207,30 @@ export const setupAuth = (app: Express) => {
       // Update last login
       await storage.updateUser(user.id, { lastLogin: new Date() });
 
-      // Create JWT token
+      // Check if user is a team member and get their specific role
+      let teamMemberInfo = null;
+      if (user.role === 'team') {
+        teamMemberInfo = await storage.getTeamMemberByUserId(user.id);
+        if (!teamMemberInfo) {
+          return res.status(401).json({ message: 'Team member not found' });
+        }
+      }
+
+      // Create JWT token with team member info if applicable
+      const tokenPayload: any = { 
+        uid: user.id, 
+        email: user.email, 
+        role: user.role 
+      };
+
+      if (teamMemberInfo) {
+        tokenPayload.teamMemberId = teamMemberInfo.id;
+        tokenPayload.teamRole = teamMemberInfo.role;
+        tokenPayload.permissions = teamMemberInfo.roleDetails?.permissions;
+      }
+
       const jwtToken = jwt.sign(
-        { 
-          uid: user.id, 
-          email: user.email, 
-          role: user.role 
-        },
+        tokenPayload,
         JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -374,7 +392,8 @@ export const setupAuth = (app: Express) => {
         lastName,
         phone: phone || null,
         passwordHash,
-        role: 'customer',
+        role: (email === 'admin@inventorstudio.com' || email === 'admin@inventor-design-studio.com') ? 'admin' : 
+              (email === 'team@inventorstudio.com' || email.includes('@team.inventorstudio.com')) ? 'team' : 'customer',
         emailVerified: false,
         isActive: true,
         createdAt: new Date(),
@@ -465,48 +484,97 @@ export const setupAuth = (app: Express) => {
     }
   });
 
-  // Logout endpoint
-  app.post('/api/auth/logout', verifyJWT, async (req: any, res) => {
+  // Logout endpoint - works with or without JWT verification
+  app.post('/api/auth/logout', async (req: any, res) => {
     try {
-      // Add token to blacklist (memory + database)
-      const token = req.headers.authorization?.replace('Bearer ', '') || req.cookies.authToken;
+      // Get token from header or cookie (same logic as verifyJWT)
+      let token = req.headers.authorization?.replace('Bearer ', '') || req.cookies?.authToken;
+      
+      console.log('Logout request - Token found:', !!token);
+      console.log('Logout request - Cookies:', req.cookies);
+      
       if (token) {
         // Add to memory blacklist for immediate effect
         memoryTokenBlacklist.add(token);
+        console.log('Token added to memory blacklist');
         
         // Add to database blacklist for persistence
         const tokenHash = createTokenHash(token);
         const decoded = jwt.decode(token) as any;
         const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        const userId = decoded?.uid || null;
         
-        await storage.addTokenToBlacklist(tokenHash, req.user?.id, 'logout', expiresAt);
+        await storage.addTokenToBlacklist(tokenHash, userId, 'logout', expiresAt);
+        console.log('Token added to database blacklist, hash:', tokenHash.substring(0, 10) + '...');
       }
 
-      // Clear the auth cookie
+      // Clear the auth cookie with multiple approaches to ensure it's removed
       res.clearCookie('authToken', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
+        maxAge: 0,
+        expires: new Date(0)
       });
       
-      // Also clear any other auth-related cookies
-      res.clearCookie('authToken');
+      // Also try clearing without secure flag (for development)
+      res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 0,
+        expires: new Date(0)
+      });
       
-      res.json({ message: 'Logged out successfully' });
+      // Clear with different sameSite values
+      res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+        expires: new Date(0)
+      });
+      
+      console.log('Cookie cleared with multiple approaches');
+      
+      res.status(200).json({ 
+        ok: true, 
+        message: 'Logged out successfully',
+        tokenBlacklisted: !!token,
+        debug: {
+          hadToken: !!token,
+          environment: process.env.NODE_ENV
+        }
+      });
     } catch (error) {
       console.error('Logout error:', error);
-      res.status(500).json({ message: 'Logout failed' });
+      res.status(500).json({ 
+        ok: false, 
+        message: 'Logout failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
   // Get current user endpoint
   app.get('/api/auth/user', verifyJWT, async (req: any, res) => {
     try {
+      console.log('Get user endpoint - User ID:', req.user?.id);
+      
       // Get fresh user data from database
       const user = await storage.getUser(req.user.id);
+      
+      console.log('Get user endpoint - User found:', !!user);
+      
       if (!user) {
+        console.log('Get user endpoint - User not found in database');
         return res.status(401).json({ message: 'User not found' });
       }
+
+      console.log('Get user endpoint - Returning user data for:', user.email);
 
       // Remove password hash from response
       const { passwordHash: _, ...userResponse } = user;
@@ -996,19 +1064,41 @@ export const verifyJWT: RequestHandler = async (req: any, res, next) => {
       token = req.cookies?.authToken;
     }
 
+    console.log('verifyJWT - Token found:', !!token);
+    console.log('verifyJWT - Cookies:', req.cookies);
+
     if (!token) {
+      console.log('verifyJWT - No token provided');
       return res.status(401).json({ message: 'No token provided' });
     }
 
     // Check if token is blacklisted (memory + database)
     if (memoryTokenBlacklist.has(token)) {
+      console.log('verifyJWT - Token found in memory blacklist');
       return res.status(401).json({ message: 'Token has been invalidated' });
     }
 
-    // Check database blacklist
+    // Check database blacklist with timeout protection
     const tokenHash = createTokenHash(token);
-    const isBlacklisted = await storage.isTokenBlacklisted(tokenHash);
+    let isBlacklisted = false;
+    
+    try {
+      // Add timeout to prevent hanging on database issues
+      const blacklistPromise = storage.isTokenBlacklisted(tokenHash);
+      const timeoutPromise = new Promise<boolean>((_, reject) => 
+        setTimeout(() => reject(new Error('Blacklist check timeout')), 5000)
+      );
+      
+      isBlacklisted = await Promise.race([blacklistPromise, timeoutPromise]);
+      console.log('verifyJWT - Database blacklist check:', isBlacklisted, 'hash:', tokenHash.substring(0, 10) + '...');
+    } catch (error) {
+      console.warn('verifyJWT - Blacklist check failed, allowing token (database issue):', error instanceof Error ? error.message : String(error));
+      // If database check fails, allow the token to proceed rather than blocking authentication
+      isBlacklisted = false;
+    }
+    
     if (isBlacklisted) {
+      console.log('verifyJWT - Token found in database blacklist');
       return res.status(401).json({ message: 'Token has been invalidated' });
     }
 

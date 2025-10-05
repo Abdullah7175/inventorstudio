@@ -28,12 +28,23 @@ if (isNeonDatabase) {
     // Local PostgreSQL optimizations
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // Increased from 2000ms to 10000ms
+    statement_timeout: 30000, // 30 second statement timeout
+    query_timeout: 30000, // 30 second query timeout
   });
   
   // Handle connection errors gracefully
   pgPool.on('error', (err) => {
     console.error('PostgreSQL pool error:', err);
+  });
+  
+  // Add connection retry logic
+  pgPool.on('connect', (client) => {
+    console.log('New PostgreSQL client connected');
+  });
+  
+  pgPool.on('remove', (client) => {
+    console.log('PostgreSQL client removed from pool');
   });
   
   db = pgDrizzle(pgPool, { schema });

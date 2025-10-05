@@ -27,7 +27,10 @@ export function useWebSocket(path: string = '', options: UseWebSocketOptions = {
     try {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       // Use the same port as the API server (5000)
-      const wsUrl = `${protocol}//${window.location.hostname}:5000/ws${path}`;
+      // In development, always use port 5000 for WebSocket
+      const isDev = window.location.port === '5173' || window.location.hostname === 'localhost';
+      const wsPort = isDev ? '5000' : window.location.port;
+      const wsUrl = `${protocol}//${window.location.hostname}:${wsPort}/ws${path}`;
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;

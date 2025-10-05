@@ -39,7 +39,7 @@ export default function TeamPortal() {
   const { user, isAuthenticated, isLoading } = useAuth();
   
   // Enable 5-minute session timeout
-  useSessionTimeout(5);
+  useSessionTimeout(30);
   
   const queryClient = useQueryClient();
 

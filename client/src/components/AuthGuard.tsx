@@ -18,13 +18,20 @@ export default function AuthGuard({
   const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
+    console.log('AuthGuard useEffect:', { isLoading, isAuthenticated, userRole: user?.role, hasRedirected });
+    
     if (isLoading) return; // Wait for auth check to complete
 
-    // Check if user just logged out
+    // Enhanced logout detection
     const userLoggedOut = sessionStorage.getItem('userLoggedOut');
-    if (userLoggedOut === 'true') {
-      // User just logged out, don't redirect again
-      sessionStorage.removeItem('userLoggedOut');
+    const logoutInProgress = sessionStorage.getItem('logoutInProgress');
+    const recentLogin = sessionStorage.getItem('recentLogin');
+    
+    console.log('AuthGuard flags:', { userLoggedOut, logoutInProgress, recentLogin });
+    
+    // CRITICAL: If user just logged out, don't redirect - let them stay on login page
+    if (userLoggedOut === 'true' || logoutInProgress === 'true') {
+      console.log('🚫 AuthGuard: User just logged out or logout in progress, preventing redirect');
       return;
     }
 
@@ -36,6 +43,7 @@ export default function AuthGuard({
 
     if (!isAuthenticated && !hasRedirected) {
       // User not authenticated, redirect to login
+      console.log('AuthGuard: User not authenticated, redirecting to login');
       setHasRedirected(true);
       setLocation(redirectTo);
       return;
@@ -44,10 +52,15 @@ export default function AuthGuard({
     if (requiredRole && user && !hasRedirected) {
       // Check if user has required role
       const hasRequiredRole = requiredRole.includes(user.role);
+      console.log('AuthGuard: Checking role', { userRole: user.role, requiredRole, hasRequiredRole });
+      
       if (!hasRequiredRole) {
         // User doesn't have required role, redirect to appropriate portal
+        console.log('AuthGuard: User has wrong role, redirecting to appropriate portal');
         setHasRedirected(true);
-        if (user.role === 'team') {
+        if (user.role === 'admin') {
+          setLocation('/admin');
+        } else if (user.role === 'team' || user.role === 'developer' || user.role === 'manager') {
           setLocation('/team');
         } else if (user.role === 'customer' || user.role === 'client') {
           setLocation('/client-portal');

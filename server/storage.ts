@@ -12,6 +12,14 @@ import {
   mobileSessions,
   mobileBiometricSettings,
   tokenBlacklist,
+  projectRequests,
+  invoices,
+  notifications,
+  projectMessages,
+  projectAssignments,
+  projectTasks,
+  teamMembers,
+  teamRoles,
   type User,
   type UpsertUser,
   type Service,
@@ -40,7 +48,7 @@ import {
   type InsertTokenBlacklist,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, lt } from "drizzle-orm";
+import { eq, desc, and, lt, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - mandatory for Firebase Auth
@@ -140,9 +148,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(users.createdAt);
-  }
 
   async createUser(userData: UpsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
@@ -165,6 +170,324 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  // Admin-specific methods
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      return [];
+    }
+  }
+
+  async getAllProjects(): Promise<any[]> {
+    try {
+      return await db.select().from(projectRequests);
+    } catch (error) {
+      console.error('Error fetching all projects:', error);
+      return [];
+    }
+  }
+
+  async createProjectRequest(projectData: any): Promise<any> {
+    try {
+      const [newProject] = await db.insert(projectRequests).values(projectData).returning();
+      return newProject;
+    } catch (error) {
+      console.error('Error creating project request:', error);
+      throw error;
+    }
+  }
+
+  async getAllInvoices(): Promise<any[]> {
+    try {
+      return await db.select().from(invoices);
+    } catch (error) {
+      console.error('Error fetching all invoices:', error);
+      return [];
+    }
+  }
+
+  async getAllNotifications(): Promise<any[]> {
+    try {
+      return await db.select().from(notifications);
+    } catch (error) {
+      console.error('Error fetching all notifications:', error);
+      return [];
+    }
+  }
+
+  async getAllProjectMessages(): Promise<any[]> {
+    try {
+      return await db.select().from(projectMessages);
+    } catch (error) {
+      console.error('Error fetching all project messages:', error);
+      return [];
+    }
+  }
+
+  async getRecentActivities(limit: number = 10): Promise<any[]> {
+    try {
+      // Get recent activities from various sources
+      const recentProjects = await db.select().from(projectRequests).orderBy(desc(projectRequests.createdAt)).limit(limit);
+      const recentUsers = await db.select().from(users).orderBy(desc(users.createdAt)).limit(limit);
+      const recentInvoices = await db.select().from(invoices).orderBy(desc(invoices.createdAt)).limit(limit);
+      
+      const activities = [
+        ...recentProjects.map(p => ({
+          id: `project_${p.id}`,
+          type: 'project_completed',
+          description: `Project "${p.projectName}" completed`,
+          customer: 'Unknown', // Will be enriched by API
+          timestamp: p.updatedAt || p.createdAt,
+          value: 0
+        })),
+        ...recentUsers.map(u => ({
+          id: `user_${u.id}`,
+          type: 'new_customer',
+          description: 'New customer registered',
+          customer: `${u.firstName} ${u.lastName}`,
+          timestamp: u.createdAt,
+          value: 0
+        })),
+        ...recentInvoices.map(inv => ({
+          id: `invoice_${inv.id}`,
+          type: 'payment_received',
+          description: 'Payment received',
+          customer: 'Unknown', // Will be enriched by API
+          timestamp: inv.paidAt || inv.createdAt,
+          value: parseFloat(inv.total || '0')
+        }))
+      ];
+
+      return activities
+        .sort((a, b) => {
+          const dateA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const dateB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return dateB - dateA;
+        })
+        .slice(0, limit);
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+      return [];
+    }
+  }
+
+  async getInvoicesByClientId(clientId: string): Promise<any[]> {
+    try {
+      return await db.select().from(invoices).where(eq(invoices.clientId, clientId));
+    } catch (error) {
+      console.error('Error fetching invoices by client ID:', error);
+      return [];
+    }
+  }
+
+  async getProjectsByTeamMember(teamMemberId: string): Promise<any[]> {
+    try {
+      // Get projects assigned to team member
+      const assignments = await db.select().from(projectAssignments).where(eq(projectAssignments.teamMemberId, teamMemberId));
+      const projectIds = assignments.map(a => a.projectId);
+      
+      if (projectIds.length === 0) return [];
+      
+      return await db.select().from(projectRequests).where(inArray(projectRequests.id, projectIds));
+    } catch (error) {
+      console.error('Error fetching projects by team member:', error);
+      return [];
+    }
+  }
+
+  async assignProjectToTeamMember(projectId: number, teamMemberId: string, role: string): Promise<any> {
+    try {
+      const [assignment] = await db.insert(projectAssignments).values({
+        projectId,
+        teamMemberId,
+        role,
+        assignedAt: new Date()
+      }).returning();
+      return assignment;
+    } catch (error) {
+      console.error('Error assigning project to team member:', error);
+      throw error;
+    }
+  }
+
+  async removeProjectAssignment(projectId: number, teamMemberId: string): Promise<void> {
+    try {
+      await db.delete(projectAssignments).where(
+        and(
+          eq(projectAssignments.projectId, projectId),
+          eq(projectAssignments.teamMemberId, teamMemberId)
+        )
+      );
+    } catch (error) {
+      console.error('Error removing project assignment:', error);
+      throw error;
+    }
+  }
+
+  async getProjectAssignments(projectId: number): Promise<any[]> {
+    try {
+      return await db.select().from(projectAssignments).where(eq(projectAssignments.projectId, projectId));
+    } catch (error) {
+      console.error('Error fetching project assignments:', error);
+      return [];
+    }
+  }
+
+  async getProjectTasks(projectId: number): Promise<any[]> {
+    try {
+      return await db.select().from(projectTasks).where(eq(projectTasks.projectId, projectId));
+    } catch (error) {
+      console.error('Error fetching project tasks:', error);
+      return [];
+    }
+  }
+
+  async getProjectMessages(projectId: number): Promise<any[]> {
+    try {
+      return await db.select().from(projectMessages).where(eq(projectMessages.projectId, projectId));
+    } catch (error) {
+      console.error('Error fetching project messages:', error);
+      return [];
+    }
+  }
+
+  async updateClientProject(projectId: number, updates: any): Promise<any> {
+    try {
+      const [updatedProject] = await db.update(projectRequests)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(projectRequests.id, projectId))
+        .returning();
+      return updatedProject;
+    } catch (error) {
+      console.error('Error updating client project:', error);
+      throw error;
+    }
+  }
+
+  // Team Member Management
+  async getAllTeamRoles(): Promise<any[]> {
+    try {
+      return await db.select().from(teamRoles).orderBy(teamRoles.id);
+    } catch (error) {
+      console.error('Error fetching team roles:', error);
+      return [];
+    }
+  }
+
+  async getTeamRoleById(roleId: number): Promise<any> {
+    try {
+      const [role] = await db.select().from(teamRoles).where(eq(teamRoles.id, roleId));
+      return role;
+    } catch (error) {
+      console.error('Error fetching team role:', error);
+      return null;
+    }
+  }
+
+  async createTeamMember(userId: string, name: string, roleId: number, skills?: string[]): Promise<any> {
+    try {
+      const role = await this.getTeamRoleById(roleId);
+      if (!role) {
+        throw new Error('Team role not found');
+      }
+
+      const [teamMember] = await db.insert(teamMembers).values({
+        userId,
+        name,
+        role: role.name,
+        skills: skills || [],
+        isActive: true,
+        createdAt: new Date()
+      }).returning();
+
+      // Update user role to 'team' and set department
+      await this.updateUser(userId, {
+        role: 'team',
+        department: role.name.toLowerCase().replace(/\s+/g, '_')
+      });
+
+      return teamMember;
+    } catch (error) {
+      console.error('Error creating team member:', error);
+      throw error;
+    }
+  }
+
+  async getAllTeamMembers(): Promise<any[]> {
+    try {
+      const members = await db.select().from(teamMembers);
+      
+      // Enrich with user data
+      const enrichedMembers = await Promise.all(
+        members.map(async (member) => {
+          const user = await this.getUser(member.userId);
+          const role = await this.getTeamRoleById(
+            (await db.select().from(teamRoles).where(eq(teamRoles.name, member.role)))[0]?.id
+          );
+          
+          return {
+            ...member,
+            user,
+            roleDetails: role
+          };
+        })
+      );
+
+      return enrichedMembers;
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      return [];
+    }
+  }
+
+  async getTeamMemberByUserId(userId: string): Promise<any> {
+    try {
+      const [member] = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));
+      if (!member) return null;
+
+      const user = await this.getUser(userId);
+      const role = await db.select().from(teamRoles).where(eq(teamRoles.name, member.role));
+      
+      return {
+        ...member,
+        user,
+        roleDetails: role[0]
+      };
+    } catch (error) {
+      console.error('Error fetching team member:', error);
+      return null;
+    }
+  }
+
+  async updateTeamMember(userId: string, updates: any): Promise<any> {
+    try {
+      const [updatedMember] = await db.update(teamMembers)
+        .set(updates)
+        .where(eq(teamMembers.userId, userId))
+        .returning();
+      return updatedMember;
+    } catch (error) {
+      console.error('Error updating team member:', error);
+      throw error;
+    }
+  }
+
+  async deactivateTeamMember(userId: string): Promise<void> {
+    try {
+      await db.update(teamMembers)
+        .set({ isActive: false })
+        .where(eq(teamMembers.userId, userId));
+      
+      // Also update user to inactive
+      await this.updateUser(userId, { isActive: false });
+    } catch (error) {
+      console.error('Error deactivating team member:', error);
+      throw error;
+    }
   }
 
   // Services
@@ -285,14 +608,6 @@ export class DatabaseStorage implements IStorage {
     return newProject;
   }
 
-  async updateClientProject(id: number, project: Partial<InsertClientProject>): Promise<ClientProject> {
-    const [updatedProject] = await db
-      .update(clientProjects)
-      .set({ ...project, updatedAt: new Date() })
-      .where(eq(clientProjects.id, id))
-      .returning();
-    return updatedProject;
-  }
 
   async deleteClientProject(id: number): Promise<void> {
     await db.delete(clientProjects).where(eq(clientProjects.id, id));

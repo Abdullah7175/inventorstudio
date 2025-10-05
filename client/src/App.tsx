@@ -34,6 +34,28 @@ import ClientMessages from "@/pages/ClientMessages";
 import ClientProfile from "@/pages/ClientProfile";
 import ClientSettings from "@/pages/ClientSettings";
 import ApiDocumentation from "@/pages/ApiDocumentation";
+import SimpleTestComponent from "@/components/SimpleTestComponent";
+// Admin Portal
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import UserManagement from "@/pages/admin/users/UserManagement";
+import AdminProjectManagement from "@/pages/admin/projects/ProjectManagement";
+import CustomerManagement from "@/pages/admin/customers/CustomerManagement";
+import TeamManagement from "@/pages/admin/teams/TeamManagement";
+import CommunicationManagement from "@/pages/admin/communications/CommunicationManagement";
+import AnalyticsDashboard from "@/pages/admin/analytics/AnalyticsDashboard";
+import AdminSettings from "@/pages/admin/settings/AdminSettings";
+
+// Team Portal imports
+import TeamLayout from "@/pages/team/TeamLayout";
+import TeamDashboard from "@/pages/team/TeamDashboard";
+import TeamProjectManagement from "@/pages/team/TeamProjectManagement";
+import TeamProfile from "@/pages/team/TeamProfile";
+import TeamMembers from "@/pages/team/TeamMembers";
+import TeamMessages from "@/pages/team/TeamMessages";
+import TeamCalendar from "@/pages/team/TeamCalendar";
+import TeamAnalytics from "@/pages/team/TeamAnalytics";
+import TeamSettings from "@/pages/team/TeamSettings";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
@@ -100,7 +122,177 @@ function Router() {
         </AuthGuard>
       </Route>
       
-      {/* Admin portal removed for security */}
+      {/* Admin Portal Routes */}
+      <Route path="/admin">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/users">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <UserManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/projects">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AdminProjectManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/customers">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <CustomerManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/teams/members">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <TeamManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/teams/roles">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <TeamManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/teams/workload">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <TeamManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/communications/chat">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <CommunicationManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/communications/notifications">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <CommunicationManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/communications/emails">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <CommunicationManagement />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/analytics">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AnalyticsDashboard />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/analytics/revenue">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AnalyticsDashboard />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/analytics/performance">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AnalyticsDashboard />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+        <Route path="/admin/settings">
+          <AuthGuard requiredRole={['admin']}>
+            <AdminLayout>
+              <AdminSettings />
+            </AdminLayout>
+          </AuthGuard>
+        </Route>
+
+        {/* Team Portal Routes */}
+        <Route path="/team">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamDashboard />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/projects">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamProjectManagement />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/profile">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamProfile />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/team">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamMembers />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/messages">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamMessages />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/calendar">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamCalendar />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/analytics">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamAnalytics />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/team/settings">
+          <AuthGuard requiredRole={['team', 'developer', 'manager']}>
+            <TeamLayout>
+              <TeamSettings />
+            </TeamLayout>
+          </AuthGuard>
+        </Route>
+      <Route path="/admin/settings/security">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AdminSettings />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
+      <Route path="/admin/settings/integrations">
+        <AuthGuard requiredRole={['admin']}>
+          <AdminLayout>
+            <AdminSettings />
+          </AdminLayout>
+        </AuthGuard>
+      </Route>
       
       {/* Project Management Routes */}
       <Route path="/projects">
@@ -145,17 +337,39 @@ function Router() {
 function App() {
   const [location] = useLocation();
   
-  // Check if we're on auth pages or client portal pages
+  // Check if we're on auth pages, client portal pages, admin portal pages, or team portal pages
   const isAuthPage = location === "/login" || location === "/register";
   const isClientPortalPage = location.startsWith("/client-portal");
+  const isAdminPortalPage = location.startsWith("/admin");
+  const isTeamPortalPage = location.startsWith("/team");
 
   // Clean up logout flags when navigating to non-auth pages
   React.useEffect(() => {
     if (!isAuthPage) {
       // Clear logout flags when not on auth pages
+      // BUT DON'T clear recentLogin flag - it's needed for auth validation
       sessionStorage.removeItem('userLoggedOut');
       sessionStorage.removeItem('logoutInProgress');
+      // sessionStorage.removeItem('recentLogin'); // REMOVED - this was causing the redirect loop!
     }
+  }, [location, isAuthPage]);
+
+  // Check for stale sessions on app load - but give time for login process
+  React.useEffect(() => {
+    // Don't check immediately - give time for login process to complete
+    const timeoutId = setTimeout(() => {
+      const hasAuthCookie = document.cookie.includes('authToken=');
+      const recentLogin = sessionStorage.getItem('recentLogin') === 'true';
+      console.log('App load - checking for stale session:', { hasAuthCookie, recentLogin });
+      
+      // If no auth cookie and no recent login, and we're on a protected route, redirect to login
+      if (!hasAuthCookie && !recentLogin && !isAuthPage && location !== '/') {
+        console.log('No auth cookie found and no recent login, redirecting to login');
+        window.location.replace('/login');
+      }
+    }, 2000); // Wait 2 seconds for login process to complete
+
+    return () => clearTimeout(timeoutId);
   }, [location, isAuthPage]);
 
   // Render different layouts for auth vs non-auth pages
@@ -177,6 +391,22 @@ function App() {
 
   // Client portal pages - use CustomerLayout (no public navigation)
   if (isClientPortalPage) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <main>
+              <Router />
+            </main>
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Admin portal pages - use AdminLayout (no public navigation)
+  if (isAdminPortalPage || isTeamPortalPage) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
