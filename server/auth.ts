@@ -245,10 +245,22 @@ export const setupAuth = (app: Express) => {
 
       // Remove password hash from response
       const { passwordHash: _, ...userResponse } = user;
+      
+      // Add team role information from JWT token if available
+      const responseWithTeamInfo: any = { ...userResponse };
+      if (tokenPayload.teamRole) {
+        responseWithTeamInfo.teamRole = tokenPayload.teamRole;
+      }
+      if (tokenPayload.teamMemberId) {
+        responseWithTeamInfo.teamMemberId = tokenPayload.teamMemberId;
+      }
+      if (tokenPayload.permissions) {
+        responseWithTeamInfo.permissions = tokenPayload.permissions;
+      }
 
       res.json({ 
         message: 'Login successful',
-        user: userResponse 
+        user: responseWithTeamInfo 
       });
 
     } catch (error) {
@@ -578,7 +590,20 @@ export const setupAuth = (app: Express) => {
 
       // Remove password hash from response
       const { passwordHash: _, ...userResponse } = user;
-      res.json(userResponse);
+      
+      // Add team role information from JWT token if available
+      const responseWithTeamInfo: any = { ...userResponse };
+      if (req.user.teamRole) {
+        responseWithTeamInfo.teamRole = req.user.teamRole;
+      }
+      if (req.user.teamMemberId) {
+        responseWithTeamInfo.teamMemberId = req.user.teamMemberId;
+      }
+      if (req.user.permissions) {
+        responseWithTeamInfo.permissions = req.user.permissions;
+      }
+      
+      res.json(responseWithTeamInfo);
     } catch (error) {
       console.error('Get user error:', error);
       res.status(500).json({ message: 'Failed to get user data' });
@@ -1110,6 +1135,17 @@ export const verifyJWT: RequestHandler = async (req: any, res, next) => {
       email: decoded.email,
       role: decoded.role,
     };
+    
+    // Add team role information if available
+    if (decoded.teamRole) {
+      req.user.teamRole = decoded.teamRole;
+    }
+    if (decoded.teamMemberId) {
+      req.user.teamMemberId = decoded.teamMemberId;
+    }
+    if (decoded.permissions) {
+      req.user.permissions = decoded.permissions;
+    }
 
     next();
   } catch (error) {

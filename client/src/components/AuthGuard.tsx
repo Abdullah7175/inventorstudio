@@ -52,14 +52,35 @@ export default function AuthGuard({
     if (requiredRole && user && !hasRedirected) {
       // Check if user has required role
       const hasRequiredRole = requiredRole.includes(user.role);
-      console.log('AuthGuard: Checking role', { userRole: user.role, requiredRole, hasRequiredRole });
       
-      if (!hasRequiredRole) {
+      // Special case: SEO Expert team members can access SEO routes
+      const isSEOExpert = user.teamRole === 'SEO Expert';
+      const hasSEORoleAccess = requiredRole.includes('seo') && isSEOExpert;
+      
+      const hasAccess = hasRequiredRole || hasSEORoleAccess;
+      
+      console.log('AuthGuard: Checking role', { 
+        userRole: user.role, 
+        teamRole: user.teamRole,
+        requiredRole, 
+        hasRequiredRole,
+        isSEOExpert,
+        hasSEORoleAccess,
+        hasAccess
+      });
+      
+      if (!hasAccess) {
         // User doesn't have required role, redirect to appropriate portal
         console.log('AuthGuard: User has wrong role, redirecting to appropriate portal');
         setHasRedirected(true);
+        
+        // Check if team member has SEO Expert role for SEO portal access
+        const isSEOExpert = user.teamRole === 'SEO Expert';
+        
         if (user.role === 'admin') {
           setLocation('/admin');
+        } else if (user.role === 'seo' || isSEOExpert) {
+          setLocation('/seo');
         } else if (user.role === 'team' || user.role === 'developer' || user.role === 'manager') {
           setLocation('/team');
         } else if (user.role === 'customer' || user.role === 'client') {
@@ -85,7 +106,12 @@ export default function AuthGuard({
   }
 
   // Don't render children if not authenticated or wrong role
-  if (!isAuthenticated || (requiredRole && user && !requiredRole.includes(user.role))) {
+  const hasRequiredRole = requiredRole ? requiredRole.includes(user?.role || '') : true;
+  const isSEOExpert = user?.teamRole === 'SEO Expert';
+  const hasSEORoleAccess = requiredRole?.includes('seo') && isSEOExpert;
+  const hasAccess = hasRequiredRole || hasSEORoleAccess;
+  
+  if (!isAuthenticated || (requiredRole && user && !hasAccess)) {
     return null;
   }
 

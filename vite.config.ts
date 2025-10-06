@@ -56,9 +56,24 @@ export default defineConfig({
     }
   },
   server: {
+    port: 5173,
+    host: true,
     fs: {
       strict: true,
       deny: ["**/.*"],
+    },
+    hmr: {
+      port: 5173,
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:5000',
+        ws: true,
+      },
     },
   },
 });

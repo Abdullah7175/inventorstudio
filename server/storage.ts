@@ -48,7 +48,7 @@ import {
   type InsertTokenBlacklist,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, lt, inArray } from "drizzle-orm";
+import { eq, desc, and, lt, inArray, gt, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - mandatory for Firebase Auth
@@ -861,6 +861,144 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(tokenBlacklist)
       .where(lt(tokenBlacklist.expiresAt, new Date()));
+  }
+
+  // ==================== SEO PORTAL STORAGE METHODS ====================
+
+  // Services Management (reusing existing methods)
+
+  // Portfolio Projects Management
+  async getAllPortfolioProjects(): Promise<any[]> {
+    try {
+      const projects = await db.select().from(portfolioProjects);
+      return projects;
+    } catch (error) {
+      console.error('Error fetching portfolio projects:', error);
+      throw error;
+    }
+  }
+
+  async getPortfolioProjectsByCategory(category: string): Promise<any[]> {
+    try {
+      const projects = await db.select().from(portfolioProjects).where(eq(portfolioProjects.category, category));
+      return projects;
+    } catch (error) {
+      console.error('Error fetching portfolio projects by category:', error);
+      throw error;
+    }
+  }
+
+  async createPortfolioProject(projectData: any): Promise<any> {
+    try {
+      const [newProject] = await db.insert(portfolioProjects).values(projectData).returning();
+      return newProject;
+    } catch (error) {
+      console.error('Error creating portfolio project:', error);
+      throw error;
+    }
+  }
+
+  async updatePortfolioProject(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedProject] = await db.update(portfolioProjects)
+        .set({ ...updates })
+        .where(eq(portfolioProjects.id, id))
+        .returning();
+      return updatedProject;
+    } catch (error) {
+      console.error('Error updating portfolio project:', error);
+      throw error;
+    }
+  }
+
+  async deletePortfolioProject(id: number): Promise<void> {
+    try {
+      await db.delete(portfolioProjects).where(eq(portfolioProjects.id, id));
+    } catch (error) {
+      console.error('Error deleting portfolio project:', error);
+      throw error;
+    }
+  }
+
+  // FAQ Items Management
+  async getAllFAQItems(): Promise<any[]> {
+    try {
+      const items = await db.select().from(faqItems);
+      return items;
+    } catch (error) {
+      console.error('Error fetching FAQ items:', error);
+      throw error;
+    }
+  }
+
+  async createFAQItem(faqData: any): Promise<any> {
+    try {
+      const [newFAQ] = await db.insert(faqItems).values(faqData).returning();
+      return newFAQ;
+    } catch (error) {
+      console.error('Error creating FAQ item:', error);
+      throw error;
+    }
+  }
+
+  async updateFAQItem(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedFAQ] = await db.update(faqItems)
+        .set(updates)
+        .where(eq(faqItems.id, id))
+        .returning();
+      return updatedFAQ;
+    } catch (error) {
+      console.error('Error updating FAQ item:', error);
+      throw error;
+    }
+  }
+
+  async deleteFAQItem(id: number): Promise<void> {
+    try {
+      await db.delete(faqItems).where(eq(faqItems.id, id));
+    } catch (error) {
+      console.error('Error deleting FAQ item:', error);
+      throw error;
+    }
+  }
+
+  async moveFAQItem(id: number, direction: 'up' | 'down'): Promise<void> {
+    try {
+      const currentItem = await db.select().from(faqItems).where(eq(faqItems.id, id)).limit(1);
+      if (!currentItem.length) return;
+
+      const currentOrder = currentItem[0].order;
+      
+      if (direction === 'up') {
+        // Move up: swap with previous item
+        const previousItem = await db.select().from(faqItems)
+          .where(lt(faqItems.order, currentOrder))
+          .orderBy(desc(faqItems.order))
+          .limit(1);
+        
+        if (previousItem.length) {
+          // Swap orders
+          await db.update(faqItems).set({ order: previousItem[0].order }).where(eq(faqItems.id, id));
+          await db.update(faqItems).set({ order: currentOrder }).where(eq(faqItems.id, previousItem[0].id));
+        }
+      } else {
+        // Move down: swap with next item
+        const nextItem = await db.select().from(faqItems)
+          .where(gt(faqItems.order, currentOrder))
+          .orderBy(asc(faqItems.order))
+          .limit(1);
+        
+        if (nextItem.length) {
+          // Swap orders
+          await db.update(faqItems).set({ order: nextItem[0].order }).where(eq(faqItems.id, id));
+          await db.update(faqItems).set({ order: currentOrder }).where(eq(faqItems.id, nextItem[0].id));
+        }
+      }
+    } catch (error) {
+      console.error('Error moving FAQ item:', error);
+      throw error;
+    }
   }
 }
 

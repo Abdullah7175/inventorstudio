@@ -268,6 +268,7 @@ export default function UserModal({
                   <SelectItem value="customer">Customer</SelectItem>
                   <SelectItem value="client">Client</SelectItem>
                   <SelectItem value="team">Team</SelectItem>
+                  <SelectItem value="seo">SEO</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

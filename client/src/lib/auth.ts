@@ -11,6 +11,9 @@ export interface AuthUser {
   emailVerified: boolean;
   createdAt: string;
   lastLogin?: string;
+  teamRole?: string;
+  teamMemberId?: number;
+  permissions?: any;
 }
 
 export interface LoginCredentials {

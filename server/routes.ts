@@ -1099,7 +1099,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/blog", async (req, res) => {
     try {
-      const posts = await storage.getBlogPosts(true);
+      const published = req.query.published === 'true';
+      console.log('Blog API called with published:', published);
+      const posts = await storage.getBlogPosts(published);
+      console.log('Found blog posts:', posts.length);
       res.json(posts);
     } catch (error) {
       console.error("Error fetching blog posts:", error);
@@ -1472,6 +1475,220 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating communication content:", error);
       res.status(500).json({ message: "Failed to generate communication content" });
+    }
+  });
+
+  // ==================== PORTFOLIO API ENDPOINTS ====================
+  
+  // Public portfolio endpoints for website
+  app.get("/api/portfolio/all", async (req: any, res) => {
+    try {
+      const projects = await storage.getAllPortfolioProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching all portfolio projects:", error);
+      res.status(500).json({ message: "Failed to fetch portfolio projects" });
+    }
+  });
+
+  app.get("/api/portfolio/:category", async (req: any, res) => {
+    try {
+      const { category } = req.params;
+      const projects = await storage.getPortfolioProjectsByCategory(category);
+      res.json(projects);
+    } catch (error) {
+      console.error(`Error fetching portfolio projects for category ${req.params.category}:`, error);
+      res.status(500).json({ message: "Failed to fetch portfolio projects" });
+    }
+  });
+
+  // ==================== SEO PORTAL API ENDPOINTS ====================
+
+  // Services Management
+  app.get("/api/seo/services", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const services = await storage.getServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+
+  app.post("/api/seo/services", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { title, description, icon, technologies, featured } = req.body;
+      
+      if (!title || !description || !icon) {
+        return res.status(400).json({ message: "Title, description, and icon are required" });
+      }
+
+      const serviceData = {
+        title,
+        description,
+        icon,
+        technologies: technologies || [],
+        featured: featured || false
+      };
+
+      const newService = await storage.createService(serviceData);
+      res.json({ message: "Service created successfully", service: newService });
+    } catch (error) {
+      console.error("Error creating service:", error);
+      res.status(500).json({ message: "Failed to create service" });
+    }
+  });
+
+  app.put("/api/seo/services/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updatedService = await storage.updateService(parseInt(id), updates);
+      res.json({ message: "Service updated successfully", service: updatedService });
+    } catch (error) {
+      console.error("Error updating service:", error);
+      res.status(500).json({ message: "Failed to update service" });
+    }
+  });
+
+  app.delete("/api/seo/services/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deleteService(parseInt(id));
+      res.json({ message: "Service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Failed to delete service" });
+    }
+  });
+
+  // Portfolio Management
+  app.get("/api/seo/portfolio", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const projects = await storage.getAllPortfolioProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching portfolio projects:", error);
+      res.status(500).json({ message: "Failed to fetch portfolio projects" });
+    }
+  });
+
+  app.post("/api/seo/portfolio", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { title, description, image_url, category, technologies, project_url, featured } = req.body;
+      
+      if (!title || !description || !image_url || !category) {
+        return res.status(400).json({ message: "Title, description, image URL, and category are required" });
+      }
+
+      const projectData = {
+        title,
+        description,
+        image_url,
+        category,
+        technologies: technologies || [],
+        project_url: project_url || null,
+        featured: featured || false
+      };
+
+      const newProject = await storage.createPortfolioProject(projectData);
+      res.json({ message: "Portfolio project created successfully", project: newProject });
+    } catch (error) {
+      console.error("Error creating portfolio project:", error);
+      res.status(500).json({ message: "Failed to create portfolio project" });
+    }
+  });
+
+  app.put("/api/seo/portfolio/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updatedProject = await storage.updatePortfolioProject(parseInt(id), updates);
+      res.json({ message: "Portfolio project updated successfully", project: updatedProject });
+    } catch (error) {
+      console.error("Error updating portfolio project:", error);
+      res.status(500).json({ message: "Failed to update portfolio project" });
+    }
+  });
+
+  app.delete("/api/seo/portfolio/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deletePortfolioProject(parseInt(id));
+      res.json({ message: "Portfolio project deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting portfolio project:", error);
+      res.status(500).json({ message: "Failed to delete portfolio project" });
+    }
+  });
+
+  // FAQ Management
+  app.get("/api/seo/faq", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const faqItems = await storage.getAllFAQItems();
+      res.json(faqItems);
+    } catch (error) {
+      console.error("Error fetching FAQ items:", error);
+      res.status(500).json({ message: "Failed to fetch FAQ items" });
+    }
+  });
+
+  app.post("/api/seo/faq", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { question, answer } = req.body;
+      
+      if (!question || !answer) {
+        return res.status(400).json({ message: "Question and answer are required" });
+      }
+
+      const faqData = { question, answer };
+      const newFAQ = await storage.createFAQItem(faqData);
+      res.json({ message: "FAQ item created successfully", faq: newFAQ });
+    } catch (error) {
+      console.error("Error creating FAQ item:", error);
+      res.status(500).json({ message: "Failed to create FAQ item" });
+    }
+  });
+
+  app.put("/api/seo/faq/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updatedFAQ = await storage.updateFAQItem(parseInt(id), updates);
+      res.json({ message: "FAQ item updated successfully", faq: updatedFAQ });
+    } catch (error) {
+      console.error("Error updating FAQ item:", error);
+      res.status(500).json({ message: "Failed to update FAQ item" });
+    }
+  });
+
+  app.delete("/api/seo/faq/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deleteFAQItem(parseInt(id));
+      res.json({ message: "FAQ item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting FAQ item:", error);
+      res.status(500).json({ message: "Failed to delete FAQ item" });
+    }
+  });
+
+  app.post("/api/seo/faq/:id/move", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { direction } = req.body;
+      
+      await storage.moveFAQItem(parseInt(id), direction);
+      res.json({ message: "FAQ order updated successfully" });
+    } catch (error) {
+      console.error("Error moving FAQ item:", error);
+      res.status(500).json({ message: "Failed to move FAQ item" });
     }
   });
 

@@ -17,6 +17,16 @@ export default function Portfolio() {
 
   const { data: projects = [], isLoading } = useQuery<PortfolioProject[]>({
     queryKey: ["/api/portfolio", selectedCategory],
+    queryFn: async () => {
+      const endpoint = selectedCategory === "all" 
+        ? "/api/portfolio/all" 
+        : `/api/portfolio/${selectedCategory}`;
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error('Failed to fetch portfolio projects');
+      }
+      return response.json();
+    },
   });
 
   const categories = [

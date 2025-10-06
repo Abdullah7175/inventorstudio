@@ -65,17 +65,22 @@ export default function Login() {
     // Only proceed with auto-redirect if user is authenticated AND it's not a post-logout visit
     const typedUser = user as AuthUser | null;
     if (isAuthenticated && typedUser && typedUser.id && typedUser.role && !isLoading) {
-      console.log('✅ User is authenticated, auto-redirecting to portal:', typedUser.role);
+      console.log('✅ User is authenticated, auto-redirecting to portal:', { role: typedUser.role, teamRole: typedUser.teamRole });
       
       hasRedirected.current = true; // Mark that we've attempted a redirect
       
       const userRole = typedUser.role;
-      if (userRole === 'team') {
+      const teamRole = typedUser.teamRole;
+      const isSEOExpert = teamRole === 'SEO Expert';
+      
+      if (userRole === 'admin') {
+        window.location.href = "/admin";
+      } else if (userRole === 'seo' || isSEOExpert) {
+        window.location.href = "/seo";
+      } else if (userRole === 'team') {
         window.location.href = "/team";
       } else if (userRole === 'customer' || userRole === 'client') {
         window.location.href = "/client-portal";
-      } else if (userRole === 'admin') {
-        window.location.href = "/admin";
       } else {
         window.location.href = "/";
       }
@@ -165,18 +170,25 @@ export default function Login() {
       
       // Force redirect immediately - don't rely on useEffect
       const userRole = response.user?.role;
-      console.log('About to redirect to:', userRole);
+      const teamRole = response.user?.teamRole;
+      console.log('About to redirect to:', { userRole, teamRole });
+      
+      // Check if team member has SEO Expert role for SEO portal access
+      const isSEOExpert = teamRole === 'SEO Expert';
       
       // Use href instead of replace to test
-      if (userRole === 'team') {
+      if (userRole === 'admin') {
+        console.log('Redirecting to admin portal');
+        window.location.href = "/admin";
+      } else if (userRole === 'seo' || isSEOExpert) {
+        console.log('Redirecting to SEO portal');
+        window.location.href = "/seo";
+      } else if (userRole === 'team') {
         console.log('Redirecting to team portal');
         window.location.href = "/team";
       } else if (userRole === 'customer' || userRole === 'client') {
         console.log('Redirecting to client portal');
         window.location.href = "/client-portal";
-      } else if (userRole === 'admin') {
-        console.log('Redirecting to admin portal');
-        window.location.href = "/admin";
       } else {
         console.log('Redirecting to home (default)');
         window.location.href = "/";
