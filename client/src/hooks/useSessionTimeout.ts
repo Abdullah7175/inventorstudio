@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
+import { queryClient } from '@/lib/queryClient';
 
 export function useSessionTimeout(timeoutMinutes: number = 30) {
   const { logout, isAuthenticated } = useAuth();
@@ -67,7 +68,6 @@ export function useSessionTimeout(timeoutMinutes: number = 30) {
       });
       
       // Clear React Query cache completely
-      const { queryClient } = await import('@/lib/queryClient');
       queryClient.clear();
       queryClient.removeQueries();
       

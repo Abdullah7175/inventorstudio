@@ -42,20 +42,24 @@ import UserManagement from "@/pages/admin/users/UserManagement";
 import AdminProjectManagement from "@/pages/admin/projects/ProjectManagement";
 import CustomerManagement from "@/pages/admin/customers/CustomerManagement";
 import TeamManagement from "@/pages/admin/teams/TeamManagement";
-import CommunicationManagement from "@/pages/admin/communications/CommunicationManagement";
-import AnalyticsDashboard from "@/pages/admin/analytics/AnalyticsDashboard";
-import AdminSettings from "@/pages/admin/settings/AdminSettings";
+// Lazy load admin pages for better performance
+const CommunicationManagement = lazy(() => import("@/pages/admin/communications/CommunicationManagement"));
+const AnalyticsDashboard = lazy(() => import("@/pages/admin/analytics/AnalyticsDashboard"));
+const AdminSettings = lazy(() => import("@/pages/admin/settings/AdminSettings"));
 
 // Team Portal imports
 import TeamLayout from "@/pages/team/TeamLayout";
 import TeamDashboard from "@/pages/team/TeamDashboard";
 import TeamProjectManagement from "@/pages/team/TeamProjectManagement";
 import TeamProfile from "@/pages/team/TeamProfile";
-import TeamMembers from "@/pages/team/TeamMembers";
-import TeamMessages from "@/pages/team/TeamMessages";
-import TeamCalendar from "@/pages/team/TeamCalendar";
-import TeamAnalytics from "@/pages/team/TeamAnalytics";
-import TeamSettings from "@/pages/team/TeamSettings";
+
+// Lazy load team portal pages for better performance
+import { lazy, Suspense } from 'react';
+const TeamMembers = lazy(() => import("@/pages/team/TeamMembers"));
+const TeamMessages = lazy(() => import("@/pages/team/TeamMessages"));
+const TeamCalendar = lazy(() => import("@/pages/team/TeamCalendar"));
+const TeamAnalytics = lazy(() => import("@/pages/team/TeamAnalytics"));
+const TeamSettings = lazy(() => import("@/pages/team/TeamSettings"));
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import Navigation from "@/components/Navigation";
 import RealTimeChatTest from "@/components/RealTimeChatTest";
@@ -175,49 +179,63 @@ function Router() {
       <Route path="/admin/communications/chat">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <CommunicationManagement />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <CommunicationManagement />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
       <Route path="/admin/communications/notifications">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <CommunicationManagement />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <CommunicationManagement />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
       <Route path="/admin/communications/emails">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <CommunicationManagement />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <CommunicationManagement />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
       <Route path="/admin/analytics">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <AnalyticsDashboard />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <AnalyticsDashboard />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
       <Route path="/admin/analytics/revenue">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <AnalyticsDashboard />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <AnalyticsDashboard />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
       <Route path="/admin/analytics/performance">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <AnalyticsDashboard />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <AnalyticsDashboard />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
         <Route path="/admin/settings">
           <AuthGuard requiredRole={['admin']}>
             <AdminLayout>
-              <AdminSettings />
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <AdminSettings />
+              </Suspense>
             </AdminLayout>
           </AuthGuard>
         </Route>
@@ -247,49 +265,63 @@ function Router() {
         <Route path="/team/team">
           <AuthGuard requiredRole={['team', 'developer', 'manager']}>
             <TeamLayout>
-              <TeamMembers />
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <TeamMembers />
+              </Suspense>
             </TeamLayout>
           </AuthGuard>
         </Route>
         <Route path="/team/messages">
           <AuthGuard requiredRole={['team', 'developer', 'manager']}>
             <TeamLayout>
-              <TeamMessages />
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <TeamMessages />
+              </Suspense>
             </TeamLayout>
           </AuthGuard>
         </Route>
         <Route path="/team/calendar">
           <AuthGuard requiredRole={['team', 'developer', 'manager']}>
             <TeamLayout>
-              <TeamCalendar />
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <TeamCalendar />
+              </Suspense>
             </TeamLayout>
           </AuthGuard>
         </Route>
         <Route path="/team/analytics">
           <AuthGuard requiredRole={['team', 'developer', 'manager']}>
             <TeamLayout>
-              <TeamAnalytics />
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <TeamAnalytics />
+              </Suspense>
             </TeamLayout>
           </AuthGuard>
         </Route>
         <Route path="/team/settings">
           <AuthGuard requiredRole={['team', 'developer', 'manager']}>
             <TeamLayout>
-              <TeamSettings />
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <TeamSettings />
+              </Suspense>
             </TeamLayout>
           </AuthGuard>
         </Route>
       <Route path="/admin/settings/security">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <AdminSettings />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <AdminSettings />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
       <Route path="/admin/settings/integrations">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            <AdminSettings />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <AdminSettings />
+            </Suspense>
           </AdminLayout>
         </AuthGuard>
       </Route>
@@ -362,8 +394,12 @@ function App() {
       const recentLogin = sessionStorage.getItem('recentLogin') === 'true';
       console.log('App load - checking for stale session:', { hasAuthCookie, recentLogin });
       
+      // Define public routes that don't require authentication
+      const publicRoutes = ['/', '/about', '/services', '/portfolio', '/blog', '/contact', '/faq', '/certifications', '/partnerships', '/privacy-policy', '/terms-of-service', '/api-docs'];
+      const isPublicRoute = publicRoutes.includes(location);
+      
       // If no auth cookie and no recent login, and we're on a protected route, redirect to login
-      if (!hasAuthCookie && !recentLogin && !isAuthPage && location !== '/') {
+      if (!hasAuthCookie && !recentLogin && !isAuthPage && !isPublicRoute) {
         console.log('No auth cookie found and no recent login, redirecting to login');
         window.location.replace('/login');
       }
