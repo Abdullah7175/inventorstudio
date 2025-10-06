@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ChatSystem from '@/components/ChatSystem';
 
-export default function TeamMessages() {
+export default function SEOMessages() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
 
   return (

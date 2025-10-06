@@ -293,6 +293,17 @@ export const invoices = pgTable("invoices", {
 });
 
 // Chat/messaging system
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projectRequests.id),
+  senderId: varchar("sender_id").notNull(),
+  message: text("message").notNull(),
+  messageType: varchar("message_type").default("text"), // text, file, image, system
+  attachments: jsonb("attachments"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const projectMessages = pgTable("project_messages", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").references(() => projectRequests.id),
@@ -394,6 +405,21 @@ export const teamRoles = pgTable("team_roles", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// SEO Content table
+export const seoContent = pgTable("seo_content", {
+  id: serial("id").primaryKey(),
+  title: varchar("title").notNull(),
+  slug: varchar("slug").notNull().unique(),
+  content: text("content").notNull(),
+  metaDescription: text("meta_description"),
+  metaKeywords: text("meta_keywords").array(),
+  status: varchar("status").default("draft").notNull(), // draft, published, archived
+  authorId: varchar("author_id").notNull(),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const serviceCartsRelations = relations(serviceCarts, ({ many }) => ({
   requests: many(projectRequests),
@@ -420,6 +446,10 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
   project: one(projectRequests, { fields: [invoices.projectId], references: [projectRequests.id] }),
 }));
 
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  project: one(projectRequests, { fields: [chatMessages.projectId], references: [projectRequests.id] }),
+}));
+
 export const projectMessagesRelations = relations(projectMessages, ({ one }) => ({
   project: one(projectRequests, { fields: [projectMessages.projectId], references: [projectRequests.id] }),
 }));
@@ -436,11 +466,13 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers);
 export const insertProjectFileSchema = createInsertSchema(projectFiles);
 export const insertInvoiceSchema = createInsertSchema(invoices);
 export const insertProjectMessageSchema = createInsertSchema(projectMessages);
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
 export const insertProjectFeedbackSchema = createInsertSchema(projectFeedback);
 export const insertOtpCodeSchema = createInsertSchema(otpCodes);
 export const insertMobileSessionSchema = createInsertSchema(mobileSessions);
 export const insertMobileBiometricSettingsSchema = createInsertSchema(mobileBiometricSettings);
 export const insertTokenBlacklistSchema = createInsertSchema(tokenBlacklist);
+export const insertSEOContentSchema = createInsertSchema(seoContent);
 
 // Types
 export type ServiceCart = typeof serviceCarts.$inferSelect;
@@ -455,6 +487,8 @@ export type ProjectFile = typeof projectFiles.$inferSelect;
 export type InsertProjectFile = z.infer<typeof insertProjectFileSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ProjectMessage = typeof projectMessages.$inferSelect;
 export type InsertProjectMessage = z.infer<typeof insertProjectMessageSchema>;
 export type ProjectFeedback = typeof projectFeedback.$inferSelect;
@@ -467,6 +501,8 @@ export type MobileBiometricSettings = typeof mobileBiometricSettings.$inferSelec
 export type InsertMobileBiometricSettings = z.infer<typeof insertMobileBiometricSettingsSchema>;
 export type TokenBlacklist = typeof tokenBlacklist.$inferSelect;
 export type InsertTokenBlacklist = z.infer<typeof insertTokenBlacklistSchema>;
+export type SEOContent = typeof seoContent.$inferSelect;
+export type InsertSEOContent = z.infer<typeof insertSEOContentSchema>;
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;

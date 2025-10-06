@@ -15,6 +15,7 @@ import {
   projectRequests,
   invoices,
   notifications,
+  chatMessages,
   projectMessages,
   projectAssignments,
   projectTasks,
@@ -46,6 +47,10 @@ import {
   type InsertMobileBiometricSettings,
   type TokenBlacklist,
   type InsertTokenBlacklist,
+  type ChatMessage,
+  type InsertChatMessage,
+  seoContent,
+  type InsertSEOContent,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lt, inArray, gt, asc } from "drizzle-orm";
@@ -124,6 +129,37 @@ export interface IStorage {
   addTokenToBlacklist(tokenHash: string, userId?: string, reason?: string, expiresAt?: Date): Promise<TokenBlacklist>;
   isTokenBlacklisted(tokenHash: string): Promise<boolean>;
   cleanupExpiredTokens(): Promise<void>;
+
+  // Chat Messages
+  getChatMessages(projectId?: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  markChatMessageAsRead(messageId: number): Promise<void>;
+  getUnreadChatMessagesCount(userId: string, projectId?: number): Promise<number>;
+  getChatConversations(userId: string, projectId?: number): Promise<any[]>;
+
+  // Notifications
+  createNotification(notification: any): Promise<any>;
+
+  // SEO Content Management
+  getSEOContent(): Promise<any[]>;
+  createSEOContent(content: any): Promise<any>;
+  updateSEOContent(id: number, updates: any): Promise<any>;
+  deleteSEOContent(id: number): Promise<void>;
+
+  // Certifications Management
+  getCertifications(): Promise<Certification[]>;
+  createCertification(certification: InsertCertification): Promise<Certification>;
+  updateCertification(id: number, certification: Partial<InsertCertification>): Promise<Certification>;
+  deleteCertification(id: number): Promise<void>;
+
+  // Partnerships Management
+  getPartnerships(): Promise<Partnership[]>;
+  createPartnership(partnership: InsertPartnership): Promise<Partnership>;
+  updatePartnership(id: number, partnership: Partial<InsertPartnership>): Promise<Partnership>;
+  deletePartnership(id: number): Promise<void>;
+
+  // FAQ Management
+  moveFAQItem(id: number, direction: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -997,6 +1033,207 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error moving FAQ item:', error);
+      throw error;
+    }
+  }
+
+  // Chat Messages
+  async getChatMessages(projectId?: number): Promise<ChatMessage[]> {
+    try {
+      const query = db.select().from(chatMessages);
+      if (projectId) {
+        return await query.where(eq(chatMessages.projectId, projectId)).orderBy(desc(chatMessages.createdAt));
+      }
+      return await query.orderBy(desc(chatMessages.createdAt));
+    } catch (error) {
+      console.error('Error fetching chat messages:', error);
+      return [];
+    }
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    try {
+      const [newMessage] = await db.insert(chatMessages).values(message).returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating chat message:', error);
+      throw error;
+    }
+  }
+
+  async markChatMessageAsRead(messageId: number): Promise<void> {
+    try {
+      await db.update(chatMessages).set({ isRead: true }).where(eq(chatMessages.id, messageId));
+    } catch (error) {
+      console.error('Error marking chat message as read:', error);
+      throw error;
+    }
+  }
+
+  async getUnreadChatMessagesCount(userId: string, projectId?: number): Promise<number> {
+    try {
+      let whereConditions;
+      
+      if (projectId) {
+        whereConditions = and(eq(chatMessages.isRead, false), eq(chatMessages.projectId, projectId));
+      } else {
+        whereConditions = eq(chatMessages.isRead, false);
+      }
+      
+      const messages = await db.select().from(chatMessages).where(whereConditions);
+      return messages.length;
+    } catch (error) {
+      console.error('Error getting unread chat messages count:', error);
+      return 0;
+    }
+  }
+
+  async getChatConversations(userId: string, projectId?: number): Promise<any[]> {
+    try {
+      // Get all users except the current user
+      const allUsers = await db.select().from(users).where(eq(users.id, userId));
+      const otherUsers = await db.select().from(users).where(and(eq(users.id, userId), eq(users.isActive, true)));
+
+      // For now, return a simplified conversation list
+      // In a real implementation, you'd want to group messages by conversation
+      const conversations = [];
+
+      // Add admin conversation if user is not admin
+      const adminUser = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
+      if (adminUser.length > 0 && adminUser[0].id !== userId) {
+        conversations.push({
+          id: `admin-${adminUser[0].id}`,
+          participantId: adminUser[0].id,
+          participantName: `${adminUser[0].firstName || ''} ${adminUser[0].lastName || ''}`.trim() || adminUser[0].email || 'Admin',
+          participantRole: 'admin',
+          projectId: null,
+          projectName: 'General Support',
+          lastMessage: null,
+          unreadCount: 0,
+          isOnline: false
+        });
+      }
+
+      // Add team member conversations if user is admin
+      if (allUsers.length > 0 && allUsers[0].role === 'admin') {
+        const teamMembers = await db.select().from(users).where(
+          and(
+            eq(users.role, 'team'),
+            eq(users.isActive, true)
+          )
+        );
+
+        for (const member of teamMembers) {
+          conversations.push({
+            id: `team-${member.id}`,
+            participantId: member.id,
+            participantName: `${member.firstName || ''} ${member.lastName || ''}`.trim() || member.email || 'Team Member',
+            participantRole: 'team',
+            projectId: null,
+            projectName: 'Team Communication',
+            lastMessage: null,
+            unreadCount: 0,
+            isOnline: false
+          });
+        }
+      }
+
+      // Add customer conversations if user is admin or team
+      if (allUsers.length > 0 && ['admin', 'team', 'developer', 'manager', 'seo'].includes(allUsers[0].role)) {
+        const customers = await db.select().from(users).where(
+          and(
+            eq(users.role, 'customer'),
+            eq(users.isActive, true)
+          )
+        );
+
+        for (const customer of customers) {
+          conversations.push({
+            id: `customer-${customer.id}`,
+            participantId: customer.id,
+            participantName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.email || 'Customer',
+            participantRole: 'customer',
+            projectId: null,
+            projectName: 'Customer Support',
+            lastMessage: null,
+            unreadCount: 0,
+            isOnline: false
+          });
+        }
+      }
+
+      return conversations;
+    } catch (error) {
+      console.error('Error getting chat conversations:', error);
+      return [];
+    }
+  }
+
+  async createNotification(notification: any): Promise<any> {
+    try {
+      const [newNotification] = await db.insert(notifications).values(notification).returning();
+      return newNotification;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  // ==================== SEO CONTENT MANAGEMENT ====================
+
+  async getSEOContent(): Promise<any[]> {
+    try {
+      const content = await db.select().from(seoContent);
+      return content;
+    } catch (error) {
+      console.error('Error fetching SEO content:', error);
+      throw error;
+    }
+  }
+
+  async createSEOContent(contentData: any): Promise<any> {
+    try {
+      const [content] = await db.insert(seoContent).values(contentData).returning();
+      return content;
+    } catch (error) {
+      console.error('Error creating SEO content:', error);
+      throw error;
+    }
+  }
+
+  async updateSEOContent(id: number, updates: any): Promise<any> {
+    try {
+      const [content] = await db.update(seoContent)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(seoContent.id, id))
+        .returning();
+      return content;
+    } catch (error) {
+      console.error('Error updating SEO content:', error);
+      throw error;
+    }
+  }
+
+  async deleteSEOContent(id: number): Promise<void> {
+    try {
+      await db.delete(seoContent).where(eq(seoContent.id, id));
+    } catch (error) {
+      console.error('Error deleting SEO content:', error);
+      throw error;
+    }
+  }
+
+
+
+  async updateContactSubmission(id: number, updates: Partial<ContactSubmission>): Promise<ContactSubmission> {
+    try {
+      const [submission] = await db.update(contactSubmissions)
+        .set(updates)
+        .where(eq(contactSubmissions.id, id))
+        .returning();
+      return submission;
+    } catch (error) {
+      console.error('Error updating contact submission:', error);
       throw error;
     }
   }

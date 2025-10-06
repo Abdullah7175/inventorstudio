@@ -109,7 +109,7 @@ function FAQModal({ mode, existingFAQ, onFAQUpdate, children }: FAQModalProps) {
       
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
             <CardHeader>
               <CardTitle>{mode === 'create' ? 'Add New FAQ' : 'Edit FAQ Item'}</CardTitle>
               <CardDescription>

@@ -40,21 +40,21 @@ interface SEOSettings {
 export default function SEOSettings() {
   const [settings, setSettings] = useState<SEOSettings>({
     siteName: 'Inventor Design Studio',
-    siteDescription: 'Professional web development and design services',
-    siteUrl: 'https://inventorstudio.com',
-    defaultMetaTitle: 'Inventor Design Studio - Web Development & Design',
-    defaultMetaDescription: 'Professional web development, mobile apps, and design services. Modern solutions for your business.',
-    defaultKeywords: ['web development', 'mobile app development', 'UI/UX design', 'e-commerce', 'Shopify'],
+    siteDescription: 'Transform your digital vision with expert web development and design services',
+    siteUrl: 'https://inventerdesignstudio.com',
+    defaultMetaTitle: 'Inventor Design Studio - Transform Your Digital Vision',
+    defaultMetaDescription: 'Expert web development, mobile apps, UI/UX design, and digital marketing solutions',
+    defaultKeywords: ['web development', 'mobile apps', 'UI/UX design', 'digital marketing'],
     googleAnalyticsId: '',
     googleSearchConsoleId: '',
     socialMediaTitle: 'Inventor Design Studio',
-    socialMediaDescription: 'Professional web development and design services',
+    socialMediaDescription: 'Transform your digital vision with expert web development and design services',
     socialMediaImage: '',
     autoGenerateSitemaps: true,
     enableRobotsTxt: true,
     enableSchemaMarkup: true,
     enableOpenGraph: true,
-    enableTwitterCards: true
+    enableTwitterCards: true,
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();

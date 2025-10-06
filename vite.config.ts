@@ -30,28 +30,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Vendor chunks
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('lucide-react') || id.includes('date-fns')) {
-              return 'utils-vendor';
-            }
-            return 'vendor';
-          }
-          // Feature chunks
-          if (id.includes('/pages/admin/')) {
-            return 'admin-chunk';
-          }
-          if (id.includes('/pages/team/')) {
-            return 'team-chunk';
-          }
-        }
+        // Disable manual chunks to avoid React reconciliation issues
+        // manualChunks: undefined
       }
     }
   },

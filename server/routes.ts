@@ -16,6 +16,7 @@ import {
   insertPortfolioProjectSchema,
   insertBlogPostSchema,
   insertFaqItemSchema,
+  insertChatMessageSchema,
 } from "@shared/schema";
 
 // Middleware to get user from database and attach to request
@@ -45,6 +46,82 @@ const attachUserFromDB = async (req: any, res: any, next: any) => {
     next();
   }
 };
+
+// Helper function to create notifications for chat messages
+async function createChatNotifications(senderId: string, message: any, projectId?: number) {
+  try {
+    const sender = await storage.getUser(senderId);
+    if (!sender) return;
+
+    // Get all users to notify based on roles and project assignments
+    const allUsers = await storage.getAllUsers();
+    const notifications = [];
+
+    for (const user of allUsers) {
+      let shouldNotify = false;
+      let notificationTitle = '';
+      let notificationMessage = '';
+
+      // Skip sender
+      if (user.id === senderId) continue;
+
+      // Admin gets all messages
+      if (user.role === 'admin') {
+        shouldNotify = true;
+        notificationTitle = 'New Chat Message';
+        notificationMessage = `${sender.firstName || sender.email} sent a message${projectId ? ' in a project' : ''}`;
+      }
+      // Team members get messages related to their assigned projects
+      else if (['team', 'developer', 'manager', 'seo'].includes(user.role)) {
+        if (projectId) {
+          const assignments = await storage.getProjectAssignments(projectId);
+          const isAssigned = assignments.some(assignment => assignment.teamMemberId === user.id);
+          if (isAssigned) {
+            shouldNotify = true;
+            notificationTitle = 'New Project Message';
+            notificationMessage = `${sender.firstName || sender.email} sent a message in your assigned project`;
+          }
+        } else {
+          // Team members get general messages from admin
+          if (sender.role === 'admin') {
+            shouldNotify = true;
+            notificationTitle = 'Admin Message';
+            notificationMessage = `Admin sent you a message`;
+          }
+        }
+      }
+      // Customers get messages related to their projects
+      else if (['customer', 'client'].includes(user.role)) {
+        if (projectId) {
+          const project = await storage.getClientProjectById(projectId);
+          if (project && project.clientId === user.id) {
+            shouldNotify = true;
+            notificationTitle = 'Project Update';
+            notificationMessage = `${sender.firstName || sender.email} sent a message about your project`;
+          }
+        }
+      }
+
+      if (shouldNotify) {
+        notifications.push({
+          userId: user.id,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: 'message',
+          projectId: projectId || null,
+          isRead: false
+        });
+      }
+    }
+
+    // Create all notifications
+    for (const notification of notifications) {
+      await storage.createNotification(notification);
+    }
+  } catch (error) {
+    console.error('Error creating chat notifications:', error);
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth middleware
@@ -1145,6 +1222,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat API endpoints
+  app.get("/api/chat/messages", verifyJWT, async (req: any, res) => {
+    try {
+      const projectId = req.query.projectId ? parseInt(req.query.projectId) : undefined;
+      const messages = await storage.getChatMessages(projectId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post("/api/chat/messages", verifyJWT, async (req: any, res) => {
+    try {
+      const { projectId, message, messageType = 'text', attachments } = req.body;
+      
+      const newMessage = await storage.createChatMessage({
+        projectId: projectId || null,
+        senderId: req.user.id,
+        message,
+        messageType,
+        attachments,
+        isRead: false
+      });
+
+      // Create notifications for relevant users
+      await createChatNotifications(req.user.id, newMessage, projectId);
+
+      res.status(201).json(newMessage);
+    } catch (error) {
+      console.error("Error creating chat message:", error);
+      res.status(500).json({ message: "Failed to create chat message" });
+    }
+  });
+
+  app.put("/api/chat/messages/:id/read", verifyJWT, async (req: any, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await storage.markChatMessageAsRead(messageId);
+      res.json({ message: "Message marked as read" });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  app.get("/api/chat/unread-count", verifyJWT, async (req: any, res) => {
+    try {
+      const projectId = req.query.projectId ? parseInt(req.query.projectId) : undefined;
+      const count = await storage.getUnreadChatMessagesCount(req.user.id, projectId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
+
+  app.get("/api/chat/conversations", verifyJWT, async (req: any, res) => {
+    try {
+      const projectId = req.query.projectId ? parseInt(req.query.projectId) : undefined;
+      const conversations = await storage.getChatConversations(req.user.id, projectId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
   // Mobile-specific API endpoints (all require API security token)
   app.post('/api/mobile/refresh-token', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
     try {
@@ -1692,6 +1837,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Blog Management
+  app.get("/api/seo/blog", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const posts = await storage.getBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.post("/api/seo/blog", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { title, slug, excerpt, content, featured_image, meta_title, meta_description, tags, read_time, status } = req.body;
+      const author_id = req.user.id;
+      
+      const post = await storage.createBlogPost({
+        title,
+        slug,
+        excerpt,
+        content,
+        featuredImage: featured_image,
+        authorId: author_id,
+        metaTitle: meta_title,
+        metaDescription: meta_description,
+        tags,
+        readTime: read_time,
+        published: status === 'published',
+        publishedAt: status === 'published' ? new Date() : null
+      });
+      
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ message: "Failed to create blog post" });
+    }
+  });
+
+  app.put("/api/seo/blog/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const post = await storage.updateBlogPost(parseInt(id), updates);
+      res.json(post);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ message: "Failed to update blog post" });
+    }
+  });
+
+  app.delete("/api/seo/blog/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteBlogPost(parseInt(id));
+      res.json({ message: "Blog post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ message: "Failed to delete blog post" });
+    }
+  });
+
+  // Certifications Management
+  app.get("/api/seo/certifications", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const certifications = await storage.getCertifications();
+      res.json(certifications);
+    } catch (error) {
+      console.error("Error fetching certifications:", error);
+      res.status(500).json({ message: "Failed to fetch certifications" });
+    }
+  });
+
+  app.post("/api/seo/certifications", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const certification = await storage.createCertification(req.body);
+      res.status(201).json(certification);
+    } catch (error) {
+      console.error("Error creating certification:", error);
+      res.status(500).json({ message: "Failed to create certification" });
+    }
+  });
+
+  app.put("/api/seo/certifications/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const certification = await storage.updateCertification(parseInt(id), req.body);
+      res.json(certification);
+    } catch (error) {
+      console.error("Error updating certification:", error);
+      res.status(500).json({ message: "Failed to update certification" });
+    }
+  });
+
+  app.delete("/api/seo/certifications/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCertification(parseInt(id));
+      res.json({ message: "Certification deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting certification:", error);
+      res.status(500).json({ message: "Failed to delete certification" });
+    }
+  });
+
+  // Partnerships Management
+  app.get("/api/seo/partnerships", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const partnerships = await storage.getPartnerships();
+      res.json(partnerships);
+    } catch (error) {
+      console.error("Error fetching partnerships:", error);
+      res.status(500).json({ message: "Failed to fetch partnerships" });
+    }
+  });
+
+  app.post("/api/seo/partnerships", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const partnership = await storage.createPartnership(req.body);
+      res.status(201).json(partnership);
+    } catch (error) {
+      console.error("Error creating partnership:", error);
+      res.status(500).json({ message: "Failed to create partnership" });
+    }
+  });
+
+  app.put("/api/seo/partnerships/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const partnership = await storage.updatePartnership(parseInt(id), req.body);
+      res.json(partnership);
+    } catch (error) {
+      console.error("Error updating partnership:", error);
+      res.status(500).json({ message: "Failed to update partnership" });
+    }
+  });
+
+  app.delete("/api/seo/partnerships/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePartnership(parseInt(id));
+      res.json({ message: "Partnership deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting partnership:", error);
+      res.status(500).json({ message: "Failed to delete partnership" });
+    }
+  });
+
+  // SEO Content Management
+  app.get("/api/seo/content", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const content = await storage.getSEOContent();
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching SEO content:", error);
+      res.status(500).json({ message: "Failed to fetch SEO content" });
+    }
+  });
+
+  app.post("/api/seo/content", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { title, slug, content, meta_description, meta_keywords, status } = req.body;
+      const author_id = req.user.id;
+      
+      const seoContent = await storage.createSEOContent({
+        title,
+        slug,
+        content,
+        metaDescription: meta_description,
+        metaKeywords: meta_keywords,
+        status,
+        authorId: author_id,
+        publishedAt: status === 'published' ? new Date() : null
+      });
+      
+      res.status(201).json(seoContent);
+    } catch (error) {
+      console.error("Error creating SEO content:", error);
+      res.status(500).json({ message: "Failed to create SEO content" });
+    }
+  });
+
+  app.put("/api/seo/content/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const content = await storage.updateSEOContent(parseInt(id), updates);
+      res.json(content);
+    } catch (error) {
+      console.error("Error updating SEO content:", error);
+      res.status(500).json({ message: "Failed to update SEO content" });
+    }
+  });
+
+  app.delete("/api/seo/content/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteSEOContent(parseInt(id));
+      res.json({ message: "SEO content deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting SEO content:", error);
+      res.status(500).json({ message: "Failed to delete SEO content" });
+    }
+  });
+
+  // Contact Messages Management
+  app.get("/api/seo/contact-messages", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const messages = await storage.getContactSubmissions();
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching contact messages:", error);
+      res.status(500).json({ message: "Failed to fetch contact messages" });
+    }
+  });
+
+  app.put("/api/seo/contact-messages/:id", verifyJWT, requireRole(["seo", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { responded } = req.body;
+      
+      const message = await storage.updateContactSubmission(parseInt(id), { responded });
+      res.json(message);
+    } catch (error) {
+      console.error("Error updating contact message:", error);
+      res.status(500).json({ message: "Failed to update contact message" });
+    }
+  });
+
   // WebSocket setup for real-time chat
   const server = createServer(app);
   const wss = new WebSocketServer({ server, path: "/ws" });
@@ -1724,22 +2099,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
 
           case "message":
-            // Broadcast message to all connected clients
-            const messageData = {
-              type: "message",
-              ...message,
-              timestamp: new Date().toISOString(),
-            };
+            // Store message in database
+            try {
+              const newMessage = await storage.createChatMessage({
+                projectId: message.projectId || null,
+                senderId: message.senderId,
+                message: message.content,
+                messageType: message.messageType || 'text',
+                attachments: message.attachments,
+                isRead: false
+              });
 
-            // Store message in database if needed
-            // await storage.createChatMessage(messageData);
+              // Create notifications for relevant users
+              await createChatNotifications(message.senderId, newMessage, message.projectId);
 
-            // Broadcast to all connections
-            connections.forEach((clientWs) => {
-              if (clientWs.readyState === WebSocket.OPEN) {
-                clientWs.send(JSON.stringify(messageData));
-              }
-            });
+              // Broadcast to all connections
+              const messageData = {
+                type: "new_message",
+                message: newMessage,
+                timestamp: new Date().toISOString(),
+              };
+
+              connections.forEach((clientWs) => {
+                if (clientWs.readyState === WebSocket.OPEN) {
+                  clientWs.send(JSON.stringify(messageData));
+                }
+              });
+            } catch (error) {
+              console.error("Error storing message:", error);
+            }
             break;
 
           case "typing":
