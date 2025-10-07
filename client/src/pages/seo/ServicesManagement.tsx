@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,17 +138,29 @@ function ServiceModal({ mode, existingService, onServiceUpdate, children }: Serv
         {children}
       </div>
       
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
+      {open && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+          <Card 
+            className="w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 my-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <CardHeader>
               <CardTitle>{mode === 'create' ? 'Add New Service' : 'Edit Service'}</CardTitle>
               <CardDescription>
                 {mode === 'create' ? 'Create a new service for your website' : 'Update service information'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <CardContent onClick={(e) => e.stopPropagation()}>
+              <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Title</label>
                   <Input
@@ -232,7 +245,8 @@ function ServiceModal({ mode, existingService, onServiceUpdate, children }: Serv
               </form>
             </CardContent>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -253,64 +267,13 @@ export default function ServicesManagement() {
         const data = await response.json();
         setServices(data);
       } else {
-        // Mock data for demonstration
-        const mockServices: Service[] = [
-          {
-            id: 1,
-            title: 'Web Development',
-            description: 'Custom websites and web applications built with modern technologies',
-            icon: 'Code',
-            technologies: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
-            featured: true,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 2,
-            title: 'Mobile App Development',
-            description: 'Native and cross-platform mobile applications',
-            icon: 'Smartphone',
-            technologies: ['React Native', 'Flutter', 'iOS', 'Android'],
-            featured: true,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 3,
-            title: 'UI/UX Design',
-            description: 'User interface and user experience design services',
-            icon: 'Palette',
-            technologies: ['Figma', 'Adobe XD', 'Sketch', 'Photoshop'],
-            featured: true,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 4,
-            title: 'Digital Marketing',
-            description: 'SEO, social media, and online marketing strategies',
-            icon: 'TrendingUp',
-            technologies: ['SEO', 'Google Ads', 'Social Media', 'Analytics'],
-            featured: false,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 5,
-            title: 'E-commerce Solutions',
-            description: 'Online store development and management',
-            icon: 'ShoppingCart',
-            technologies: ['Shopify', 'WooCommerce', 'Stripe', 'PayPal'],
-            featured: false,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 6,
-            title: 'Cloud Solutions',
-            description: 'Cloud infrastructure and deployment services',
-            icon: 'Cloud',
-            technologies: ['AWS', 'Google Cloud', 'Azure', 'Docker'],
-            featured: false,
-            created_at: '2025-01-01T10:00:00Z'
-          }
-        ];
-        setServices(mockServices);
+        console.error('Failed to fetch services:', response.status, response.statusText);
+        setServices([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch services. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching services:', error);

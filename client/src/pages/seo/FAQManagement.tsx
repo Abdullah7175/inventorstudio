@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,17 +108,29 @@ function FAQModal({ mode, existingFAQ, onFAQUpdate, children }: FAQModalProps) {
         {children}
       </div>
       
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
+      {open && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+          <Card 
+            className="w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 my-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <CardHeader>
               <CardTitle>{mode === 'create' ? 'Add New FAQ' : 'Edit FAQ Item'}</CardTitle>
               <CardDescription>
                 {mode === 'create' ? 'Add a new frequently asked question' : 'Update FAQ item information'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <CardContent onClick={(e) => e.stopPropagation()}>
+              <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Question</label>
                   <Input
@@ -150,7 +163,8 @@ function FAQModal({ mode, existingFAQ, onFAQUpdate, children }: FAQModalProps) {
               </form>
             </CardContent>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

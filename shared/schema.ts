@@ -297,6 +297,7 @@ export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").references(() => projectRequests.id),
   senderId: varchar("sender_id").notNull(),
+  recipientId: varchar("recipient_id"), // For direct messages
   message: text("message").notNull(),
   messageType: varchar("message_type").default("text"), // text, file, image, system
   attachments: jsonb("attachments"),

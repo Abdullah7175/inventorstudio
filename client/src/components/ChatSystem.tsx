@@ -78,7 +78,9 @@ export default function ChatSystem({
     queryFn: async () => {
       const response = await fetch(`/api/chat/conversations?projectId=${projectId || ''}`);
       if (!response.ok) throw new Error('Failed to fetch conversations');
-      return response.json();
+      const data = await response.json();
+      console.log('ChatSystem: Fetched conversations:', data);
+      return data;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -91,9 +93,12 @@ export default function ChatSystem({
       if (projectId) params.append('projectId', projectId.toString());
       if (selectedConversationId) params.append('conversationId', selectedConversationId);
       
+      console.log('ChatSystem: Fetching messages for conversation:', selectedConversationId, 'with params:', params.toString());
       const response = await fetch(`/api/chat/messages?${params}`);
       if (!response.ok) throw new Error('Failed to fetch messages');
-      return response.json();
+      const data = await response.json();
+      console.log('ChatSystem: Fetched messages:', data);
+      return data;
     },
     enabled: !!selectedConversationId,
     refetchInterval: 10000, // Refetch every 10 seconds
@@ -239,7 +244,10 @@ export default function ChatSystem({
                   className={`cursor-pointer transition-colors hover:bg-muted/50 ${
                     selectedConversationId === conversation.id ? 'bg-primary/10 border-primary/20' : ''
                   }`}
-                  onClick={() => onConversationSelect?.(conversation.id)}
+                  onClick={() => {
+                    console.log('ChatSystem: Selecting conversation:', conversation.id);
+                    onConversationSelect?.(conversation.id);
+                  }}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">

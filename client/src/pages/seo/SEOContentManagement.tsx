@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,240 @@ interface SEOContent {
   created_at: string;
 }
 
+interface SEOContentModalProps {
+  mode: 'create' | 'edit';
+  existingContent?: SEOContent;
+  onContentUpdate: () => void;
+  children: React.ReactNode;
+}
+
+// SEO Content Modal Component
+function SEOContentModal({ mode, existingContent, onContentUpdate, children }: SEOContentModalProps) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    content: '',
+    meta_description: '',
+    meta_keywords: [] as string[],
+    status: 'draft'
+  });
+  const [newKeyword, setNewKeyword] = useState('');
+  const { toast } = useToast();
+
+  const statuses = [
+    { value: 'draft', label: 'Draft' },
+    { value: 'published', label: 'Published' },
+    { value: 'archived', label: 'Archived' }
+  ];
+
+  useEffect(() => {
+    if (open && mode === 'edit' && existingContent) {
+      setFormData({
+        title: existingContent.title,
+        slug: existingContent.slug,
+        content: existingContent.content,
+        meta_description: existingContent.meta_description || '',
+        meta_keywords: existingContent.meta_keywords || [],
+        status: existingContent.status
+      });
+    } else if (open && mode === 'create') {
+      setFormData({
+        title: '',
+        slug: '',
+        content: '',
+        meta_description: '',
+        meta_keywords: [],
+        status: 'draft'
+      });
+    }
+  }, [open, mode, existingContent]);
+
+  const addKeyword = () => {
+    if (newKeyword.trim() && !formData.meta_keywords.includes(newKeyword.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        meta_keywords: [...prev.meta_keywords, newKeyword.trim()]
+      }));
+      setNewKeyword('');
+    }
+  };
+
+  const removeKeyword = (keyword: string) => {
+    setFormData(prev => ({
+      ...prev,
+      meta_keywords: prev.meta_keywords.filter(k => k !== keyword)
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const url = mode === 'create' ? '/api/seo/content' : `/api/seo/content/${existingContent?.id}`;
+      const method = mode === 'create' ? 'POST' : 'PUT';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          published_at: formData.status === 'published' ? new Date().toISOString() : null
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `SEO Content ${mode === 'create' ? 'created' : 'updated'} successfully`,
+        });
+        setOpen(false);
+        onContentUpdate();
+      } else {
+        throw new Error('Failed to save SEO content');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save SEO content",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setOpen(true)}>
+        {children}
+      </div>
+      
+      {open && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+          <Card 
+            className="w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 my-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <CardHeader>
+              <CardTitle>{mode === 'create' ? 'Add New SEO Content' : 'Edit SEO Content'}</CardTitle>
+              <CardDescription>
+                {mode === 'create' ? 'Create new SEO-optimized content' : 'Update SEO content information'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent onClick={(e) => e.stopPropagation()}>
+              <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Title</label>
+                    <Input
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Content title"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Slug</label>
+                    <Input
+                      value={formData.slug}
+                      onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                      placeholder="content-slug"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Content</label>
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Full content text"
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm min-h-[200px]"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Meta Description</label>
+                  <textarea
+                    value={formData.meta_description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, meta_description: e.target.value }))}
+                    placeholder="SEO meta description"
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm min-h-[60px]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Meta Keywords</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.meta_keywords.map((keyword) => (
+                      <Badge key={keyword} variant="secondary" className="flex items-center gap-1">
+                        {keyword}
+                        <button
+                          type="button"
+                          onClick={() => removeKeyword(keyword)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add keyword..."
+                      value={newKeyword}
+                      onChange={(e) => setNewKeyword(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
+                    />
+                    <Button type="button" onClick={addKeyword} variant="outline">
+                      Add
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  >
+                    {statuses.map(status => (
+                      <option key={status.value} value={status.value}>{status.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {mode === 'create' ? 'Create SEO Content' : 'Update SEO Content'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 export default function SEOContentManagement() {
   const [seoContent, setSeoContent] = useState<SEOContent[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,57 +294,13 @@ export default function SEOContentManagement() {
         const data = await response.json();
         setSeoContent(data);
       } else {
-        // Mock data for demonstration
-        const mockSEOContent: SEOContent[] = [
-          {
-            id: 1,
-            title: 'About Us - Inventor Design Studio',
-            slug: 'about',
-            content: 'Full about page content...',
-            meta_description: 'Learn about Inventor Design Studio, a leading web development company specializing in modern solutions.',
-            meta_keywords: ['about', 'company', 'web development', 'design studio'],
-            status: 'published',
-            author_id: 'author-1',
-            published_at: '2024-12-01T10:00:00Z',
-            created_at: '2024-12-01T10:00:00Z'
-          },
-          {
-            id: 2,
-            title: 'Services - Web Development Solutions',
-            slug: 'services',
-            content: 'Full services page content...',
-            meta_description: 'Comprehensive web development services including React, Node.js, and modern technologies.',
-            meta_keywords: ['services', 'web development', 'React', 'Node.js'],
-            status: 'published',
-            author_id: 'author-1',
-            published_at: '2024-12-01T10:00:00Z',
-            created_at: '2024-12-01T10:00:00Z'
-          },
-          {
-            id: 3,
-            title: 'Portfolio - Our Work',
-            slug: 'portfolio',
-            content: 'Full portfolio page content...',
-            meta_description: 'View our portfolio of successful web development projects and client work.',
-            meta_keywords: ['portfolio', 'projects', 'work', 'examples'],
-            status: 'published',
-            author_id: 'author-1',
-            published_at: '2024-12-01T10:00:00Z',
-            created_at: '2024-12-01T10:00:00Z'
-          },
-          {
-            id: 4,
-            title: 'Contact Us - Get In Touch',
-            slug: 'contact',
-            content: 'Full contact page content...',
-            meta_description: 'Contact Inventor Design Studio for your web development needs. Get a free quote today.',
-            meta_keywords: ['contact', 'get in touch', 'quote', 'web development'],
-            status: 'draft',
-            author_id: 'author-1',
-            created_at: '2024-12-02T10:00:00Z'
-          }
-        ];
-        setSeoContent(mockSEOContent);
+        console.error('Failed to fetch SEO content:', response.status, response.statusText);
+        setSeoContent([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch SEO content. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching SEO content:', error);
@@ -154,10 +345,12 @@ export default function SEOContentManagement() {
           <h1 className="text-3xl font-bold">SEO Content Management</h1>
           <p className="text-muted-foreground">Manage SEO-optimized content for your website pages</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New SEO Content
-        </Button>
+        <SEOContentModal mode="create" onContentUpdate={fetchSEOContent}>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New SEO Content
+          </Button>
+        </SEOContentModal>
       </div>
 
       {/* Search and Filters */}
@@ -291,10 +484,12 @@ export default function SEOContentManagement() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Content
-                            </DropdownMenuItem>
+                            <SEOContentModal mode="edit" existingContent={content} onContentUpdate={fetchSEOContent}>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Content
+                              </DropdownMenuItem>
+                            </SEOContentModal>
                             <DropdownMenuItem>
                               <Eye className="h-4 w-4 mr-2" />
                               Preview

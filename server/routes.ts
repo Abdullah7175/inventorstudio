@@ -53,27 +53,43 @@ async function createChatNotifications(senderId: string, message: any, projectId
     const sender = await storage.getUser(senderId);
     if (!sender) return;
 
-    // Get all users to notify based on roles and project assignments
-    const allUsers = await storage.getAllUsers();
     const notifications = [];
 
-    for (const user of allUsers) {
-      let shouldNotify = false;
-      let notificationTitle = '';
-      let notificationMessage = '';
-
-      // Skip sender
-      if (user.id === senderId) continue;
-
-      // Admin gets all messages
-      if (user.role === 'admin') {
-        shouldNotify = true;
-        notificationTitle = 'New Chat Message';
-        notificationMessage = `${sender.firstName || sender.email} sent a message${projectId ? ' in a project' : ''}`;
+    // For direct messages (no projectId but has recipientId)
+    if (!projectId && message.recipientId) {
+      const recipient = await storage.getUser(message.recipientId);
+      if (recipient) {
+        notifications.push({
+          userId: message.recipientId,
+          title: 'New Direct Message',
+          message: `${sender.firstName || sender.email} sent you a direct message`,
+          type: 'message',
+          projectId: null,
+          isRead: false
+        });
       }
-      // Team members get messages related to their assigned projects
-      else if (['team', 'developer', 'manager', 'seo'].includes(user.role)) {
-        if (projectId) {
+    }
+    // For project-based messages
+    else if (projectId) {
+      // Get all users to notify based on roles and project assignments
+      const allUsers = await storage.getAllUsers();
+
+      for (const user of allUsers) {
+        let shouldNotify = false;
+        let notificationTitle = '';
+        let notificationMessage = '';
+
+        // Skip sender
+        if (user.id === senderId) continue;
+
+        // Admin gets all project messages
+        if (user.role === 'admin') {
+          shouldNotify = true;
+          notificationTitle = 'New Project Message';
+          notificationMessage = `${sender.firstName || sender.email} sent a message in a project`;
+        }
+        // Team members get messages related to their assigned projects
+        else if (['team', 'developer', 'manager', 'seo'].includes(user.role)) {
           const assignments = await storage.getProjectAssignments(projectId);
           const isAssigned = assignments.some(assignment => assignment.teamMemberId === user.id);
           if (isAssigned) {
@@ -81,18 +97,9 @@ async function createChatNotifications(senderId: string, message: any, projectId
             notificationTitle = 'New Project Message';
             notificationMessage = `${sender.firstName || sender.email} sent a message in your assigned project`;
           }
-        } else {
-          // Team members get general messages from admin
-          if (sender.role === 'admin') {
-            shouldNotify = true;
-            notificationTitle = 'Admin Message';
-            notificationMessage = `Admin sent you a message`;
-          }
         }
-      }
-      // Customers get messages related to their projects
-      else if (['customer', 'client'].includes(user.role)) {
-        if (projectId) {
+        // Customers get messages related to their projects
+        else if (['customer', 'client'].includes(user.role)) {
           const project = await storage.getClientProjectById(projectId);
           if (project && project.clientId === user.id) {
             shouldNotify = true;
@@ -100,17 +107,17 @@ async function createChatNotifications(senderId: string, message: any, projectId
             notificationMessage = `${sender.firstName || sender.email} sent a message about your project`;
           }
         }
-      }
 
-      if (shouldNotify) {
-        notifications.push({
-          userId: user.id,
-          title: notificationTitle,
-          message: notificationMessage,
-          type: 'message',
-          projectId: projectId || null,
-          isRead: false
-        });
+        if (shouldNotify) {
+          notifications.push({
+            userId: user.id,
+            title: notificationTitle,
+            message: notificationMessage,
+            type: 'message',
+            projectId: projectId,
+            isRead: false
+          });
+        }
       }
     }
 
@@ -118,6 +125,8 @@ async function createChatNotifications(senderId: string, message: any, projectId
     for (const notification of notifications) {
       await storage.createNotification(notification);
     }
+    
+    console.log(`Created ${notifications.length} notifications for message from ${senderId}`);
   } catch (error) {
     console.error('Error creating chat notifications:', error);
   }
@@ -1226,7 +1235,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chat/messages", verifyJWT, async (req: any, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId) : undefined;
-      const messages = await storage.getChatMessages(projectId);
+      const conversationId = req.query.conversationId;
+      const userId = req.user.id;
+      
+      console.log(`Fetching messages for user ${userId}, projectId: ${projectId}, conversationId: ${conversationId}`);
+      const messages = await storage.getChatMessages(projectId, conversationId, userId);
+      console.log(`Found ${messages.length} messages:`, messages);
       res.json(messages);
     } catch (error) {
       console.error("Error fetching chat messages:", error);
@@ -1236,11 +1250,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/chat/messages", verifyJWT, async (req: any, res) => {
     try {
-      const { projectId, message, messageType = 'text', attachments } = req.body;
+      const { projectId, message, messageType = 'text', attachments, conversationId } = req.body;
+      
+      // Determine recipient for direct messages
+      let recipientId = null;
+      if (!projectId && conversationId) {
+        // Extract recipient ID from conversation ID (format: "role-userId" or "admin-userId")
+        const parts = conversationId.split('-');
+        if (parts.length >= 2) {
+          recipientId = parts.slice(1).join('-'); // Handle UUIDs that might contain dashes
+        }
+      }
       
       const newMessage = await storage.createChatMessage({
         projectId: projectId || null,
         senderId: req.user.id,
+        recipientId: recipientId,
         message,
         messageType,
         attachments,
@@ -1282,13 +1307,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chat/conversations", verifyJWT, async (req: any, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId) : undefined;
+      console.log(`Fetching conversations for user ${req.user.id}, projectId: ${projectId}`);
+      
+      // Debug: Check user info
+      const user = await storage.getUser(req.user.id);
+      console.log(`User info:`, user);
+      
+      // Debug: Check all users in database
+      const allUsers = await storage.getAllUsers();
+      console.log(`All users in database:`, allUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+      
       const conversations = await storage.getChatConversations(req.user.id, projectId);
+      console.log(`Found ${conversations.length} conversations:`, conversations);
       res.json(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ message: "Failed to fetch conversations" });
     }
   });
+
+  // Debug endpoint to check notifications
+  app.get("/api/debug/notifications", verifyJWT, async (req: any, res) => {
+    try {
+      console.log(`Checking notifications for user ${req.user.id}`);
+      const notifications = await storage.getNotifications(req.user.id);
+      console.log(`Found ${notifications.length} notifications:`, notifications);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.put("/api/notifications/:id/read", verifyJWT, async (req: any, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.put("/api/notifications/mark-all-read", verifyJWT, async (req: any, res) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.user.id);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
+    }
+  });
+
+  // Debug endpoint to create test customer if none exist
+  app.post("/api/debug/create-test-customer", verifyJWT, requireRole(["admin"]), async (req: any, res) => {
+    try {
+      // Check if any customers exist
+      const existingCustomers = await storage.getAllUsers();
+      const hasCustomers = existingCustomers.some(user => user.role === 'customer');
+      
+      let testCustomer;
+      if (!hasCustomers) {
+        // Create a test customer
+        testCustomer = await storage.createUser({
+          email: 'testcustomer@example.com',
+          firstName: 'Test',
+          lastName: 'Customer',
+          role: 'customer',
+          isActive: true,
+          passwordHash: '$2b$10$dummy.hash.for.testing',
+          emailVerified: true,
+          createdAt: new Date(),
+        });
+        console.log("Created test customer:", testCustomer);
+      } else {
+        testCustomer = existingCustomers.find(u => u.role === 'customer');
+        console.log("Using existing customer:", testCustomer);
+      }
+
+      // Create some test messages between admin and customer
+      const adminUser = await storage.getUser(req.user.id);
+      let messagesCreated = 0;
+      
+      if (adminUser && testCustomer) {
+        // Create a conversation with some test messages
+        const testMessages = [
+          {
+            senderId: testCustomer.id,
+            message: "Hello! I'm interested in your web development services. Can you help me with a new project?",
+            messageType: 'text' as const,
+            recipientId: adminUser.id,
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+          },
+          {
+            senderId: adminUser.id,
+            message: "Hello! I'd be happy to help you with your web development project. What kind of website are you looking to build?",
+            messageType: 'text' as const,
+            recipientId: testCustomer.id,
+            createdAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000), // 1.5 hours ago
+          },
+          {
+            senderId: testCustomer.id,
+            message: "I need an e-commerce website for my clothing store. Do you have experience with Shopify development?",
+            messageType: 'text' as const,
+            recipientId: adminUser.id,
+            createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+          },
+          {
+            senderId: adminUser.id,
+            message: "Absolutely! We have extensive experience with Shopify development and can create a custom e-commerce solution for your clothing store. Would you like to schedule a call to discuss your requirements in detail?",
+            messageType: 'text' as const,
+            recipientId: testCustomer.id,
+            createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+          }
+        ];
+
+        // Create the test messages
+        for (const msg of testMessages) {
+          await storage.createChatMessage(msg);
+        }
+
+        messagesCreated = testMessages.length;
+        console.log(`Created ${messagesCreated} test messages between admin and customer`);
+      }
+
+      res.json({ 
+        message: "Test customer and messages created successfully", 
+        customer: testCustomer,
+        messagesCreated
+      });
+    } catch (error) {
+      console.error("Error creating test customer and messages:", error);
+      res.status(500).json({ message: "Failed to create test customer and messages" });
+    }
+  });
+
 
   // Mobile-specific API endpoints (all require API security token)
   app.post('/api/mobile/refresh-token', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
@@ -2101,9 +2257,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case "message":
             // Store message in database
             try {
+              // Determine recipient for direct messages
+              let recipientId = null;
+              if (!message.projectId && message.conversationId) {
+                const parts = message.conversationId.split('-');
+                if (parts.length >= 2) {
+                  recipientId = parts.slice(1).join('-');
+                }
+              }
+
               const newMessage = await storage.createChatMessage({
                 projectId: message.projectId || null,
                 senderId: message.senderId,
+                recipientId: recipientId,
                 message: message.content,
                 messageType: message.messageType || 'text',
                 attachments: message.attachments,

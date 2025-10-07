@@ -1161,7 +1161,16 @@ export const requireRole = (roles: string[]) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Check both user role and team role for SEO access
+    const userRole = req.user.role;
+    const teamRole = req.user.teamRole;
+    
+    // Allow access if user has required role OR if user has team role "SEO Expert" and "seo" is in required roles
+    const hasAccess = roles.includes(userRole) || 
+                     (teamRole === "SEO Expert" && roles.includes("seo")) ||
+                     (teamRole === "SEO Expert" && roles.includes("SEO Expert"));
+
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

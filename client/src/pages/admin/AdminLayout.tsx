@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import { 
   LayoutDashboard, 
   Users, 
@@ -85,9 +86,7 @@ const menuItems: MenuItem[] = [
     icon: MessageSquare,
     path: '/admin/communications',
     children: [
-      { id: 'chat', label: 'Chat Management', icon: MessageSquare, path: '/admin/communications/chat' },
-      { id: 'notifications', label: 'Notifications', icon: Bell, path: '/admin/communications/notifications' },
-      { id: 'emails', label: 'Email Management', icon: Mail, path: '/admin/communications/emails' }
+      { id: 'chat', label: 'Chat Management', icon: MessageSquare, path: '/admin/communications/chat' }
     ]
   },
   {
@@ -96,9 +95,7 @@ const menuItems: MenuItem[] = [
     icon: BarChart3,
     path: '/admin/analytics',
     children: [
-      { id: 'overview', label: 'Overview', icon: BarChart3, path: '/admin/analytics' },
-      { id: 'revenue', label: 'Revenue', icon: Activity, path: '/admin/analytics/revenue' },
-      { id: 'performance', label: 'Performance', icon: Globe, path: '/admin/analytics/performance' }
+      { id: 'overview', label: 'Overview', icon: BarChart3, path: '/admin/analytics' }
     ]
   },
   {
@@ -107,9 +104,7 @@ const menuItems: MenuItem[] = [
     icon: Settings,
     path: '/admin/settings',
     children: [
-      { id: 'general', label: 'General Settings', icon: Settings, path: '/admin/settings' },
-      { id: 'security', label: 'Security', icon: Shield, path: '/admin/settings/security' },
-      { id: 'integrations', label: 'Integrations', icon: Globe, path: '/admin/settings/integrations' }
+      { id: 'general', label: 'General Settings', icon: Settings, path: '/admin/settings' }
     ]
   }
 ];
@@ -273,9 +268,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-              </Button>
+              <NotificationDropdown />
               <Button variant="ghost" size="sm">
                 <Mail className="h-4 w-4" />
               </Button>

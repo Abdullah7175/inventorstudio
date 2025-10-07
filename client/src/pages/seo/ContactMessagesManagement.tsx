@@ -29,6 +29,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ChatSystem from '@/components/ChatSystem';
 
 interface ContactMessage {
   id: number;
@@ -45,6 +46,8 @@ export default function ContactMessagesManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [showConversations, setShowConversations] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchContactMessages = useCallback(async () => {
@@ -56,45 +59,13 @@ export default function ContactMessagesManagement() {
         const data = await response.json();
         setContactMessages(data);
       } else {
-        // Mock data for demonstration
-        const mockMessages: ContactMessage[] = [
-          {
-            id: 1,
-            name: 'John Smith',
-            email: 'john.smith@example.com',
-            service: 'Web Development',
-            message: 'I need a new website for my business. Can you provide a quote?',
-            responded: false,
-            created_at: '2025-01-05T09:15:00Z'
-          },
-          {
-            id: 2,
-            name: 'Sarah Johnson',
-            email: 'sarah.j@example.com',
-            service: 'Mobile App Development',
-            message: 'I am interested in developing a mobile app for my startup. What are your rates?',
-            responded: true,
-            created_at: '2025-01-04T14:30:00Z'
-          },
-          {
-            id: 3,
-            name: 'Mike Davis',
-            email: 'mike.davis@example.com',
-            service: 'E-commerce Development',
-            message: 'We need help with our Shopify store optimization and custom features.',
-            responded: false,
-            created_at: '2025-01-03T16:45:00Z'
-          },
-          {
-            id: 4,
-            name: 'Emily Brown',
-            email: 'emily.brown@example.com',
-            message: 'Do you offer SEO services? I need help with my website ranking.',
-            responded: true,
-            created_at: '2025-01-02T11:20:00Z'
-          }
-        ];
-        setContactMessages(mockMessages);
+        console.error('Failed to fetch contact messages:', response.status, response.statusText);
+        setContactMessages([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch contact messages. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching contact messages:', error);
@@ -193,6 +164,14 @@ export default function ContactMessagesManagement() {
           <p className="text-muted-foreground">Manage incoming contact form submissions</p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button 
+            variant={showConversations ? "default" : "outline"}
+            onClick={() => setShowConversations(!showConversations)}
+            className="flex items-center space-x-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>{showConversations ? 'Hide Conversations' : 'Show Conversations'}</span>
+          </Button>
           <Badge variant="outline" className="flex items-center space-x-1">
             <MessageSquare className="h-3 w-3" />
             <span>{contactMessages.filter(m => !m.responded).length} Unread</span>
@@ -330,6 +309,30 @@ export default function ContactMessagesManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Conversation Window */}
+      {showConversations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <MessageSquare className="h-5 w-5" />
+              <span>Conversations</span>
+            </CardTitle>
+            <CardDescription>
+              Chat with customers and team members
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[600px]">
+              <ChatSystem
+                selectedConversationId={selectedConversation}
+                onConversationSelect={setSelectedConversation}
+                className="h-full"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

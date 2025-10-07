@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,235 @@ interface Partnership {
   created_at: string;
 }
 
+interface PartnershipModalProps {
+  mode: 'create' | 'edit';
+  existingPartnership?: Partnership;
+  onPartnershipUpdate: () => void;
+  children: React.ReactNode;
+}
+
+// Partnership Modal Component
+function PartnershipModal({ mode, existingPartnership, onPartnershipUpdate, children }: PartnershipModalProps) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    company_name: '',
+    logo: '',
+    description: '',
+    partnership_type: 'technology',
+    website: '',
+    status: 'active',
+    start_date: '',
+    order: 0
+  });
+  const { toast } = useToast();
+
+  const partnershipTypes = [
+    { value: 'technology', label: 'Technology' },
+    { value: 'strategic', label: 'Strategic' },
+    { value: 'integration', label: 'Integration' },
+    { value: 'reseller', label: 'Reseller' }
+  ];
+
+  const statuses = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' }
+  ];
+
+  useEffect(() => {
+    if (open && mode === 'edit' && existingPartnership) {
+      setFormData({
+        company_name: existingPartnership.company_name,
+        logo: existingPartnership.logo || '',
+        description: existingPartnership.description || '',
+        partnership_type: existingPartnership.partnership_type,
+        website: existingPartnership.website || '',
+        status: existingPartnership.status,
+        start_date: existingPartnership.start_date ? existingPartnership.start_date.split('T')[0] : '',
+        order: existingPartnership.order
+      });
+    } else if (open && mode === 'create') {
+      setFormData({
+        company_name: '',
+        logo: '',
+        description: '',
+        partnership_type: 'technology',
+        website: '',
+        status: 'active',
+        start_date: '',
+        order: 0
+      });
+    }
+  }, [open, mode, existingPartnership]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const url = mode === 'create' ? '/api/seo/partnerships' : `/api/seo/partnerships/${existingPartnership?.id}`;
+      const method = mode === 'create' ? 'POST' : 'PUT';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Partnership ${mode === 'create' ? 'created' : 'updated'} successfully`,
+        });
+        setOpen(false);
+        onPartnershipUpdate();
+      } else {
+        throw new Error('Failed to save partnership');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save partnership",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setOpen(true)}>
+        {children}
+      </div>
+      
+      {open && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+          <Card 
+            className="w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 my-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <CardHeader>
+              <CardTitle>{mode === 'create' ? 'Add New Partnership' : 'Edit Partnership'}</CardTitle>
+              <CardDescription>
+                {mode === 'create' ? 'Add a new business partnership' : 'Update partnership information'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent onClick={(e) => e.stopPropagation()}>
+              <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Company Name</label>
+                    <Input
+                      value={formData.company_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                      placeholder="Partner company name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Logo URL</label>
+                    <Input
+                      value={formData.logo}
+                      onChange={(e) => setFormData(prev => ({ ...prev, logo: e.target.value }))}
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Brief description of the partnership"
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm min-h-[80px]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Partnership Type</label>
+                    <select
+                      value={formData.partnership_type}
+                      onChange={(e) => setFormData(prev => ({ ...prev, partnership_type: e.target.value }))}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                    >
+                      {partnershipTypes.map(type => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                    >
+                      {statuses.map(status => (
+                        <option key={status.value} value={status.value}>{status.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Start Date</label>
+                    <Input
+                      type="date"
+                      value={formData.start_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Website</label>
+                    <Input
+                      value={formData.website}
+                      onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                      placeholder="https://partner-company.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Display Order</label>
+                    <Input
+                      type="number"
+                      value={formData.order}
+                      onChange={(e) => setFormData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {mode === 'create' ? 'Create Partnership' : 'Update Partnership'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 export default function PartnershipsManagement() {
   const [partnerships, setPartnerships] = useState<Partnership[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,46 +289,13 @@ export default function PartnershipsManagement() {
         const data = await response.json();
         setPartnerships(data);
       } else {
-        // Mock data for demonstration
-        const mockPartnerships: Partnership[] = [
-          {
-            id: 1,
-            company_name: 'Shopify',
-            logo: 'https://example.com/shopify-logo.png',
-            description: 'Official Shopify Partner providing e-commerce solutions',
-            partnership_type: 'technology',
-            website: 'https://shopify.com',
-            status: 'active',
-            start_date: '2024-01-15',
-            order: 1,
-            created_at: '2024-01-15T10:00:00Z'
-          },
-          {
-            id: 2,
-            company_name: 'Google Cloud',
-            logo: 'https://example.com/google-cloud-logo.png',
-            description: 'Google Cloud Partner for cloud infrastructure solutions',
-            partnership_type: 'strategic',
-            website: 'https://cloud.google.com',
-            status: 'active',
-            start_date: '2023-09-01',
-            order: 2,
-            created_at: '2023-09-01T10:00:00Z'
-          },
-          {
-            id: 3,
-            company_name: 'Adobe',
-            logo: 'https://example.com/adobe-logo.png',
-            description: 'Adobe Creative Cloud Partner',
-            partnership_type: 'integration',
-            website: 'https://adobe.com',
-            status: 'inactive',
-            start_date: '2023-06-01',
-            order: 3,
-            created_at: '2023-06-01T10:00:00Z'
-          }
-        ];
-        setPartnerships(mockPartnerships);
+        console.error('Failed to fetch partnerships:', response.status, response.statusText);
+        setPartnerships([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch partnerships. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching partnerships:', error);
@@ -152,10 +349,12 @@ export default function PartnershipsManagement() {
           <h1 className="text-3xl font-bold">Partnerships Management</h1>
           <p className="text-muted-foreground">Manage your business partnerships and collaborations</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Partnership
-        </Button>
+        <PartnershipModal mode="create" onPartnershipUpdate={fetchPartnerships}>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Partnership
+          </Button>
+        </PartnershipModal>
       </div>
 
       {/* Search and Filters */}
@@ -296,10 +495,12 @@ export default function PartnershipsManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Partnership
-                          </DropdownMenuItem>
+                          <PartnershipModal mode="edit" existingPartnership={partnership} onPartnershipUpdate={fetchPartnerships}>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Partnership
+                            </DropdownMenuItem>
+                          </PartnershipModal>
                           <DropdownMenuItem className="text-destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete Partnership

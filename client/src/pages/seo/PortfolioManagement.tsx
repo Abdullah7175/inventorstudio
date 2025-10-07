@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -154,17 +155,29 @@ function PortfolioModal({ mode, existingProject, onProjectUpdate, children }: Po
         {children}
       </div>
       
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
+      {open && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+          <Card 
+            className="w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 my-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <CardHeader>
               <CardTitle>{mode === 'create' ? 'Add New Project' : 'Edit Project'}</CardTitle>
               <CardDescription>
                 {mode === 'create' ? 'Add a new project to your portfolio' : 'Update project information'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <CardContent onClick={(e) => e.stopPropagation()}>
+              <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Title</label>
                   <Input
@@ -271,7 +284,8 @@ function PortfolioModal({ mode, existingProject, onProjectUpdate, children }: Po
               </form>
             </CardContent>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -296,42 +310,13 @@ export default function PortfolioManagement() {
         const data = await response.json();
         setProjects(data);
       } else {
-        // Mock data for demonstration
-        const mockProjects: PortfolioProject[] = [
-          {
-            id: 1,
-            title: 'E-commerce Platform',
-            description: 'Modern e-commerce platform built with React and Node.js',
-            image_url: 'https://example.com/ecommerce.jpg',
-            category: 'web',
-            technologies: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-            project_url: 'https://example.com',
-            featured: true,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 2,
-            title: 'Mobile Banking App',
-            description: 'Secure mobile banking application with biometric authentication',
-            image_url: 'https://example.com/banking.jpg',
-            category: 'mobile',
-            technologies: ['React Native', 'Node.js', 'PostgreSQL'],
-            featured: true,
-            created_at: '2025-01-01T10:00:00Z'
-          },
-          {
-            id: 3,
-            title: 'Corporate Website',
-            description: 'Professional corporate website with CMS integration',
-            image_url: 'https://example.com/corporate.jpg',
-            category: 'web',
-            technologies: ['Next.js', 'TypeScript', 'Contentful'],
-            project_url: 'https://example.com',
-            featured: false,
-            created_at: '2025-01-01T10:00:00Z'
-          }
-        ];
-        setProjects(mockProjects);
+        console.error('Failed to fetch projects:', response.status, response.statusText);
+        setProjects([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch projects. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching projects:', error);

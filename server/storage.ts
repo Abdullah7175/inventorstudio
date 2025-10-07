@@ -53,7 +53,7 @@ import {
   type InsertSEOContent,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, lt, inArray, gt, asc } from "drizzle-orm";
+import { eq, desc, and, lt, inArray, gt, asc, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - mandatory for Firebase Auth
@@ -131,7 +131,7 @@ export interface IStorage {
   cleanupExpiredTokens(): Promise<void>;
 
   // Chat Messages
-  getChatMessages(projectId?: number): Promise<ChatMessage[]>;
+  getChatMessages(projectId?: number, conversationId?: string, userId?: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   markChatMessageAsRead(messageId: number): Promise<void>;
   getUnreadChatMessagesCount(userId: string, projectId?: number): Promise<number>;
@@ -139,6 +139,9 @@ export interface IStorage {
 
   // Notifications
   createNotification(notification: any): Promise<any>;
+  getNotifications(userId: string): Promise<any[]>;
+  markNotificationAsRead(notificationId: number): Promise<void>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
 
   // SEO Content Management
   getSEOContent(): Promise<any[]>;
@@ -1038,13 +1041,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Chat Messages
-  async getChatMessages(projectId?: number): Promise<ChatMessage[]> {
+  async getChatMessages(projectId?: number, conversationId?: string, userId?: string): Promise<ChatMessage[]> {
     try {
-      const query = db.select().from(chatMessages);
+      let messages: ChatMessage[] = [];
+      
       if (projectId) {
-        return await query.where(eq(chatMessages.projectId, projectId)).orderBy(desc(chatMessages.createdAt));
+        // Project-based messages
+        messages = await db.select().from(chatMessages)
+          .where(eq(chatMessages.projectId, projectId))
+          .orderBy(desc(chatMessages.createdAt));
+      } else if (conversationId && userId) {
+        // Direct messages between users
+        const parts = conversationId.split('-');
+        if (parts.length >= 2) {
+          const recipientId = parts.slice(1).join('-');
+          
+          // Get messages where current user is sender and recipient is target
+          const sentMessages = await db.select().from(chatMessages)
+            .where(
+              and(
+                eq(chatMessages.senderId, userId),
+                eq(chatMessages.recipientId, recipientId)
+              )
+            );
+          
+          // Get messages where target is sender and current user is recipient
+          const receivedMessages = await db.select().from(chatMessages)
+            .where(
+              and(
+                eq(chatMessages.senderId, recipientId),
+                eq(chatMessages.recipientId, userId)
+              )
+            );
+          
+          // Combine and sort messages
+          messages = [...sentMessages, ...receivedMessages]
+            .sort((a, b) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateA - dateB;
+            });
+        }
+      } else {
+        // Get all messages for the user (fallback)
+        if (!userId) {
+          messages = [];
+        } else {
+          const sentMessages = await db.select().from(chatMessages)
+            .where(eq(chatMessages.senderId, userId));
+          
+          const receivedMessages = await db.select().from(chatMessages)
+            .where(eq(chatMessages.recipientId, userId));
+          
+          messages = [...sentMessages, ...receivedMessages]
+            .sort((a, b) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateA - dateB;
+            });
+        }
       }
-      return await query.orderBy(desc(chatMessages.createdAt));
+      
+      // Enrich messages with sender information
+      const enrichedMessages = await Promise.all(
+        messages.map(async (message) => {
+          try {
+            const sender = await this.getUser(message.senderId);
+            return {
+              ...message,
+              sender: sender ? {
+                id: sender.id,
+                firstName: sender.firstName || '',
+                lastName: sender.lastName || '',
+                email: sender.email || '',
+                role: sender.role,
+                profileImageUrl: sender.profileImageUrl || undefined
+              } : undefined
+            };
+          } catch (error) {
+            console.error('Error fetching sender info:', error);
+            return message;
+          }
+        })
+      );
+      
+      return enrichedMessages;
     } catch (error) {
       console.error('Error fetching chat messages:', error);
       return [];
@@ -1090,17 +1171,58 @@ export class DatabaseStorage implements IStorage {
 
   async getChatConversations(userId: string, projectId?: number): Promise<any[]> {
     try {
-      // Get all users except the current user
-      const allUsers = await db.select().from(users).where(eq(users.id, userId));
-      const otherUsers = await db.select().from(users).where(and(eq(users.id, userId), eq(users.isActive, true)));
+      // Get current user info
+      const currentUserResult = await db.select().from(users).where(eq(users.id, userId));
+      const currentUser = currentUserResult[0];
+      
+      if (!currentUser) {
+        return [];
+      }
 
-      // For now, return a simplified conversation list
-      // In a real implementation, you'd want to group messages by conversation
       const conversations = [];
+
+      // Helper function to get last message and unread count for a conversation
+      const getConversationData = async (participantId: string, conversationId: string) => {
+        // Get messages between current user and participant
+        const sentMessages = await db.select().from(chatMessages)
+          .where(
+            and(
+              eq(chatMessages.senderId, userId),
+              eq(chatMessages.recipientId, participantId),
+              isNull(chatMessages.projectId) // Direct messages only
+            )
+          )
+          .orderBy(desc(chatMessages.createdAt));
+        
+        const receivedMessages = await db.select().from(chatMessages)
+          .where(
+            and(
+              eq(chatMessages.senderId, participantId),
+              eq(chatMessages.recipientId, userId),
+              isNull(chatMessages.projectId) // Direct messages only
+            )
+          )
+          .orderBy(desc(chatMessages.createdAt));
+
+        // Combine and get the most recent message
+        const allMessages = [...sentMessages, ...receivedMessages]
+          .sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA; // Most recent first
+          });
+
+        const lastMessage = allMessages.length > 0 ? allMessages[0] : null;
+        const unreadCount = receivedMessages.filter(msg => !msg.isRead).length;
+
+        return { lastMessage, unreadCount };
+      };
 
       // Add admin conversation if user is not admin
       const adminUser = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
-      if (adminUser.length > 0 && adminUser[0].id !== userId) {
+      if (adminUser.length > 0 && adminUser[0].id !== currentUser.id) {
+        const { lastMessage, unreadCount } = await getConversationData(adminUser[0].id, `admin-${adminUser[0].id}`);
+        
         conversations.push({
           id: `admin-${adminUser[0].id}`,
           participantId: adminUser[0].id,
@@ -1108,14 +1230,19 @@ export class DatabaseStorage implements IStorage {
           participantRole: 'admin',
           projectId: null,
           projectName: 'General Support',
-          lastMessage: null,
-          unreadCount: 0,
+          lastMessage: lastMessage ? {
+            id: lastMessage.id,
+            message: lastMessage.message,
+            createdAt: lastMessage.createdAt,
+            senderId: lastMessage.senderId
+          } : null,
+          unreadCount,
           isOnline: false
         });
       }
 
       // Add team member conversations if user is admin
-      if (allUsers.length > 0 && allUsers[0].role === 'admin') {
+      if (currentUser && currentUser.role === 'admin') {
         const teamMembers = await db.select().from(users).where(
           and(
             eq(users.role, 'team'),
@@ -1123,7 +1250,11 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
+        console.log(`Found ${teamMembers.length} team members for admin conversations`);
+
         for (const member of teamMembers) {
+          const { lastMessage, unreadCount } = await getConversationData(member.id, `team-${member.id}`);
+          
           conversations.push({
             id: `team-${member.id}`,
             participantId: member.id,
@@ -1131,15 +1262,20 @@ export class DatabaseStorage implements IStorage {
             participantRole: 'team',
             projectId: null,
             projectName: 'Team Communication',
-            lastMessage: null,
-            unreadCount: 0,
+            lastMessage: lastMessage ? {
+              id: lastMessage.id,
+              message: lastMessage.message,
+              createdAt: lastMessage.createdAt,
+              senderId: lastMessage.senderId
+            } : null,
+            unreadCount,
             isOnline: false
           });
         }
       }
 
       // Add customer conversations if user is admin or team
-      if (allUsers.length > 0 && ['admin', 'team', 'developer', 'manager', 'seo'].includes(allUsers[0].role)) {
+      if (currentUser && ['admin', 'team', 'developer', 'manager', 'seo'].includes(currentUser.role)) {
         const customers = await db.select().from(users).where(
           and(
             eq(users.role, 'customer'),
@@ -1147,7 +1283,11 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
+        console.log(`Found ${customers.length} customers for admin/team conversations`);
+
         for (const customer of customers) {
+          const { lastMessage, unreadCount } = await getConversationData(customer.id, `customer-${customer.id}`);
+          
           conversations.push({
             id: `customer-${customer.id}`,
             participantId: customer.id,
@@ -1155,13 +1295,30 @@ export class DatabaseStorage implements IStorage {
             participantRole: 'customer',
             projectId: null,
             projectName: 'Customer Support',
-            lastMessage: null,
-            unreadCount: 0,
+            lastMessage: lastMessage ? {
+              id: lastMessage.id,
+              message: lastMessage.message,
+              createdAt: lastMessage.createdAt,
+              senderId: lastMessage.senderId
+            } : null,
+            unreadCount,
             isOnline: false
           });
         }
       }
 
+      // Sort conversations by last message time (most recent first)
+      conversations.sort((a, b) => {
+        if (!a.lastMessage && !b.lastMessage) return 0;
+        if (!a.lastMessage) return 1;
+        if (!b.lastMessage) return -1;
+        
+        const dateA = a.lastMessage && a.lastMessage.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+        const dateB = b.lastMessage && b.lastMessage.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      console.log(`Returning ${conversations.length} conversations with last messages`);
       return conversations;
     } catch (error) {
       console.error('Error getting chat conversations:', error);
@@ -1175,6 +1332,36 @@ export class DatabaseStorage implements IStorage {
       return newNotification;
     } catch (error) {
       console.error('Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  async getNotifications(userId: string): Promise<any[]> {
+    try {
+      const userNotifications = await db.select().from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+      return userNotifications;
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<void> {
+    try {
+      await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, notificationId));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    try {
+      await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
       throw error;
     }
   }

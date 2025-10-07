@@ -202,8 +202,7 @@ function Router() {
       <Route path="/admin/communications/chat">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
-            
-              <CommunicationManagement />
+            <AdminMessages />
             
           </AdminLayout>
         </AuthGuard>
