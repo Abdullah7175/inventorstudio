@@ -338,7 +338,7 @@ export default function ClientPortal() {
         </div>
       </section>
 
-      <Footer />
+      <Footer showDesignRushBadge={false} />
     </div>
   );
 }

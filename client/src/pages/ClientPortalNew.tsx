@@ -122,7 +122,7 @@ export default function ClientPortal() {
             </div>
           </div>
         </div>
-        <Footer />
+        <Footer showDesignRushBadge={false} />
       </div>
     );
   }
@@ -379,7 +379,7 @@ export default function ClientPortal() {
           </Tabs>
         </div>
       </div>
-      <Footer />
+      <Footer showDesignRushBadge={false} />
     </div>
   );
 }

@@ -117,7 +117,7 @@ export default function ProjectManagement() {
             </AnimatedSection>
           </div>
         </section>
-        <Footer />
+        <Footer showDesignRushBadge={false} />
       </div>
     );
   }
@@ -335,7 +335,7 @@ export default function ProjectManagement() {
         </div>
       </section>
 
-      <Footer />
+      <Footer showDesignRushBadge={false} />
     </div>
   );
 }

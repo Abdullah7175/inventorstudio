@@ -1,0 +1,35 @@
+<svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="120" rx="8" fill="#fafafa"/>
+  
+  <!-- Flame/Torch Icon -->
+  <g transform="translate(100, 15)">
+    <path d="M-8,-5 C-6,-8 -3,-10 0,-10 C3,-10 6,-8 8,-5 C6,-3 3,-1 0,-1 C-3,-1 -6,-3 -8,-5 Z" fill="#0066CC"/>
+    <path d="M-6,-3 C-4,-6 -2,-8 0,-8 C2,-8 4,-6 6,-3 C4,-1 2,1 0,1 C-2,1 -4,-1 -6,-3 Z" fill="#0088FF"/>
+    <path d="M-4,-1 C-2,-4 0,-6 0,-6 C0,-6 2,-4 4,-1 C2,1 0,3 0,3 C0,3 -2,1 -4,-1 Z" fill="#00AAFF"/>
+  </g>
+  
+  <!-- V Shape -->
+  <path d="M85,25 L100,45 L115,25 L110,25 L100,40 L90,25 Z" fill="#0066CC"/>
+  
+  <!-- Stars -->
+  <g fill="#0066CC">
+    <path d="M60,55 L62,60 L67,60 L63,63 L65,68 L60,65 L55,68 L57,63 L53,60 L58,60 Z"/>
+    <path d="M75,55 L77,60 L82,60 L78,63 L80,68 L75,65 L70,68 L72,63 L68,60 L73,60 Z"/>
+    <path d="M90,55 L92,60 L97,60 L93,63 L95,68 L90,65 L85,68 L87,63 L83,60 L88,60 Z"/>
+    <path d="M105,55 L107,60 L112,60 L108,63 L110,68 L105,65 L100,68 L102,63 L98,60 L103,60 Z"/>
+    <path d="M120,55 L122,60 L127,60 L123,63 L125,68 L120,65 L115,68 L117,63 L113,60 L118,60 Z"/>
+  </g>
+  
+  <!-- Text: TOP WEB DEVELOPMENT COMPANY -->
+  <text x="100" y="80" text-anchor="middle" fill="#0066CC" font-family="Arial, sans-serif" font-size="8" font-weight="bold">TOP</text>
+  <text x="100" y="90" text-anchor="middle" fill="#0066CC" font-family="Arial, sans-serif" font-size="6" font-weight="bold">WEB DEVELOPMENT</text>
+  <text x="100" y="98" text-anchor="middle" fill="#0066CC" font-family="Arial, sans-serif" font-size="6" font-weight="bold">COMPANY</text>
+  
+  <!-- Banner with DesignRush.com -->
+  <rect x="50" y="102" width="100" height="12" rx="2" fill="#0066CC"/>
+  <text x="100" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="6" font-weight="bold">DESIGNRUSH.com</text>
+  
+  <!-- Year 2025 -->
+  <text x="100" y="118" text-anchor="middle" fill="#0066CC" font-family="Arial, sans-serif" font-size="8" font-weight="bold">2025</text>
+</svg>

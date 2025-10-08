@@ -9,8 +9,13 @@ import {
   Phone, 
   MapPin 
 } from "lucide-react";
+import DesignRushBadge from "@/assets/designrush-badge.svg";
 
-export default function Footer() {
+interface FooterProps {
+  showDesignRushBadge?: boolean;
+}
+
+export default function Footer({ showDesignRushBadge = true }: FooterProps) {
   const socialLinks = [
     { icon: Facebook, href: "#", label: "Facebook" },
     { icon: Instagram, href: "#", label: "Instagram" },
@@ -159,11 +164,36 @@ export default function Footer() {
           viewport={{ once: true }}
           className="border-t border-border mt-12 pt-8"
         >
-          <div className="flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-muted-foreground text-center sm:text-left responsive-text-sm">
-              © 2024 Inventer Design Studio. All rights reserved.
+          <div className="flex flex-col lg:flex-row justify-between items-center space-y-6 lg:space-y-0">
+            <p className="text-muted-foreground text-center lg:text-left responsive-text-sm">
+              © 2025 Inventer Design Studio. All rights reserved.
             </p>
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 mt-4 sm:mt-0">
+            
+            {/* DesignRush Badge - Only show on public pages */}
+            {showDesignRushBadge && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                viewport={{ once: true }}
+                className="flex justify-center"
+              >
+                <a
+                  href="https://www.designrush.com/agency/digital-marketing/texas/fort-worth"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity duration-300"
+                >
+                  <img
+                    src={DesignRushBadge}
+                    alt="Featured on the DesignRush list of top digital marketing agencies"
+                    className="h-20 w-auto"
+                  />
+                </a>
+              </motion.div>
+            )}
+            
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
               <div className="flex items-center text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-2 text-primary" />
                 <span className="text-sm">Lahore, Pakistan • Dubai, UAE</span>

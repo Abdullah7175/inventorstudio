@@ -188,7 +188,7 @@ export default function TeamPortal() {
             </div>
           </div>
         </div>
-        <Footer />
+        <Footer showDesignRushBadge={false} />
       </div>
     );
   }
@@ -500,7 +500,7 @@ export default function TeamPortal() {
           </Tabs>
         </div>
       </div>
-      <Footer />
+      <Footer showDesignRushBadge={false} />
     </div>
   );
 }
