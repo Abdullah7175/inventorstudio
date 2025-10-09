@@ -50,7 +50,7 @@ export default function Footer({ showDesignRushBadge = true }: FooterProps) {
   return (
     <footer className="bg-gray-900 bg-opacity-50 py-12 border-t border-border">
       <div className="container mx-auto responsive-padding">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 responsive-gap">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 responsive-gap">
           {/* Company Info */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -154,6 +154,29 @@ export default function Footer({ showDesignRushBadge = true }: FooterProps) {
               ))}
             </ul>
           </motion.div>
+          
+          {showDesignRushBadge && (
+              <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                viewport={{ once: true }}
+                
+              >
+                <a
+                  href="https://www.designrush.com/agency/digital-marketing/texas/fort-worth"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity duration-300"
+                >
+                  <img
+                    src={DesignRushBadge}
+                    alt="Featured on the DesignRush list of top digital marketing agencies"
+                    className="h-20 w-auto"
+                  />
+                </a>
+              </motion.div>
+            )}
         </div>
 
         {/* Bottom Section */}
@@ -170,7 +193,7 @@ export default function Footer({ showDesignRushBadge = true }: FooterProps) {
             </p>
             
             {/* DesignRush Badge - Only show on public pages */}
-            {showDesignRushBadge && (
+            {/* {showDesignRushBadge && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -191,7 +214,7 @@ export default function Footer({ showDesignRushBadge = true }: FooterProps) {
                   />
                 </a>
               </motion.div>
-            )}
+            )} */}
             
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
               <div className="flex items-center text-muted-foreground">
