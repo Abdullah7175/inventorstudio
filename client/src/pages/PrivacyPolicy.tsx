@@ -188,7 +188,7 @@ export default function PrivacyPolicy() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" />
-                    <span>📍 Address: First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, Pakistan</span>
+                    <span>📍 Address: First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, 54000</span>
                   </div>
                 </div>
               </CardContent>

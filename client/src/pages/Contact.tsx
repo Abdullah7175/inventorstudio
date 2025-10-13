@@ -62,7 +62,7 @@ export default function Contact() {
     {
       icon: MapPin,
       title: "Office Locations",
-      details: ["Lahore, Pakistan", "Dubai, UAE"]
+      details: ["First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, 54000", "Dubai, UAE"]
     },
     {
       icon: Phone,

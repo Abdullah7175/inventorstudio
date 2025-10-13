@@ -277,6 +277,7 @@ export default function About() {
                   <MapPin className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-2xl font-bold mb-2">Lahore, Pakistan</h3>
                   <p className="text-muted-foreground mb-4">Our headquarters and main development hub</p>
+                  <p className="text-sm text-muted-foreground mb-4">First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, 54000</p>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>📞 +92 XXX XXXXXXX</p>
                     <p>📧 lahore@inventerdesignstudio.com</p>

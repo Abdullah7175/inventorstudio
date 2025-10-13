@@ -79,7 +79,7 @@ export default function AdminSettings() {
     companyName: 'Inventor Design Studio',
     companyEmail: 'admin@inventorstudio.com',
     companyPhone: '+1 (555) 123-4567',
-    companyAddress: '123 Design Street, Creative City, CC 12345',
+    companyAddress: 'First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, 54000',
     timezone: 'America/New_York',
     currency: 'USD',
     language: 'en',
