@@ -140,7 +140,7 @@ export default function TeamManagement() {
       id: '1',
       firstName: 'Alice',
       lastName: 'Johnson',
-      email: 'alice.johnson@inventorstudio.com',
+      email: 'alice.johnson@inventerdesignstudio.com',
       role: 'manager',
       department: 'development',
       status: 'active',
@@ -155,7 +155,7 @@ export default function TeamManagement() {
       id: '2',
       firstName: 'Bob',
       lastName: 'Smith',
-      email: 'bob.smith@inventorstudio.com',
+      email: 'bob.smith@inventerdesignstudio.com',
       role: 'developer',
       department: 'development',
       status: 'active',
@@ -170,7 +170,7 @@ export default function TeamManagement() {
       id: '3',
       firstName: 'Carol',
       lastName: 'Davis',
-      email: 'carol.davis@inventorstudio.com',
+      email: 'carol.davis@inventerdesignstudio.com',
       role: 'designer',
       department: 'design',
       status: 'active',
@@ -185,7 +185,7 @@ export default function TeamManagement() {
       id: '4',
       firstName: 'David',
       lastName: 'Wilson',
-      email: 'david.wilson@inventorstudio.com',
+      email: 'david.wilson@inventerdesignstudio.com',
       role: 'support',
       department: 'support',
       status: 'on-leave',
@@ -664,7 +664,7 @@ export default function TeamManagement() {
                           {role.permissions && typeof role.permissions === 'object' ? 
                             Object.entries(role.permissions).map(([key, value]) => (
                               <Badge key={key} variant="secondary" className="text-xs">
-                                {key}: {value}
+                                {key}: {String(value)}
                               </Badge>
                             )) :
                             <Badge variant="secondary" className="text-xs">

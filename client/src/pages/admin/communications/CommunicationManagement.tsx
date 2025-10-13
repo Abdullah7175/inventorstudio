@@ -103,7 +103,7 @@ export default function CommunicationManagement() {
       recipient: {
         id: '2',
         name: 'Alice Johnson',
-        email: 'alice.johnson@inventorstudio.com',
+        email: 'alice.johnson@inventerdesignstudio.com',
         type: 'team'
       },
       subject: 'Project Timeline Question',
@@ -125,7 +125,7 @@ export default function CommunicationManagement() {
       recipient: {
         id: '4',
         name: 'Support Team',
-        email: 'support@inventorstudio.com',
+        email: 'support@inventerdesignstudio.com',
         type: 'team'
       },
       subject: 'Login Issues',
@@ -141,7 +141,7 @@ export default function CommunicationManagement() {
       sender: {
         id: '5',
         name: 'Carol Davis',
-        email: 'carol.davis@inventorstudio.com',
+        email: 'carol.davis@inventerdesignstudio.com',
         type: 'team'
       },
       recipient: {

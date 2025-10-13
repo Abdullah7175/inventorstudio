@@ -180,7 +180,7 @@ export default function Services() {
                   
                   <div className="text-center mt-8 pt-6 border-t border-border">
                     <p className="text-sm text-muted-foreground">
-                      📞 +92 XXX XXXXXXX • 📧 hello@inventerdesignstudio.com
+                      📞 +92 XXX XXXXXXX • 📧 info@inventerdesignstudio.com
                     </p>
                   </div>
                 </CardContent>

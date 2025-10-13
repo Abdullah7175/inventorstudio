@@ -280,7 +280,7 @@ export default function About() {
                   <p className="text-sm text-muted-foreground mb-4">First Floor, Plaza No. 8, H, A4, Commercial Area Block H Valencia, Lahore, 54000</p>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>📞 +92 XXX XXXXXXX</p>
-                    <p>📧 lahore@inventerdesignstudio.com</p>
+                    <p>📧 info@inventerdesignstudio.com</p>
                   </div>
                 </CardContent>
               </Card>
@@ -294,7 +294,7 @@ export default function About() {
                   <p className="text-muted-foreground mb-4">Strategic office for Middle Eastern clients</p>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>📞 +971 XX XXXXXXX</p>
-                    <p>📧 dubai@inventerdesignstudio.com</p>
+                    <p>📧 info@inventerdesignstudio.com</p>
                   </div>
                 </CardContent>
               </Card>

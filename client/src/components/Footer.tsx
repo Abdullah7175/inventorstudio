@@ -223,7 +223,7 @@ export default function Footer({ showDesignRushBadge = true }: FooterProps) {
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Mail className="h-4 w-4 mr-2 text-primary" />
-                <span className="text-sm">hello@inventerdesignstudio.com</span>
+                <span className="text-sm">info@inventerdesignstudio.com</span>
               </div>
             </div>
           </div>

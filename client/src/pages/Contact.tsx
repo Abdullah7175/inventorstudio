@@ -27,7 +27,10 @@ export default function Contact() {
 
   const contactMutation = useMutation({
     mutationFn: async (data: InsertContactSubmission) => {
-      await apiRequest("POST", "/api/contact", data);
+      await apiRequest("/api/contact", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
       toast({
@@ -72,7 +75,7 @@ export default function Contact() {
     {
       icon: Mail,
       title: "Email Addresses",
-      details: ["hello@inventerdesignstudio.com", "projects@inventerdesignstudio.com"]
+      details: ["info@inventerdesignstudio.com", "projects@inventerdesignstudio.com"]
     },
     {
       icon: Clock,
