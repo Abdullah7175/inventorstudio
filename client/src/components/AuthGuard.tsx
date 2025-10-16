@@ -83,6 +83,8 @@ export default function AuthGuard({
           setLocation('/seo');
         } else if (user.role === 'team' || user.role === 'developer' || user.role === 'manager') {
           setLocation('/team');
+        } else if (user.role === 'salesmanager' || user.role === 'businessmanager') {
+          setLocation('/sales');
         } else if (user.role === 'customer' || user.role === 'client') {
           setLocation('/client-portal');
         } else {

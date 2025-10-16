@@ -62,7 +62,7 @@ export default function UserModal({
   const handleRemoveSkill = (skillToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
+      skills: prev.skills.filter((skill: string) => skill !== skillToRemove)
     }));
   };
 
@@ -270,6 +270,8 @@ export default function UserModal({
                   <SelectItem value="team">Team</SelectItem>
                   <SelectItem value="seo">SEO</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="salesmanager">Sales Manager</SelectItem>
+                  <SelectItem value="businessmanager">Business Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -303,7 +305,7 @@ export default function UserModal({
           <div className="space-y-2">
             <Label>Skills</Label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {formData.skills.map((skill, index) => (
+              {formData.skills.map((skill: string, index: number) => (
                 <Badge key={index} variant="secondary" className="flex items-center gap-1">
                   {skill}
                   <button

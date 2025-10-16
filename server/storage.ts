@@ -21,6 +21,15 @@ import {
   projectTasks,
   teamMembers,
   teamRoles,
+  seoContent,
+  leads,
+  opportunities,
+  proposals,
+  proposalItems,
+  followUps,
+  communicationLogs,
+  salesTargets,
+  businessDevelopmentOpportunities,
   type User,
   type UpsertUser,
   type Service,
@@ -49,7 +58,7 @@ import {
   type InsertTokenBlacklist,
   type ChatMessage,
   type InsertChatMessage,
-  seoContent,
+  type SEOContent,
   type InsertSEOContent,
 } from "@shared/schema";
 import { db } from "./db";
@@ -163,6 +172,40 @@ export interface IStorage {
 
   // FAQ Management
   moveFAQItem(id: number, direction: string): Promise<void>;
+
+  // Sales/BD Portal operations
+  getAllLeads(): Promise<any[]>;
+  createLead(lead: any): Promise<any>;
+  updateLead(id: number, updates: any): Promise<any>;
+  deleteLead(id: number): Promise<void>;
+  
+  getAllOpportunities(): Promise<any[]>;
+  createOpportunity(opportunity: any): Promise<any>;
+  updateOpportunity(id: number, updates: any): Promise<any>;
+  deleteOpportunity(id: number): Promise<void>;
+  
+  getAllProposals(): Promise<any[]>;
+  createProposal(proposal: any): Promise<any>;
+  updateProposal(id: number, updates: any): Promise<any>;
+  deleteProposal(id: number): Promise<void>;
+  
+  getAllFollowUps(): Promise<any[]>;
+  createFollowUp(followUp: any): Promise<any>;
+  updateFollowUp(id: number, updates: any): Promise<any>;
+  deleteFollowUp(id: number): Promise<void>;
+  
+  getAllBusinessDevelopmentOpportunities(): Promise<any[]>;
+  createBusinessDevelopmentOpportunity(opportunity: any): Promise<any>;
+  updateBusinessDevelopmentOpportunity(id: number, updates: any): Promise<any>;
+  deleteBusinessDevelopmentOpportunity(id: number): Promise<void>;
+  
+  getAllSalesTargets(): Promise<any[]>;
+  createSalesTarget(target: any): Promise<any>;
+  updateSalesTarget(id: number, updates: any): Promise<any>;
+  deleteSalesTarget(id: number): Promise<void>;
+  
+  getAllCommunicationLogs(): Promise<any[]>;
+  createCommunicationLog(log: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1421,6 +1464,273 @@ export class DatabaseStorage implements IStorage {
       return submission;
     } catch (error) {
       console.error('Error updating contact submission:', error);
+      throw error;
+    }
+  }
+
+  // ==================== SALES/BD PORTAL OPERATIONS ====================
+
+  async getAllLeads(): Promise<any[]> {
+    try {
+      return await db.select().from(leads).orderBy(desc(leads.createdAt));
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      throw error;
+    }
+  }
+
+  async createLead(leadData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(leads).values(leadData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating lead:', error);
+      throw error;
+    }
+  }
+
+  async updateLead(id: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(leads)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(leads.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      throw error;
+    }
+  }
+
+  async deleteLead(id: number): Promise<void> {
+    try {
+      await db.delete(leads).where(eq(leads.id, id));
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      throw error;
+    }
+  }
+
+  async getAllOpportunities(): Promise<any[]> {
+    try {
+      return await db.select().from(opportunities).orderBy(desc(opportunities.createdAt));
+    } catch (error) {
+      console.error('Error fetching opportunities:', error);
+      throw error;
+    }
+  }
+
+  async createOpportunity(opportunityData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(opportunities).values(opportunityData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating opportunity:', error);
+      throw error;
+    }
+  }
+
+  async updateOpportunity(id: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(opportunities)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(opportunities.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating opportunity:', error);
+      throw error;
+    }
+  }
+
+  async deleteOpportunity(id: number): Promise<void> {
+    try {
+      await db.delete(opportunities).where(eq(opportunities.id, id));
+    } catch (error) {
+      console.error('Error deleting opportunity:', error);
+      throw error;
+    }
+  }
+
+  async getAllProposals(): Promise<any[]> {
+    try {
+      return await db.select().from(proposals).orderBy(desc(proposals.createdAt));
+    } catch (error) {
+      console.error('Error fetching proposals:', error);
+      throw error;
+    }
+  }
+
+  async createProposal(proposalData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(proposals).values(proposalData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating proposal:', error);
+      throw error;
+    }
+  }
+
+  async updateProposal(id: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(proposals)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(proposals.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating proposal:', error);
+      throw error;
+    }
+  }
+
+  async deleteProposal(id: number): Promise<void> {
+    try {
+      await db.delete(proposals).where(eq(proposals.id, id));
+    } catch (error) {
+      console.error('Error deleting proposal:', error);
+      throw error;
+    }
+  }
+
+  async getAllFollowUps(): Promise<any[]> {
+    try {
+      return await db.select().from(followUps).orderBy(desc(followUps.createdAt));
+    } catch (error) {
+      console.error('Error fetching follow-ups:', error);
+      throw error;
+    }
+  }
+
+  async createFollowUp(followUpData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(followUps).values(followUpData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating follow-up:', error);
+      throw error;
+    }
+  }
+
+  async updateFollowUp(id: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(followUps)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(followUps.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating follow-up:', error);
+      throw error;
+    }
+  }
+
+  async deleteFollowUp(id: number): Promise<void> {
+    try {
+      await db.delete(followUps).where(eq(followUps.id, id));
+    } catch (error) {
+      console.error('Error deleting follow-up:', error);
+      throw error;
+    }
+  }
+
+  async getAllBusinessDevelopmentOpportunities(): Promise<any[]> {
+    try {
+      return await db.select().from(businessDevelopmentOpportunities).orderBy(desc(businessDevelopmentOpportunities.createdAt));
+    } catch (error) {
+      console.error('Error fetching business development opportunities:', error);
+      throw error;
+    }
+  }
+
+  async createBusinessDevelopmentOpportunity(opportunityData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(businessDevelopmentOpportunities).values(opportunityData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating business development opportunity:', error);
+      throw error;
+    }
+  }
+
+  async updateBusinessDevelopmentOpportunity(id: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(businessDevelopmentOpportunities)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(businessDevelopmentOpportunities.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating business development opportunity:', error);
+      throw error;
+    }
+  }
+
+  async deleteBusinessDevelopmentOpportunity(id: number): Promise<void> {
+    try {
+      await db.delete(businessDevelopmentOpportunities).where(eq(businessDevelopmentOpportunities.id, id));
+    } catch (error) {
+      console.error('Error deleting business development opportunity:', error);
+      throw error;
+    }
+  }
+
+  async getAllSalesTargets(): Promise<any[]> {
+    try {
+      return await db.select().from(salesTargets).orderBy(desc(salesTargets.createdAt));
+    } catch (error) {
+      console.error('Error fetching sales targets:', error);
+      throw error;
+    }
+  }
+
+  async createSalesTarget(targetData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(salesTargets).values(targetData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating sales target:', error);
+      throw error;
+    }
+  }
+
+  async updateSalesTarget(id: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(salesTargets)
+        .set({ ...updates, updated_at: new Date() })
+        .where(eq(salesTargets.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating sales target:', error);
+      throw error;
+    }
+  }
+
+  async deleteSalesTarget(id: number): Promise<void> {
+    try {
+      await db.delete(salesTargets).where(eq(salesTargets.id, id));
+    } catch (error) {
+      console.error('Error deleting sales target:', error);
+      throw error;
+    }
+  }
+
+  async getAllCommunicationLogs(): Promise<any[]> {
+    try {
+      return await db.select().from(communicationLogs).orderBy(desc(communicationLogs.createdAt));
+    } catch (error) {
+      console.error('Error fetching communication logs:', error);
+      throw error;
+    }
+  }
+
+  async createCommunicationLog(logData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(communicationLogs).values(logData).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating communication log:', error);
       throw error;
     }
   }

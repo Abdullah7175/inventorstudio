@@ -3,11 +3,49 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import jwt from 'jsonwebtoken';
 import { storage } from "./storage";
-import { setupAuth, verifyJWT, requireRole, verifyApiSecurityToken } from "./auth";
+import { setupAuth, verifyJWT, requireRole, verifyApiSecurityToken, createApiKey, validateApiKey } from "./auth";
 import { generateDesignRecommendations, analyzeProjectHealth, generateCommunicationContent } from "./ai";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// Rate limiting configurations
+const mobileApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  message: {
+    error: 'RATE_LIMIT_EXCEEDED',
+    message: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const mobileAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: {
+    error: 'LOGIN_RATE_LIMIT_EXCEEDED',
+    message: 'Too many login attempts, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const mobileChatLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 30, // Limit each IP to 30 chat messages per minute
+  message: {
+    error: 'CHAT_RATE_LIMIT_EXCEEDED',
+    message: 'Too many chat messages, please slow down.',
+    retryAfter: '1 minute'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 import {
   insertContactSubmissionSchema,
@@ -1447,7 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Mobile-specific API endpoints (all require API security token)
-  app.post('/api/mobile/refresh-token', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+  app.post('/api/mobile/refresh-token', mobileApiLimiter, verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1478,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/mobile/update-device-token', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+  app.post('/api/mobile/update-device-token', mobileApiLimiter, verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { deviceToken, deviceType } = req.body;
@@ -1499,7 +1537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/mobile/user-profile', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+  app.get('/api/mobile/user-profile', mobileApiLimiter, verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1518,7 +1556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/mobile/user-profile', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+  app.put('/api/mobile/user-profile', mobileApiLimiter, verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { firstName, lastName, phone } = req.body;
@@ -1713,6 +1751,364 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error creating mobile contact submission:', error);
       res.status(400).json({ message: error.message || 'Failed to submit contact form' });
+    }
+  });
+
+  // ==================== ENHANCED MOBILE APIs ====================
+
+  // Mobile blog posts API
+  app.get('/api/mobile/blog', verifyApiSecurityToken, async (req, res) => {
+    try {
+      const { published, limit } = req.query;
+      const posts = await storage.getBlogPosts(published === 'true');
+      
+      const limitedPosts = limit ? posts.slice(0, parseInt(limit as string)) : posts;
+      
+      res.json(limitedPosts);
+    } catch (error) {
+      console.error('Error fetching mobile blog posts:', error);
+      res.status(500).json({ message: 'Failed to fetch blog posts' });
+    }
+  });
+
+  app.get('/api/mobile/blog/:slug', verifyApiSecurityToken, async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const post = await storage.getBlogPostBySlug(slug);
+      
+      if (!post) {
+        return res.status(404).json({ message: 'Blog post not found' });
+      }
+      
+      res.json(post);
+    } catch (error) {
+      console.error('Error fetching mobile blog post:', error);
+      res.status(500).json({ message: 'Failed to fetch blog post' });
+    }
+  });
+
+  // Mobile chat APIs
+  app.get('/api/mobile/chat/:projectId', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const projectId = parseInt(req.params.projectId);
+      
+      // Verify user has access to this project
+      const project = await storage.getClientProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+      
+      if (project.clientId !== userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      const messages = await storage.getChatMessages(projectId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching mobile chat messages:', error);
+      res.status(500).json({ message: 'Failed to fetch chat messages' });
+    }
+  });
+
+  app.post('/api/mobile/chat/send', mobileChatLimiter, verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { projectId, message, messageType = 'text' } = req.body;
+      
+      if (!projectId || !message) {
+        return res.status(400).json({ message: 'Project ID and message are required' });
+      }
+      
+      // Verify user has access to this project
+      const project = await storage.getClientProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+      
+      if (project.clientId !== userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      const messageData = {
+        senderId: userId,
+        projectId: projectId,
+        message: message,
+        messageType: messageType,
+        isRead: false
+      };
+      
+      const newMessage = await storage.createChatMessage(messageData);
+      
+      // Create notifications for team members
+      await createChatNotifications(userId, newMessage, projectId);
+      
+      res.status(201).json(newMessage);
+    } catch (error) {
+      console.error('Error sending mobile chat message:', error);
+      res.status(500).json({ message: 'Failed to send message' });
+    }
+  });
+
+  // Mobile notifications API
+  app.get('/api/mobile/notifications', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const notifications = await storage.getNotifications(userId);
+      
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching mobile notifications:', error);
+      res.status(500).json({ message: 'Failed to fetch notifications' });
+    }
+  });
+
+  app.put('/api/mobile/notifications/:id/read', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const notificationId = parseInt(req.params.id);
+      
+      await storage.markNotificationAsRead(notificationId);
+      
+      res.json({ message: 'Notification marked as read' });
+    } catch (error) {
+      console.error('Error marking mobile notification as read:', error);
+      res.status(500).json({ message: 'Failed to mark notification as read' });
+    }
+  });
+
+  app.put('/api/mobile/notifications/read-all', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      await storage.markAllNotificationsAsRead(userId);
+      
+      res.json({ message: 'All notifications marked as read' });
+    } catch (error) {
+      console.error('Error marking all mobile notifications as read:', error);
+      res.status(500).json({ message: 'Failed to mark all notifications as read' });
+    }
+  });
+
+  // Mobile FAQ API
+  app.get('/api/mobile/faq', verifyApiSecurityToken, async (req, res) => {
+    try {
+      const faqItems = await storage.getFaqItems();
+      res.json(faqItems);
+    } catch (error) {
+      console.error('Error fetching mobile FAQ:', error);
+      res.status(500).json({ message: 'Failed to fetch FAQ items' });
+    }
+  });
+
+  // Mobile portfolio with filtering
+  app.get('/api/mobile/portfolio/:category', verifyApiSecurityToken, async (req, res) => {
+    try {
+      const { category } = req.params;
+      const { featured } = req.query;
+      
+      let projects;
+      if (featured === 'true') {
+        projects = await storage.getFeaturedProjects();
+      } else {
+        projects = await storage.getPortfolioProjectsByCategory(category);
+      }
+      
+      res.json(projects);
+    } catch (error) {
+      console.error('Error fetching mobile portfolio by category:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio projects' });
+    }
+  });
+
+  // Mobile services with filtering
+  app.get('/api/mobile/services/featured', verifyApiSecurityToken, async (req, res) => {
+    try {
+      const services = await storage.getFeaturedServices();
+      res.json(services);
+    } catch (error) {
+      console.error('Error fetching mobile featured services:', error);
+      res.status(500).json({ message: 'Failed to fetch featured services' });
+    }
+  });
+
+  // Mobile logout with session cleanup
+  app.post('/api/mobile/logout', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { deviceToken } = req.body;
+      
+      // Deactivate mobile session if device token provided
+      if (deviceToken) {
+        await storage.deactivateMobileSession(userId, deviceToken);
+      }
+      
+      // Add current JWT to blacklist
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+        await storage.addTokenToBlacklist(tokenHash, userId, 'Mobile logout');
+      }
+      
+      res.json({ message: 'Logout successful' });
+    } catch (error) {
+      console.error('Error during mobile logout:', error);
+      res.status(500).json({ message: 'Failed to logout' });
+    }
+  });
+
+  // Mobile password change
+  app.post('/api/mobile/change-password', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Current password and new password are required' });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'New password must be at least 6 characters' });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user || !user.passwordHash) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+      
+      // Hash new password
+      const newPasswordHash = await bcrypt.hash(newPassword, 12);
+      
+      // Update password
+      await storage.updateUser(userId, { passwordHash: newPasswordHash });
+      
+      res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+      console.error('Error changing mobile password:', error);
+      res.status(500).json({ message: 'Failed to change password' });
+    }
+  });
+
+  // Mobile biometric settings
+  app.get('/api/mobile/biometric-settings', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { deviceToken } = req.query;
+      
+      if (!deviceToken) {
+        return res.status(400).json({ message: 'Device token is required' });
+      }
+      
+      const settings = await storage.getBiometricSettings(userId, deviceToken);
+      res.json(settings || { enabled: false });
+    } catch (error) {
+      console.error('Error fetching mobile biometric settings:', error);
+      res.status(500).json({ message: 'Failed to fetch biometric settings' });
+    }
+  });
+
+  app.post('/api/mobile/biometric-settings', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { deviceToken, enabled, biometricType } = req.body;
+      
+      if (!deviceToken) {
+        return res.status(400).json({ message: 'Device token is required' });
+      }
+      
+      const settingsData = {
+        userId,
+        deviceToken,
+        enabled: enabled || false,
+        biometricType: biometricType || 'fingerprint',
+        createdAt: new Date()
+      };
+      
+      const settings = await storage.createBiometricSettings(settingsData);
+      res.json(settings);
+    } catch (error) {
+      console.error('Error creating mobile biometric settings:', error);
+      res.status(500).json({ message: 'Failed to save biometric settings' });
+    }
+  });
+
+  app.put('/api/mobile/biometric-settings', verifyApiSecurityToken, verifyJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { deviceToken, enabled, biometricType } = req.body;
+      
+      if (!deviceToken) {
+        return res.status(400).json({ message: 'Device token is required' });
+      }
+      
+      const updateData: any = {};
+      if (enabled !== undefined) updateData.enabled = enabled;
+      if (biometricType) updateData.biometricType = biometricType;
+      
+      const settings = await storage.updateBiometricSettings(userId, deviceToken, updateData);
+      res.json(settings);
+    } catch (error) {
+      console.error('Error updating mobile biometric settings:', error);
+      res.status(500).json({ message: 'Failed to update biometric settings' });
+    }
+  });
+
+  // ==================== API KEY MANAGEMENT ====================
+  
+  // Create API key (Admin only)
+  app.post('/api/admin/api-keys', verifyJWT, requireRole(["admin"]), async (req: any, res) => {
+    try {
+      const { name, permissions, expiresInDays } = req.body;
+      
+      if (!name || !permissions || !Array.isArray(permissions)) {
+        return res.status(400).json({ 
+          message: 'Name and permissions array are required' 
+        });
+      }
+      
+      const apiKey = createApiKey(name, permissions, expiresInDays);
+      
+      res.status(201).json({
+        message: 'API key created successfully',
+        apiKey: {
+          id: apiKey.id,
+          name: apiKey.name,
+          key: apiKey.key,
+          permissions: apiKey.permissions,
+          expiresAt: apiKey.expiresAt,
+          createdAt: apiKey.createdAt
+        }
+      });
+    } catch (error) {
+      console.error('Error creating API key:', error);
+      res.status(500).json({ message: 'Failed to create API key' });
+    }
+  });
+
+  // Validate API key endpoint (for testing)
+  app.post('/api/validate-api-key', async (req, res) => {
+    try {
+      const { apiKey, requiredPermission } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: 'API key is required' });
+      }
+      
+      const isValid = validateApiKey(apiKey, requiredPermission);
+      
+      res.json({
+        valid: isValid,
+        message: isValid ? 'API key is valid' : 'API key is invalid or expired'
+      });
+    } catch (error) {
+      console.error('Error validating API key:', error);
+      res.status(500).json({ message: 'Failed to validate API key' });
     }
   });
 
@@ -2220,6 +2616,483 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating contact message:", error);
       res.status(500).json({ message: "Failed to update contact message" });
+    }
+  });
+
+  // ==================== SALES/BD PORTAL API ENDPOINTS ====================
+
+  // Sales Dashboard
+  app.get("/api/sales/dashboard", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get sales statistics
+      const leads = await storage.getAllLeads();
+      const opportunities = await storage.getAllOpportunities();
+      const proposals = await storage.getAllProposals();
+      const followUps = await storage.getAllFollowUps();
+      
+      // Calculate metrics
+      const totalLeads = leads.length;
+      const activeLeads = leads.filter(l => ['new', 'contacted', 'qualified'].includes(l.status)).length;
+      const totalOpportunities = opportunities.length;
+      const activeOpportunities = opportunities.filter(o => ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(o.stage)).length;
+      const totalProposals = proposals.length;
+      const pendingProposals = proposals.filter(p => p.status === 'pending').length;
+      const totalFollowUps = followUps.length;
+      const overdueFollowUps = followUps.filter(f => new Date(f.scheduledDate) < new Date() && f.status === 'pending').length;
+      
+      // Calculate revenue metrics
+      const totalPipelineValue = opportunities.reduce((sum, o) => sum + parseFloat(o.estimatedValue || '0'), 0);
+      const totalProposalValue = proposals.reduce((sum, p) => sum + parseFloat(p.totalAmount || '0'), 0);
+      
+      // Get recent activities
+      const recentLeads = leads.slice(0, 5);
+      const recentOpportunities = opportunities.slice(0, 5);
+      const recentProposals = proposals.slice(0, 5);
+      
+      const dashboardData = {
+        stats: {
+          totalLeads,
+          activeLeads,
+          totalOpportunities,
+          activeOpportunities,
+          totalProposals,
+          pendingProposals,
+          totalFollowUps,
+          overdueFollowUps,
+          totalPipelineValue,
+          totalProposalValue
+        },
+        recentLeads,
+        recentOpportunities,
+        recentProposals
+      };
+      
+      res.json(dashboardData);
+    } catch (error) {
+      console.error("Error fetching sales dashboard:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard data" });
+    }
+  });
+
+  // Lead Management
+  app.get("/api/sales/leads", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { status, priority, source, assignedTo } = req.query;
+      let leads = await storage.getAllLeads();
+      
+      // Apply filters
+      if (status && status !== 'all') {
+        leads = leads.filter(l => l.status === status);
+      }
+      if (priority && priority !== 'all') {
+        leads = leads.filter(l => l.priority === priority);
+      }
+      if (source && source !== 'all') {
+        leads = leads.filter(l => l.source === source);
+      }
+      if (assignedTo && assignedTo !== 'all') {
+        leads = leads.filter(l => l.assignedTo === assignedTo);
+      }
+      
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ message: "Failed to fetch leads" });
+    }
+  });
+
+  app.post("/api/sales/leads", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const leadData = req.body;
+      const newLead = await storage.createLead(leadData);
+      res.status(201).json(newLead);
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      res.status(500).json({ message: "Failed to create lead" });
+    }
+  });
+
+  app.put("/api/sales/leads/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedLead = await storage.updateLead(parseInt(id), updates);
+      res.json(updatedLead);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ message: "Failed to update lead" });
+    }
+  });
+
+  app.delete("/api/sales/leads/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLead(parseInt(id));
+      res.json({ message: "Lead deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      res.status(500).json({ message: "Failed to delete lead" });
+    }
+  });
+
+  // Opportunity Management
+  app.get("/api/sales/opportunities", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { stage, priority, assignedTo } = req.query;
+      let opportunities = await storage.getAllOpportunities();
+      
+      // Apply filters
+      if (stage && stage !== 'all') {
+        opportunities = opportunities.filter(o => o.stage === stage);
+      }
+      if (priority && priority !== 'all') {
+        opportunities = opportunities.filter(o => o.priority === priority);
+      }
+      if (assignedTo && assignedTo !== 'all') {
+        opportunities = opportunities.filter(o => o.assignedTo === assignedTo);
+      }
+      
+      res.json(opportunities);
+    } catch (error) {
+      console.error("Error fetching opportunities:", error);
+      res.status(500).json({ message: "Failed to fetch opportunities" });
+    }
+  });
+
+  app.post("/api/sales/opportunities", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const opportunityData = req.body;
+      const newOpportunity = await storage.createOpportunity(opportunityData);
+      res.status(201).json(newOpportunity);
+    } catch (error) {
+      console.error("Error creating opportunity:", error);
+      res.status(500).json({ message: "Failed to create opportunity" });
+    }
+  });
+
+  app.put("/api/sales/opportunities/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedOpportunity = await storage.updateOpportunity(parseInt(id), updates);
+      res.json(updatedOpportunity);
+    } catch (error) {
+      console.error("Error updating opportunity:", error);
+      res.status(500).json({ message: "Failed to update opportunity" });
+    }
+  });
+
+  app.delete("/api/sales/opportunities/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteOpportunity(parseInt(id));
+      res.json({ message: "Opportunity deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting opportunity:", error);
+      res.status(500).json({ message: "Failed to delete opportunity" });
+    }
+  });
+
+  // Proposal Management
+  app.get("/api/sales/proposals", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { status, opportunityId } = req.query;
+      let proposals = await storage.getAllProposals();
+      
+      // Apply filters
+      if (status && status !== 'all') {
+        proposals = proposals.filter(p => p.status === status);
+      }
+      if (opportunityId) {
+        proposals = proposals.filter(p => p.opportunityId === parseInt(opportunityId));
+      }
+      
+      res.json(proposals);
+    } catch (error) {
+      console.error("Error fetching proposals:", error);
+      res.status(500).json({ message: "Failed to fetch proposals" });
+    }
+  });
+
+  app.post("/api/sales/proposals", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const proposalData = req.body;
+      const newProposal = await storage.createProposal(proposalData);
+      res.status(201).json(newProposal);
+    } catch (error) {
+      console.error("Error creating proposal:", error);
+      res.status(500).json({ message: "Failed to create proposal" });
+    }
+  });
+
+  app.put("/api/sales/proposals/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedProposal = await storage.updateProposal(parseInt(id), updates);
+      res.json(updatedProposal);
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      res.status(500).json({ message: "Failed to update proposal" });
+    }
+  });
+
+  app.delete("/api/sales/proposals/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteProposal(parseInt(id));
+      res.json({ message: "Proposal deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      res.status(500).json({ message: "Failed to delete proposal" });
+    }
+  });
+
+  // Follow-up Management
+  app.get("/api/sales/follow-ups", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { status, type, assignedTo } = req.query;
+      let followUps = await storage.getAllFollowUps();
+      
+      // Apply filters
+      if (status && status !== 'all') {
+        followUps = followUps.filter(f => f.status === status);
+      }
+      if (type && type !== 'all') {
+        followUps = followUps.filter(f => f.type === type);
+      }
+      if (assignedTo && assignedTo !== 'all') {
+        followUps = followUps.filter(f => f.assignedTo === assignedTo);
+      }
+      
+      res.json(followUps);
+    } catch (error) {
+      console.error("Error fetching follow-ups:", error);
+      res.status(500).json({ message: "Failed to fetch follow-ups" });
+    }
+  });
+
+  app.post("/api/sales/follow-ups", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const followUpData = req.body;
+      const newFollowUp = await storage.createFollowUp(followUpData);
+      res.status(201).json(newFollowUp);
+    } catch (error) {
+      console.error("Error creating follow-up:", error);
+      res.status(500).json({ message: "Failed to create follow-up" });
+    }
+  });
+
+  app.put("/api/sales/follow-ups/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedFollowUp = await storage.updateFollowUp(parseInt(id), updates);
+      res.json(updatedFollowUp);
+    } catch (error) {
+      console.error("Error updating follow-up:", error);
+      res.status(500).json({ message: "Failed to update follow-up" });
+    }
+  });
+
+  app.delete("/api/sales/follow-ups/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFollowUp(parseInt(id));
+      res.json({ message: "Follow-up deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting follow-up:", error);
+      res.status(500).json({ message: "Failed to delete follow-up" });
+    }
+  });
+
+  // Sales Analytics
+  app.get("/api/sales/analytics", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { timeRange = '30d' } = req.query;
+      
+      // Get all sales data
+      const leads = await storage.getAllLeads();
+      const opportunities = await storage.getAllOpportunities();
+      const proposals = await storage.getAllProposals();
+      const followUps = await storage.getAllFollowUps();
+      
+      // Calculate date range
+      const now = new Date();
+      const daysBack = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
+      const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
+      
+      // Filter data by time range
+      const recentLeads = leads.filter(l => l.createdAt && new Date(l.createdAt) >= startDate);
+      const recentOpportunities = opportunities.filter(o => o.createdAt && new Date(o.createdAt) >= startDate);
+      const recentProposals = proposals.filter(p => p.createdAt && new Date(p.createdAt) >= startDate);
+      
+      // Calculate metrics
+      const totalPipelineValue = opportunities.reduce((sum, o) => sum + parseFloat(o.estimatedValue || '0'), 0);
+      const totalProposalValue = proposals.reduce((sum, p) => sum + parseFloat(p.totalAmount || '0'), 0);
+      const conversionRate = leads.length > 0 ? (opportunities.length / leads.length) * 100 : 0;
+      const winRate = opportunities.length > 0 ? (proposals.filter(p => p.status === 'accepted').length / opportunities.length) * 100 : 0;
+      
+      // Lead source analysis
+      const leadSources = leads.reduce((acc, lead) => {
+        acc[lead.source] = (acc[lead.source] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Opportunity stage analysis
+      const opportunityStages = opportunities.reduce((acc, opp) => {
+        acc[opp.stage] = (acc[opp.stage] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const analyticsData = {
+        metrics: {
+          totalLeads: leads.length,
+          totalOpportunities: opportunities.length,
+          totalProposals: proposals.length,
+          totalPipelineValue,
+          totalProposalValue,
+          conversionRate,
+          winRate
+        },
+        leadSources,
+        opportunityStages,
+        chartData: {
+          months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          leads: [12, 15, 18, 14, 20, recentLeads.length],
+          opportunities: [8, 10, 12, 9, 14, recentOpportunities.length],
+          proposals: [5, 7, 9, 6, 11, recentProposals.length]
+        }
+      };
+      
+      res.json(analyticsData);
+    } catch (error) {
+      console.error("Error fetching sales analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics data" });
+    }
+  });
+
+  // Business Development
+  app.get("/api/sales/business-development", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const opportunities = await storage.getAllBusinessDevelopmentOpportunities();
+      res.json(opportunities);
+    } catch (error) {
+      console.error("Error fetching business development opportunities:", error);
+      res.status(500).json({ message: "Failed to fetch business development opportunities" });
+    }
+  });
+
+  app.post("/api/sales/business-development", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const opportunityData = req.body;
+      const newOpportunity = await storage.createBusinessDevelopmentOpportunity(opportunityData);
+      res.status(201).json(newOpportunity);
+    } catch (error) {
+      console.error("Error creating business development opportunity:", error);
+      res.status(500).json({ message: "Failed to create business development opportunity" });
+    }
+  });
+
+  app.put("/api/sales/business-development/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedOpportunity = await storage.updateBusinessDevelopmentOpportunity(parseInt(id), updates);
+      res.json(updatedOpportunity);
+    } catch (error) {
+      console.error("Error updating business development opportunity:", error);
+      res.status(500).json({ message: "Failed to update business development opportunity" });
+    }
+  });
+
+  app.delete("/api/sales/business-development/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteBusinessDevelopmentOpportunity(parseInt(id));
+      res.json({ message: "Business development opportunity deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting business development opportunity:", error);
+      res.status(500).json({ message: "Failed to delete business development opportunity" });
+    }
+  });
+
+  // Sales Targets
+  app.get("/api/sales/targets", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const targets = await storage.getAllSalesTargets();
+      res.json(targets);
+    } catch (error) {
+      console.error("Error fetching sales targets:", error);
+      res.status(500).json({ message: "Failed to fetch sales targets" });
+    }
+  });
+
+  app.post("/api/sales/targets", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const targetData = req.body;
+      const newTarget = await storage.createSalesTarget(targetData);
+      res.status(201).json(newTarget);
+    } catch (error) {
+      console.error("Error creating sales target:", error);
+      res.status(500).json({ message: "Failed to create sales target" });
+    }
+  });
+
+  app.put("/api/sales/targets/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedTarget = await storage.updateSalesTarget(parseInt(id), updates);
+      res.json(updatedTarget);
+    } catch (error) {
+      console.error("Error updating sales target:", error);
+      res.status(500).json({ message: "Failed to update sales target" });
+    }
+  });
+
+  app.delete("/api/sales/targets/:id", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteSalesTarget(parseInt(id));
+      res.json({ message: "Sales target deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting sales target:", error);
+      res.status(500).json({ message: "Failed to delete sales target" });
+    }
+  });
+
+  // Communication Logs
+  app.get("/api/sales/communication-logs", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { entityType, entityId } = req.query;
+      let logs = await storage.getAllCommunicationLogs();
+      
+      // Apply filters
+      if (entityType) {
+        logs = logs.filter(l => l.entityType === entityType);
+      }
+      if (entityId) {
+        logs = logs.filter(l => l.entityId === parseInt(entityId));
+      }
+      
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching communication logs:", error);
+      res.status(500).json({ message: "Failed to fetch communication logs" });
+    }
+  });
+
+  app.post("/api/sales/communication-logs", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const logData = req.body;
+      const newLog = await storage.createCommunicationLog(logData);
+      res.status(201).json(newLog);
+    } catch (error) {
+      console.error("Error creating communication log:", error);
+      res.status(500).json({ message: "Failed to create communication log" });
     }
   });
 

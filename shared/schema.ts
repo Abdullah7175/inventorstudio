@@ -33,7 +33,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role").default("customer").notNull(), // customer, client, admin, team, seo, manager, developer, mobile_developer
+  role: varchar("role").default("customer").notNull(), // customer, client, admin, team, seo, manager, developer, mobile_developer, salesmanager, businessmanager
   phone: varchar("phone"),
   department: varchar("department"),
   skills: text("skills").array(),
@@ -156,47 +156,47 @@ export const partnerships = pgTable("partnerships", {
 });
 
 // Insert schemas
-export const insertServiceSchema = createInsertSchema(services).omit({
-  id: true,
-  createdAt: true,
+export const insertServiceSchema = createInsertSchema(services, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertPortfolioProjectSchema = createInsertSchema(portfolioProjects).omit({
-  id: true,
-  createdAt: true,
+export const insertPortfolioProjectSchema = createInsertSchema(portfolioProjects, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertBlogPostSchema = createInsertSchema(blogPosts, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertClientProjectSchema = createInsertSchema(clientProjects).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertClientProjectSchema = createInsertSchema(clientProjects, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({
-  id: true,
-  createdAt: true,
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertFaqItemSchema = createInsertSchema(faqItems).omit({
-  id: true,
+export const insertFaqItemSchema = createInsertSchema(faqItems, {
+  id: undefined,
 });
 
-export const insertCertificationSchema = createInsertSchema(certifications).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCertificationSchema = createInsertSchema(certifications, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertPartnershipSchema = createInsertSchema(partnerships).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPartnershipSchema = createInsertSchema(partnerships, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Types
@@ -475,6 +475,161 @@ export const insertMobileBiometricSettingsSchema = createInsertSchema(mobileBiom
 export const insertTokenBlacklistSchema = createInsertSchema(tokenBlacklist);
 export const insertSEOContentSchema = createInsertSchema(seoContent);
 
+// ==================== SALES/BD PORTAL TABLES ====================
+
+// Leads table
+export const leads = pgTable("leads", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  company: varchar("company", { length: 255 }),
+  jobTitle: varchar("job_title", { length: 255 }),
+  industry: varchar("industry", { length: 100 }),
+  source: varchar("source", { length: 100 }).notNull(),
+  status: varchar("status", { length: 50 }).default("new").notNull(),
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  estimatedValue: integer("estimated_value"), // Using integer for simplicity, can be changed to decimal
+  notes: text("notes"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Opportunities table
+export const opportunities = pgTable("opportunities", {
+  id: serial("id").primaryKey(),
+  leadId: integer("lead_id").references(() => leads.id),
+  clientId: varchar("client_id").references(() => users.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  stage: varchar("stage", { length: 50 }).default("prospecting").notNull(),
+  probability: integer("probability").default(0).notNull(),
+  estimatedValue: integer("estimated_value").notNull(),
+  actualValue: integer("actual_value"),
+  expectedCloseDate: timestamp("expected_close_date"),
+  actualCloseDate: timestamp("actual_close_date"),
+  assignedTo: varchar("assigned_to").references(() => users.id).notNull(),
+  source: varchar("source", { length: 100 }),
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
+  notes: text("notes"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Proposals table
+export const proposals = pgTable("proposals", {
+  id: serial("id").primaryKey(),
+  opportunityId: integer("opportunity_id").references(() => opportunities.id),
+  clientId: varchar("client_id").references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  proposalNumber: varchar("proposal_number", { length: 100 }).notNull().unique(),
+  status: varchar("status", { length: 50 }).default("draft").notNull(),
+  totalAmount: integer("total_amount").notNull(),
+  validUntil: timestamp("valid_until"),
+  sentAt: timestamp("sent_at"),
+  viewedAt: timestamp("viewed_at"),
+  respondedAt: timestamp("responded_at"),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Proposal Items table
+export const proposalItems = pgTable("proposal_items", {
+  id: serial("id").primaryKey(),
+  proposalId: integer("proposal_id").references(() => proposals.id).notNull(),
+  serviceName: varchar("service_name", { length: 255 }).notNull(),
+  description: text("description"),
+  quantity: integer("quantity").default(1).notNull(),
+  unitPrice: integer("unit_price").notNull(),
+  totalPrice: integer("total_price").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Follow-ups table
+export const followUps = pgTable("follow_ups", {
+  id: serial("id").primaryKey(),
+  leadId: integer("lead_id").references(() => leads.id),
+  opportunityId: integer("opportunity_id").references(() => opportunities.id),
+  clientId: varchar("client_id").references(() => users.id),
+  type: varchar("type", { length: 50 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description"),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  completedDate: timestamp("completed_date"),
+  status: varchar("status", { length: 50 }).default("scheduled").notNull(),
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
+  assignedTo: varchar("assigned_to").references(() => users.id).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Communication Logs table
+export const communicationLogs = pgTable("communication_logs", {
+  id: serial("id").primaryKey(),
+  leadId: integer("lead_id").references(() => leads.id),
+  opportunityId: integer("opportunity_id").references(() => opportunities.id),
+  clientId: varchar("client_id").references(() => users.id),
+  type: varchar("type", { length: 50 }).notNull(),
+  subject: varchar("subject", { length: 255 }),
+  content: text("content"),
+  direction: varchar("direction", { length: 20 }).default("outbound").notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Sales Targets table
+export const salesTargets = pgTable("sales_targets", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  period: varchar("period", { length: 20 }).notNull(),
+  year: integer("year").notNull(),
+  month: integer("month"),
+  quarter: integer("quarter"),
+  targetType: varchar("target_type", { length: 50 }).notNull(),
+  targetValue: integer("target_value").notNull(),
+  achievedValue: integer("achieved_value").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Business Development Opportunities table
+export const businessDevelopmentOpportunities = pgTable("business_development_opportunities", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
+  companyName: varchar("company_name", { length: 255 }),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  contactPhone: varchar("contact_phone", { length: 50 }),
+  estimatedValue: integer("estimated_value"),
+  expectedTimeline: varchar("expected_timeline", { length: 100 }),
+  assignedTo: varchar("assigned_to").references(() => users.id).notNull(),
+  notes: text("notes"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Insert schemas for Sales/BD tables
+export const insertLeadSchema = createInsertSchema(leads);
+export const insertOpportunitySchema = createInsertSchema(opportunities);
+export const insertProposalSchema = createInsertSchema(proposals);
+export const insertProposalItemSchema = createInsertSchema(proposalItems);
+export const insertFollowUpSchema = createInsertSchema(followUps);
+export const insertCommunicationLogSchema = createInsertSchema(communicationLogs);
+export const insertSalesTargetSchema = createInsertSchema(salesTargets);
+export const insertBusinessDevelopmentOpportunitySchema = createInsertSchema(businessDevelopmentOpportunities);
+
 // Types
 export type ServiceCart = typeof serviceCarts.$inferSelect;
 export type InsertServiceCart = z.infer<typeof insertServiceCartSchema>;
@@ -523,3 +678,21 @@ export type Certification = typeof certifications.$inferSelect;
 export type InsertCertification = z.infer<typeof insertCertificationSchema>;
 export type Partnership = typeof partnerships.$inferSelect;
 export type InsertPartnership = z.infer<typeof insertPartnershipSchema>;
+
+// Sales/BD Portal types
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+export type Opportunity = typeof opportunities.$inferSelect;
+export type InsertOpportunity = z.infer<typeof insertOpportunitySchema>;
+export type Proposal = typeof proposals.$inferSelect;
+export type InsertProposal = z.infer<typeof insertProposalSchema>;
+export type ProposalItem = typeof proposalItems.$inferSelect;
+export type InsertProposalItem = z.infer<typeof insertProposalItemSchema>;
+export type FollowUp = typeof followUps.$inferSelect;
+export type InsertFollowUp = z.infer<typeof insertFollowUpSchema>;
+export type CommunicationLog = typeof communicationLogs.$inferSelect;
+export type InsertCommunicationLog = z.infer<typeof insertCommunicationLogSchema>;
+export type SalesTarget = typeof salesTargets.$inferSelect;
+export type InsertSalesTarget = z.infer<typeof insertSalesTargetSchema>;
+export type BusinessDevelopmentOpportunity = typeof businessDevelopmentOpportunities.$inferSelect;
+export type InsertBusinessDevelopmentOpportunity = z.infer<typeof insertBusinessDevelopmentOpportunitySchema>;

@@ -230,6 +230,22 @@ export default function TeamManagement() {
       permissions: ['design', 'prototyping', 'user_research'],
       department: 'design',
       memberCount: 1
+    },
+    {
+      id: '5',
+      name: 'Sales Manager',
+      description: 'Manage sales pipeline, leads, and opportunities',
+      permissions: ['lead_management', 'sales_pipeline', 'proposal_management', 'sales_analytics'],
+      department: 'sales',
+      memberCount: 0
+    },
+    {
+      id: '6',
+      name: 'Business Manager',
+      description: 'Manage business development and strategic partnerships',
+      permissions: ['business_development', 'partnership_management', 'strategic_planning'],
+      department: 'business',
+      memberCount: 0
     }
   ];
 

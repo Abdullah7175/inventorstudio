@@ -19,7 +19,11 @@ export default function Navigation() {
     location.startsWith("/client-portal") || 
     location.startsWith("/team-portal") || 
     location.startsWith("/projects") || 
-    location.startsWith("/chat-test")
+    location.startsWith("/chat-test") ||
+    location.startsWith("/sales") ||
+    location.startsWith("/admin") ||
+    location.startsWith("/seo") ||
+    location.startsWith("/team")
   );
 
   // For public pages, ALWAYS show login/register buttons, even if user is authenticated
@@ -27,6 +31,10 @@ export default function Navigation() {
                       !location.startsWith("/team-portal") && 
                       !location.startsWith("/projects") && 
                       !location.startsWith("/chat-test") &&
+                      !location.startsWith("/sales") &&
+                      !location.startsWith("/admin") &&
+                      !location.startsWith("/seo") &&
+                      !location.startsWith("/team") &&
                       !location.startsWith("/login") &&
                       !location.startsWith("/register");
 

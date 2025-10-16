@@ -37,7 +37,9 @@ import {
   UserCheck,
   UserX,
   Eye,
-  Plus
+  Plus,
+  TrendingUp,
+  Building2
 } from 'lucide-react';
 import UserModal from '@/components/UserModal';
 
@@ -182,6 +184,10 @@ export default function UserManagement() {
         return <Users className="h-4 w-4" />;
       case 'customer':
         return <UserCheck className="h-4 w-4" />;
+      case 'salesmanager':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'businessmanager':
+        return <Building2 className="h-4 w-4" />;
       default:
         return <Users className="h-4 w-4" />;
     }
@@ -195,6 +201,10 @@ export default function UserManagement() {
         return 'bg-blue-100 text-blue-800';
       case 'customer':
         return 'bg-green-100 text-green-800';
+      case 'salesmanager':
+        return 'bg-purple-100 text-purple-800';
+      case 'businessmanager':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -318,7 +328,7 @@ export default function UserManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => ['team', 'admin', 'developer', 'manager'].includes(u.role)).length}
+              {users.filter(u => ['team', 'admin', 'developer', 'manager', 'salesmanager', 'businessmanager'].includes(u.role)).length}
             </div>
             <p className="text-xs text-muted-foreground">Team & admin accounts</p>
           </CardContent>
@@ -352,6 +362,8 @@ export default function UserManagement() {
                 <SelectItem value="team">Team</SelectItem>
                 <SelectItem value="developer">Developer</SelectItem>
                 <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="salesmanager">Sales Manager</SelectItem>
+                <SelectItem value="businessmanager">Business Manager</SelectItem>
                 <SelectItem value="customer">Customer</SelectItem>
                 <SelectItem value="client">Client</SelectItem>
               </SelectContent>

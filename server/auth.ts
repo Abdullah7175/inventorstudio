@@ -76,6 +76,93 @@ const MASTER_OTP_CODE = '999999';
 // API Security Token (separate from session tokens)
 const API_SECURITY_TOKEN = process.env.API_SECURITY_TOKEN || 'inventor-design-studio-api-2024-secure';
 
+// API Key Management
+interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  permissions: string[];
+  isActive: boolean;
+  createdAt: Date;
+  lastUsed?: Date;
+  expiresAt?: Date;
+}
+
+// In-memory API key store (in production, use database)
+const apiKeys = new Map<string, ApiKey>();
+
+// Generate API key
+function generateApiKey(): string {
+  const prefix = 'ids_';
+  const randomPart = crypto.randomBytes(24).toString('hex');
+  return `${prefix}${randomPart}`;
+}
+
+// Create API key
+export function createApiKey(name: string, permissions: string[], expiresInDays?: number): ApiKey {
+  const key = generateApiKey();
+  const apiKey: ApiKey = {
+    id: crypto.randomUUID(),
+    name,
+    key,
+    permissions,
+    isActive: true,
+    createdAt: new Date(),
+    expiresAt: expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000) : undefined
+  };
+  
+  apiKeys.set(key, apiKey);
+  return apiKey;
+}
+
+// Validate API key
+export function validateApiKey(key: string, requiredPermission?: string): boolean {
+  const apiKey = apiKeys.get(key);
+  
+  if (!apiKey || !apiKey.isActive) {
+    return false;
+  }
+  
+  // Check expiration
+  if (apiKey.expiresAt && new Date() > apiKey.expiresAt) {
+    return false;
+  }
+  
+  // Check permission if required
+  if (requiredPermission && !apiKey.permissions.includes(requiredPermission)) {
+    return false;
+  }
+  
+  // Update last used
+  apiKey.lastUsed = new Date();
+  
+  return true;
+}
+
+// Enhanced API Security Token middleware with API key support
+export const verifyApiSecurityToken: RequestHandler = (req, res, next) => {
+  // Check for API security token first
+  const apiToken = req.headers['x-api-security-token'] || req.headers['api-security-token'];
+  
+  // Check for API key as alternative
+  const apiKey = req.headers['x-api-key'] || req.headers['api-key'];
+  
+  if (apiToken && apiToken === API_SECURITY_TOKEN) {
+    // Traditional API security token
+    return next();
+  }
+  
+  if (apiKey && typeof apiKey === 'string' && validateApiKey(apiKey)) {
+    // Valid API key
+    return next();
+  }
+  
+    return res.status(401).json({ 
+    message: 'Invalid or missing API security token or API key',
+    error: 'API_AUTHENTICATION_REQUIRED'
+  });
+};
+
 // Generate secure session token for mobile
 function generateSessionToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -86,19 +173,6 @@ function createTokenHash(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-// API Security Token middleware
-export const verifyApiSecurityToken: RequestHandler = (req, res, next) => {
-  const apiToken = req.headers['x-api-security-token'] || req.headers['api-security-token'];
-  
-  if (!apiToken || apiToken !== API_SECURITY_TOKEN) {
-    return res.status(401).json({ 
-      message: 'Invalid or missing API security token',
-      error: 'API_SECURITY_TOKEN_REQUIRED'
-    });
-  }
-  
-  next();
-};
 
 // Setup authentication routes
 export const setupAuth = (app: Express) => {

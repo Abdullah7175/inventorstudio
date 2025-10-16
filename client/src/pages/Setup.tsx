@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, UserCheck, Settings } from "lucide-react";
+import { Users, UserCheck, Settings, TrendingUp, Building2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +75,20 @@ export default function Setup() {
       description: "Can view own projects, communicate with team, download files, and view invoices",
       icon: UserCheck,
       color: "text-green-500"
+    },
+    {
+      value: "salesmanager",
+      label: "Sales Manager",
+      description: "Can manage leads, opportunities, proposals, and sales pipeline. Access to sales analytics and targets",
+      icon: TrendingUp,
+      color: "text-purple-500"
+    },
+    {
+      value: "businessmanager",
+      label: "Business Manager",
+      description: "Can manage business development opportunities, partnerships, and strategic initiatives",
+      icon: Building2,
+      color: "text-orange-500"
     }
   ];
 

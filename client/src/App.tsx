@@ -48,6 +48,18 @@ import CommunicationManagement from "@/pages/admin/communications/CommunicationM
 import AnalyticsDashboard from "@/pages/admin/analytics/AnalyticsDashboard";
 import AdminSettings from "@/pages/admin/settings/AdminSettings";
 
+// Sales/BD Portal
+import SalesLayout from "@/pages/sales/SalesLayout";
+import SalesDashboard from "@/pages/sales/SalesDashboard";
+import LeadManagement from "@/pages/sales/LeadManagement";
+import SalesPipeline from "@/pages/sales/SalesPipeline";
+import ProposalManagement from "@/pages/sales/ProposalManagement";
+import FollowUpManagement from "@/pages/sales/FollowUpManagement";
+import SalesAnalytics from "@/pages/sales/SalesAnalytics";
+import BusinessDevelopment from "@/pages/sales/BusinessDevelopment";
+import SalesTargets from "@/pages/sales/SalesTargets";
+import SalesSettings from "@/pages/sales/SalesSettings";
+
 // Team Portal imports
 import TeamLayout from "@/pages/team/TeamLayout";
 import TeamDashboard from "@/pages/team/TeamDashboard";
@@ -82,6 +94,50 @@ import RealTimeChatTest from "@/components/RealTimeChatTest";
 import AuthGuard from "@/components/AuthGuard";
 import CustomerLayout from "@/components/CustomerLayout";
 
+// Role-based redirect component
+function RoleBasedRedirect() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  React.useEffect(() => {
+    if (user && typeof user === 'object' && 'role' in user && user.role) {
+      switch (user.role) {
+        case 'admin':
+          setLocation('/admin');
+          break;
+        case 'seo':
+          setLocation('/seo');
+          break;
+        case 'team':
+        case 'developer':
+        case 'manager':
+          setLocation('/team');
+          break;
+        case 'salesmanager':
+        case 'businessmanager':
+          setLocation('/sales');
+          break;
+        case 'customer':
+        case 'client':
+          setLocation('/client-portal');
+          break;
+        default:
+          // For other roles or no role, show the public home page
+          setLocation('/public-home');
+          break;
+      }
+    }
+  }, [user, setLocation]);
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin h-12 w-12 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Redirecting to your portal...</p>
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -415,6 +471,71 @@ function Router() {
           </AuthGuard>
         </Route>
 
+        {/* Sales/BD Portal Routes */}
+        <Route path="/sales">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <SalesDashboard />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/leads">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <LeadManagement />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/pipeline">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <SalesPipeline />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/proposals">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <ProposalManagement />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/follow-ups">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <FollowUpManagement />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/analytics">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <SalesAnalytics />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/business-development">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <BusinessDevelopment />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/targets">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <SalesTargets />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+        <Route path="/sales/settings">
+          <AuthGuard requiredRole={['salesmanager', 'businessmanager', 'admin']}>
+            <SalesLayout>
+              <SalesSettings />
+            </SalesLayout>
+          </AuthGuard>
+        </Route>
+
       <Route path="/admin/settings/security">
         <AuthGuard requiredRole={['admin']}>
           <AdminLayout>
@@ -456,7 +577,10 @@ function Router() {
       {/* Setup Route */}
       <Route path="/setup" component={Setup} />
       
-      {/* Home route - show Landing for non-authenticated users, Home for authenticated */}
+      {/* Public home route for authenticated users who don't have a specific portal */}
+      <Route path="/public-home" component={Home} />
+      
+      {/* Home route - show Landing for non-authenticated users, redirect authenticated users to their portal */}
       <Route path="/">
         {isLoading ? (
           <div className="min-h-screen bg-background flex items-center justify-center">
@@ -466,7 +590,7 @@ function Router() {
             </div>
           </div>
         ) : isAuthenticated ? (
-          <Home />
+          <RoleBasedRedirect />
         ) : (
           <Landing />
         )}
