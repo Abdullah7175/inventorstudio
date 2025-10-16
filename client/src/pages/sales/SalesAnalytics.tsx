@@ -117,35 +117,50 @@ export default function SalesAnalytics() {
       const metricsResponse = await fetch(`/api/sales/analytics/metrics?range=${timeRange}`);
       if (metricsResponse.ok) {
         const metricsData = await metricsResponse.json();
-        setMetrics(metricsData);
+        // Ensure all required fields have default values
+        setMetrics({
+          totalRevenue: metricsData.totalRevenue || 0,
+          monthlyRevenue: metricsData.monthlyRevenue || 0,
+          quarterlyRevenue: metricsData.quarterlyRevenue || 0,
+          yearlyRevenue: metricsData.yearlyRevenue || 0,
+          revenueGrowth: metricsData.revenueGrowth || 0,
+          totalLeads: metricsData.totalLeads || 0,
+          leadsGrowth: metricsData.leadsGrowth || 0,
+          conversionRate: metricsData.conversionRate || 0,
+          conversionGrowth: metricsData.conversionGrowth || 0,
+          averageDealSize: metricsData.averageDealSize || 0,
+          dealSizeGrowth: metricsData.dealSizeGrowth || 0,
+          salesCycle: metricsData.salesCycle || 0,
+          cycleGrowth: metricsData.cycleGrowth || 0
+        });
       }
 
       // Fetch performance data
       const performanceResponse = await fetch(`/api/sales/analytics/performance?range=${timeRange}`);
       if (performanceResponse.ok) {
         const performanceData = await performanceResponse.json();
-        setPerformanceData(performanceData);
+        setPerformanceData(Array.isArray(performanceData) ? performanceData : []);
       }
 
       // Fetch pipeline data
       const pipelineResponse = await fetch(`/api/sales/analytics/pipeline?range=${timeRange}`);
       if (pipelineResponse.ok) {
         const pipelineData = await pipelineResponse.json();
-        setPipelineData(pipelineData);
+        setPipelineData(Array.isArray(pipelineData) ? pipelineData : []);
       }
 
       // Fetch time series data
       const timeSeriesResponse = await fetch(`/api/sales/analytics/timeseries?range=${timeRange}`);
       if (timeSeriesResponse.ok) {
         const timeSeriesData = await timeSeriesResponse.json();
-        setTimeSeriesData(timeSeriesData);
+        setTimeSeriesData(Array.isArray(timeSeriesData) ? timeSeriesData : []);
       }
 
       // Fetch source data
       const sourceResponse = await fetch(`/api/sales/analytics/sources?range=${timeRange}`);
       if (sourceResponse.ok) {
         const sourceData = await sourceResponse.json();
-        setSourceData(sourceData);
+        setSourceData(Array.isArray(sourceData) ? sourceData : []);
       }
     } catch (error) {
       console.error('Error fetching analytics data:', error);
@@ -379,10 +394,10 @@ export default function SalesAnalytics() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{source.leads} leads</span>
-                    <span>{formatCurrency(source.revenue)}</span>
+                    <span>{source.leads || 0} leads</span>
+                    <span>{formatCurrency(source.revenue || 0)}</span>
                   </div>
-                  <Progress value={source.conversionRate} className="h-2" />
+                  <Progress value={source.conversionRate || 0} className="h-2" />
                 </div>
               ))}
             </div>
@@ -403,14 +418,14 @@ export default function SalesAnalytics() {
                       {stage.stage.replace('_', ' ')}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {stage.count} deals
+                      {stage.count || 0} deals
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{formatCurrency(stage.value)}</span>
+                    <span>{formatCurrency(stage.value || 0)}</span>
                     <span>{(stage.probability || 0).toFixed(0)}%</span>
                   </div>
-                  <Progress value={stage.probability} className="h-2" />
+                  <Progress value={stage.probability || 0} className="h-2" />
                 </div>
               ))}
             </div>
@@ -438,13 +453,13 @@ export default function SalesAnalytics() {
                     <div>
                       <div className="font-medium">{member.userName}</div>
                       <div className="text-sm text-muted-foreground">
-                        {member.dealsClosed} deals • {member.leadsGenerated} leads
+                        {member.dealsClosed || 0} deals • {member.leadsGenerated || 0} leads
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-6">
                     <div className="text-right">
-                      <div className="text-sm font-medium">{formatCurrency(member.revenue)}</div>
+                      <div className="text-sm font-medium">{formatCurrency(member.revenue || 0)}</div>
                       <div className="text-xs text-muted-foreground">Revenue</div>
                     </div>
                     <div className="text-right">
@@ -452,7 +467,7 @@ export default function SalesAnalytics() {
                       <div className="text-xs text-muted-foreground">Conversion</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">{formatCurrency(member.averageDealSize)}</div>
+                      <div className="text-sm font-medium">{formatCurrency(member.averageDealSize || 0)}</div>
                       <div className="text-xs text-muted-foreground">Avg Deal</div>
                     </div>
                     <div className="text-right">
