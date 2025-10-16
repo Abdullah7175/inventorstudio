@@ -169,13 +169,14 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Notifications</h3>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 opacity-100">
                   {unreadNotifications.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => markAllAsReadMutation.mutate()}
                       disabled={markAllAsReadMutation.isPending}
+                      className="opacity-100 hover:opacity-90 transition-opacity"
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Mark all read
@@ -185,6 +186,7 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsOpen(false)}
+                    className="opacity-100 hover:opacity-90 transition-opacity"
                   >
                     <X className="h-4 w-4" />
                   </Button>

@@ -28,7 +28,18 @@ import {
   Globe,
   Database,
   Download,
-  Upload
+  Upload,
+  Key,
+  Lock,
+  Eye,
+  EyeOff,
+  Trash2,
+  Edit,
+  Check,
+  X,
+  AlertTriangle,
+  Info,
+  Plus
 } from 'lucide-react';
 
 interface SalesSettings {

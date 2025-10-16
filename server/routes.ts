@@ -601,9 +601,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Team member IDs are required" });
       }
 
-      // Verify project exists
-      const project = await storage.getClientProjectById(parseInt(projectId));
+      // Verify project exists - try multiple lookup methods
+      let project = await storage.getClientProjectById(parseInt(projectId));
+      
+      // If not found, try getting from portfolio projects
       if (!project) {
+        try {
+          project = await storage.getPortfolioProjectById(parseInt(projectId));
+        } catch (error) {
+          console.log('Project not found in portfolio projects either');
+        }
+      }
+      
+      if (!project) {
+        console.error(`Project not found with ID: ${projectId}`);
         return res.status(404).json({ message: "Project not found" });
       }
 
@@ -2974,6 +2985,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sales Analytics - Metrics endpoint
+  app.get("/api/sales/analytics/metrics", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { range = '30d' } = req.query;
+      
+      const leads = await storage.getAllLeads();
+      const opportunities = await storage.getAllOpportunities();
+      const proposals = await storage.getAllProposals();
+      
+      const totalPipelineValue = opportunities.reduce((sum, opp) => sum + parseFloat(opp.estimatedValue || '0'), 0);
+      const conversionRate = leads.length > 0 ? (opportunities.length / leads.length) * 100 : 0;
+      const winRate = opportunities.length > 0 ? (opportunities.filter(opp => opp.stage === 'closed_won').length / opportunities.length) * 100 : 0;
+      
+      const metrics = {
+        totalLeads: leads.length,
+        totalOpportunities: opportunities.length,
+        totalProposals: proposals.length,
+        totalPipelineValue,
+        conversionRate,
+        winRate,
+        averageDealSize: opportunities.length > 0 ? totalPipelineValue / opportunities.length : 0
+      };
+      
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching analytics metrics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics metrics" });
+    }
+  });
+
+  // Sales Analytics - Performance endpoint
+  app.get("/api/sales/analytics/performance", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { range = '30d' } = req.query;
+      
+      const opportunities = await storage.getAllOpportunities();
+      const leads = await storage.getAllLeads();
+      
+      const performanceData = {
+        conversionRate: leads.length > 0 ? (opportunities.length / leads.length) * 100 : 0,
+        winRate: opportunities.length > 0 ? (opportunities.filter(opp => opp.stage === 'closed_won').length / opportunities.length) * 100 : 0,
+        averageSalesCycle: 45, // Placeholder
+        topPerformingReps: [],
+        stageConversion: {}
+      };
+      
+      res.json(performanceData);
+    } catch (error) {
+      console.error("Error fetching performance data:", error);
+      res.status(500).json({ message: "Failed to fetch performance data" });
+    }
+  });
+
+  // Sales Analytics - Pipeline endpoint
+  app.get("/api/sales/analytics/pipeline", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { range = '30d' } = req.query;
+      
+      const opportunities = await storage.getAllOpportunities();
+      
+      const pipelineData = {
+        totalValue: opportunities.reduce((sum, opp) => sum + parseFloat(opp.estimatedValue || '0'), 0),
+        stageBreakdown: opportunities.reduce((acc, opp) => {
+          acc[opp.stage] = (acc[opp.stage] || 0) + parseFloat(opp.estimatedValue || '0');
+          return acc;
+        }, {} as Record<string, number>),
+        velocity: 0,
+        forecast: []
+      };
+      
+      res.json(pipelineData);
+    } catch (error) {
+      console.error("Error fetching pipeline data:", error);
+      res.status(500).json({ message: "Failed to fetch pipeline data" });
+    }
+  });
+
+  // Sales Analytics - Time Series endpoint
+  app.get("/api/sales/analytics/timeseries", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { range = '30d' } = req.query;
+      
+      const timeSeriesData = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+          {
+            label: 'Leads',
+            data: [12, 15, 18, 14, 20, 16],
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)'
+          },
+          {
+            label: 'Opportunities',
+            data: [8, 10, 12, 9, 14, 11],
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)'
+          },
+          {
+            label: 'Revenue',
+            data: [15000, 22000, 28000, 19000, 32000, 25000],
+            borderColor: 'rgb(168, 85, 247)',
+            backgroundColor: 'rgba(168, 85, 247, 0.1)'
+          }
+        ]
+      };
+      
+      res.json(timeSeriesData);
+    } catch (error) {
+      console.error("Error fetching time series data:", error);
+      res.status(500).json({ message: "Failed to fetch time series data" });
+    }
+  });
+
+  // Sales Analytics - Sources endpoint
+  app.get("/api/sales/analytics/sources", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const { range = '30d' } = req.query;
+      
+      const leads = await storage.getAllLeads();
+      
+      const sourceData = leads.reduce((acc, lead) => {
+        acc[lead.source] = (acc[lead.source] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      res.json(sourceData);
+    } catch (error) {
+      console.error("Error fetching source data:", error);
+      res.status(500).json({ message: "Failed to fetch source data" });
+    }
+  });
+
   // Business Development
   app.get("/api/sales/business-development", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
     try {
@@ -2982,6 +3125,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching business development opportunities:", error);
       res.status(500).json({ message: "Failed to fetch business development opportunities" });
+    }
+  });
+
+  // Business Development - Opportunities endpoint
+  app.get("/api/sales/business-development/opportunities", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const opportunities = await storage.getAllBusinessDevelopmentOpportunities();
+      res.json(opportunities);
+    } catch (error) {
+      console.error("Error fetching business development opportunities:", error);
+      res.status(500).json({ message: "Failed to fetch business development opportunities" });
+    }
+  });
+
+  // Business Development - Partnerships endpoint
+  app.get("/api/sales/business-development/partnerships", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      // For now, return empty array since we don't have separate partnerships data
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching partnerships:", error);
+      res.status(500).json({ message: "Failed to fetch partnerships" });
+    }
+  });
+
+  // Business Development - Insights endpoint
+  app.get("/api/sales/business-development/insights", verifyJWT, requireRole(["salesmanager", "businessmanager", "admin"]), async (req: any, res) => {
+    try {
+      const opportunities = await storage.getAllBusinessDevelopmentOpportunities();
+      const totalOpportunities = opportunities.length;
+      const activePartnerships = opportunities.filter(opp => opp.status === 'active').length;
+      const pipelineValue = opportunities.reduce((sum, opp) => sum + (opp.estimatedValue || 0), 0);
+      const conversionRate = opportunities.length > 0 ? (opportunities.filter(opp => opp.status === 'closed_won').length / opportunities.length) * 100 : 0;
+      
+      const insights = {
+        totalOpportunities,
+        activePartnerships,
+        pipelineValue,
+        conversionRate,
+        topPerformingTypes: [],
+        recentActivities: []
+      };
+      
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching business development insights:", error);
+      res.status(500).json({ message: "Failed to fetch business development insights" });
     }
   });
 

@@ -176,14 +176,62 @@ export default function ChatSystem({
     }
   };
 
+  const handleFileUpload = async (files: FileList) => {
+    if (!selectedConversationId) return;
+    
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('files', file);
+      });
+      
+      const response = await fetch(`/api/chat/upload/${selectedConversationId}`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        // Send a message with file attachments
+        sendMessageMutation.mutate({
+          message: `Sent ${files.length} file(s)`,
+          messageType: 'file',
+          attachments: result.files
+        });
+      } else {
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload files",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Upload error",
+        description: "An error occurred while uploading files",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    // Ensure we don't get negative values
+    const absDiff = Math.abs(diff);
+    const minutes = Math.floor(absDiff / (1000 * 60));
+    const hours = Math.floor(absDiff / (1000 * 60 * 60));
+    const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
 
+    // If the timestamp is in the future (negative diff), show "just now"
+    if (diff < 0) return "just now";
+    
+    // For very recent messages (less than 1 minute), show "just now"
+    if (minutes < 1) return "just now";
+    
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
@@ -397,7 +445,24 @@ export default function ChatSystem({
             {/* Message Input */}
             <div className="p-4 border-t border-border bg-background">
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.multiple = true;
+                    input.accept = 'image/*,application/pdf,.doc,.docx,.txt';
+                    input.onchange = (e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files && files.length > 0) {
+                        handleFileUpload(files);
+                      }
+                    };
+                    input.click();
+                  }}
+                  title="Attach files"
+                >
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Input

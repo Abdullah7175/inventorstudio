@@ -59,21 +59,31 @@ interface User {
 
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const refreshUsers = () => {
     setRefreshKey(prev => prev + 1);
   };
 
   const { data: users, isLoading, error } = useQuery<User[]>({
-    queryKey: ['admin-users', roleFilter, statusFilter, searchTerm, refreshKey],
+    queryKey: ['admin-users', roleFilter, statusFilter, debouncedSearchTerm, refreshKey],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (roleFilter !== 'all') params.append('role', roleFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (searchTerm) params.append('search', searchTerm);
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
 
       const response = await fetch(`/api/admin/users?${params.toString()}`, {
         credentials: 'include',

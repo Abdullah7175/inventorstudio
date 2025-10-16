@@ -66,11 +66,25 @@ export default function UserModal({
     }));
   };
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async () => {
     if (!formData.email || !formData.firstName || !formData.lastName) {
       toast({
         title: "Missing Fields",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address (e.g., user@example.com)",
         variant: "destructive",
       });
       return;

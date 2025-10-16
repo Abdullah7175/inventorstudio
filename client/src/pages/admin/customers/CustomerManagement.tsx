@@ -68,12 +68,22 @@ interface Customer {
 
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Debounce search term to prevent excessive API calls and focus loss
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const refreshCustomers = () => {
     setRefreshKey(prev => prev + 1);
@@ -85,7 +95,7 @@ export default function CustomerManagement() {
       const params = new URLSearchParams();
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (tierFilter !== 'all') params.append('tier', tierFilter);
-      if (searchTerm) params.append('search', searchTerm);
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
       params.append('role', 'customer');
 
       const response = await fetch(`/api/admin/customers?${params.toString()}`, {
@@ -105,7 +115,7 @@ export default function CustomerManagement() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, tierFilter, searchTerm, refreshKey]);
+  }, [statusFilter, tierFilter, debouncedSearchTerm, refreshKey]);
 
   useEffect(() => {
     fetchCustomers();

@@ -36,6 +36,29 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icon-192x192.svg">
     <link rel="icon" type="image/svg+xml" href="/icon-192x192.svg">
+    
+    <!-- Load the Facebook SDK -->
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({
+          appId      : '2242968322885842',
+          cookie     : true,
+          xfbml      : true,
+          version    : 'v20.0'   // latest stable API version
+        });
+          
+        FB.AppEvents.logPageView();   
+      };
+
+      (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) return;
+         js = d.createElement(s); 
+         js.id = id;
+         js.src = "https://connect.facebook.net/en_US/sdk.js";
+         fjs.parentNode.insertBefore(js, fjs);
+       }(document, 'script', 'facebook-jssdk'));
+    </script>
   </head>
   <body>
     <div id="root"></div>

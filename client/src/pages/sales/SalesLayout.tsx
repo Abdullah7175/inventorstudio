@@ -46,29 +46,25 @@ const menuItems: MenuItem[] = [
     id: 'leads',
     label: 'Lead Management',
     icon: Users,
-    path: '/sales/leads',
-    badge: 12
+    path: '/sales/leads'
   },
   {
     id: 'opportunities',
     label: 'Sales Pipeline',
     icon: TrendingUp,
-    path: '/sales/opportunities',
-    badge: 8
+    path: '/sales/opportunities'
   },
   {
     id: 'proposals',
     label: 'Proposals',
     icon: FileText,
-    path: '/sales/proposals',
-    badge: 5
+    path: '/sales/proposals'
   },
   {
     id: 'follow-ups',
     label: 'Follow-ups',
     icon: Calendar,
-    path: '/sales/follow-ups',
-    badge: 15
+    path: '/sales/follow-ups'
   },
   {
     id: 'targets',

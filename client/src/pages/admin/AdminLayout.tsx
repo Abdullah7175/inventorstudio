@@ -127,12 +127,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     await logout();
   };
 
-  const isActive = (path: string) => location === path || location.startsWith(path + '/');
+  const isActive = (path: string, itemId: string) => {
+    // Special case for dashboard - only active when exactly on dashboard
+    if (itemId === 'dashboard') {
+      return location === '/admin' || location === '/admin/';
+    }
+    // For other items, check if current path starts with the item path
+    return location === path || location.startsWith(path + '/');
+  };
 
   const renderMenuItem = (item: MenuItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedMenus.includes(item.id);
-    const isCurrentActive = isActive(item.path);
+    const isCurrentActive = isActive(item.path, item.id);
 
     return (
       <div key={item.id}>
