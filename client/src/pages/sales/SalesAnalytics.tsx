@@ -164,7 +164,7 @@ export default function SalesAnalytics() {
   };
 
   const formatPercentage = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+    return `${(value || 0) >= 0 ? '+' : ''}${(value || 0).toFixed(1)}%`;
   };
 
   const getGrowthIcon = (growth: number) => {
@@ -290,7 +290,7 @@ export default function SalesAnalytics() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{(metrics.conversionRate || 0).toFixed(1)}%</div>
             <p className={`text-xs flex items-center ${getGrowthColor(metrics.conversionGrowth)}`}>
               {getGrowthIcon(metrics.conversionGrowth)}
               <span className="ml-1">{formatPercentage(metrics.conversionGrowth)} from last period</span>
@@ -318,7 +318,7 @@ export default function SalesAnalytics() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.salesCycle.toFixed(0)} days</div>
+            <div className="text-2xl font-bold">{(metrics.salesCycle || 0).toFixed(0)} days</div>
             <p className={`text-xs flex items-center ${getGrowthColor(-metrics.cycleGrowth)}`}>
               {getGrowthIcon(-metrics.cycleGrowth)}
               <span className="ml-1">{formatPercentage(-metrics.cycleGrowth)} from last period</span>
@@ -375,7 +375,7 @@ export default function SalesAnalytics() {
                       {source.source.replace('_', ' ')}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {source.conversionRate.toFixed(1)}%
+                      {(source.conversionRate || 0).toFixed(1)}%
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -408,7 +408,7 @@ export default function SalesAnalytics() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{formatCurrency(stage.value)}</span>
-                    <span>{stage.probability.toFixed(0)}%</span>
+                    <span>{(stage.probability || 0).toFixed(0)}%</span>
                   </div>
                   <Progress value={stage.probability} className="h-2" />
                 </div>
@@ -448,7 +448,7 @@ export default function SalesAnalytics() {
                       <div className="text-xs text-muted-foreground">Revenue</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">{member.conversionRate.toFixed(1)}%</div>
+                      <div className="text-sm font-medium">{(member.conversionRate || 0).toFixed(1)}%</div>
                       <div className="text-xs text-muted-foreground">Conversion</div>
                     </div>
                     <div className="text-right">
@@ -456,7 +456,7 @@ export default function SalesAnalytics() {
                       <div className="text-xs text-muted-foreground">Avg Deal</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">{member.salesCycle.toFixed(0)}d</div>
+                      <div className="text-sm font-medium">{(member.salesCycle || 0).toFixed(0)}d</div>
                       <div className="text-xs text-muted-foreground">Cycle</div>
                     </div>
                   </div>

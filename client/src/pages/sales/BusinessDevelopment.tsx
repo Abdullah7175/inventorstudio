@@ -662,7 +662,7 @@ export default function BusinessDevelopment() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{insights.conversionRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{(insights.conversionRate || 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Opportunity conversion</p>
           </CardContent>
         </Card>

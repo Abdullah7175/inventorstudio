@@ -333,7 +333,7 @@ export default function SalesDashboard() {
             <Progress value={stats.targetProgress} className="h-2" />
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                {stats.targetProgress.toFixed(1)}% completed
+                {(stats.targetProgress || 0).toFixed(1)}% completed
               </span>
               <span className="text-muted-foreground">
                 {formatCurrency(stats.monthlyTarget - stats.monthlyRevenue)} remaining

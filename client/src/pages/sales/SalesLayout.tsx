@@ -52,7 +52,7 @@ const menuItems: MenuItem[] = [
     id: 'opportunities',
     label: 'Sales Pipeline',
     icon: TrendingUp,
-    path: '/sales/opportunities'
+    path: '/sales/pipeline'
   },
   {
     id: 'proposals',

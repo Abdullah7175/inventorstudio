@@ -500,7 +500,7 @@ export default function SalesTargets() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.achievementRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{(stats.achievementRate || 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Targets achieved</p>
           </CardContent>
         </Card>
@@ -520,7 +520,7 @@ export default function SalesTargets() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.overallProgress.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{(stats.overallProgress || 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Of total targets</p>
           </CardContent>
         </Card>
@@ -561,7 +561,7 @@ export default function SalesTargets() {
                       <div className="text-xs text-muted-foreground">Target</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">{progress.toFixed(1)}%</div>
+                      <div className="text-sm font-medium">{(progress || 0).toFixed(1)}%</div>
                       <div className="text-xs text-muted-foreground">Progress</div>
                     </div>
                     <div className="w-20">
@@ -715,7 +715,7 @@ export default function SalesTargets() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-sm">
-                              <span>{progress.toFixed(1)}%</span>
+                              <span>{(progress || 0).toFixed(1)}%</span>
                               <span className="text-muted-foreground">
                                 {target.achievedValue.toLocaleString()} / {target.targetValue.toLocaleString()}
                               </span>
